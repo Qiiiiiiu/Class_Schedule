@@ -1,0 +1,153 @@
+<view class="container">
+  <view class="stats-header">
+    <view class="stat-item">
+      <text class="stat-num">{{totalStudents}}</text>
+      <text class="stat-label">绑定学生总数</text>
+    </view>
+    <view class="action-btns">
+      <button class="add-btn" bindtap="onGenerateCode">生成绑定码</button>
+      <button class="add-btn secondary" bindtap="onShowAddModal">添加学生</button>
+    </view>
+  </view>
+
+  <view class="verify-code-section" wx:if="{{currentVerifyCode}}">
+    <view class="code-header">
+      <text class="code-title">当前绑定码</text>
+      <text class="code-expire">有效期至：{{expireTimeStr}}</text>
+    </view>
+    <view class="code-display">
+      <text class="code-value">{{currentVerifyCode}}</text>
+      <text class="code-hint">请将此码告知学生</text>
+    </view>
+  </view>
+
+  <view class="filter-bar">
+    <view class="search-box">
+      <input class="search-input" placeholder="搜索学生姓名" bindinput="onSearchInput" value="{{searchKey}}" />
+      <text class="search-icon" wx:if="{{searchKey}}" bindtap="onClearSearch">✕</text>
+    </view>
+  </view>
+
+  <view class="student-list" wx:if="{{students.length > 0}}">
+    <view class="student-item" wx:for="{{students}}" wx:key="_id">
+      <view class="student-info" bindtap="onViewDetail" data-student="{{item}}">
+        <image class="student-avatar" src="{{item.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
+        <view class="info-text">
+          <text class="student-name">{{item.studentName}}</text>
+          <text class="student-meta">申请时间: {{item.applyTimeStr}}</text>
+        </view>
+      </view>
+      <view class="student-actions">
+        <view class="student-status status-{{item.status}}">
+          {{item.statusStr}}
+        </view>
+        <button class="merge-btn" wx:if="{{item.status === 'unbound'}}" bindtap="onShowMergeModal" data-student="{{item}}">
+          合并
+        </button>
+        <button class="delete-btn" bindtap="onDeleteStudent" data-student="{{item}}">
+          删除
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:else>
+    <text class="empty-icon">👨‍🎓</text>
+    <text class="empty-text">{{searchKey ? '未找到匹配的学生' : '暂无绑定学生'}}</text>
+  </view>
+
+  <view class="modal-overlay" wx:if="{{showDetailModal}}" bindtap="onCloseDetailModal">
+    <view class="modal-content detail-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">{{currentStudent.studentName}} - 学生详情</text>
+        <text class="modal-close" bindtap="onCloseDetailModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">籍贯</text>
+          <input class="form-input" placeholder="请输入籍贯" value="{{studentDetail.nativePlace}}" bindinput="onNativePlaceInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">年级</text>
+          <input class="form-input" placeholder="请输入年级" value="{{studentDetail.grade}}" bindinput="onGradeInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">科目</text>
+          <input class="form-input" placeholder="请输入科目" value="{{studentDetail.subject}}" bindinput="onSubjectInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">备注</text>
+          <textarea class="form-textarea" placeholder="请输入备注信息" value="{{studentDetail.remark}}" bindinput="onRemarkInput"></textarea>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel-btn" bindtap="onCloseDetailModal">取消</button>
+        <button class="modal-btn confirm-btn" bindtap="onSaveDetail">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="modal-overlay" wx:if="{{showAddModal}}" bindtap="onCloseAddModal">
+    <view class="modal-content add-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">添加学生</text>
+        <text class="modal-close" bindtap="onCloseAddModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">学生姓名</text>
+          <input class="form-input" placeholder="请输入学生姓名" value="{{addStudentForm.name}}" bindinput="onAddNameInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">籍贯</text>
+          <input class="form-input" placeholder="请输入籍贯" value="{{addStudentForm.nativePlace}}" bindinput="onAddNativePlaceInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">年级</text>
+          <input class="form-input" placeholder="请输入年级" value="{{addStudentForm.grade}}" bindinput="onAddGradeInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">科目</text>
+          <input class="form-input" placeholder="请输入科目" value="{{addStudentForm.subject}}" bindinput="onAddSubjectInput" />
+        </view>
+        <view class="form-item">
+          <text class="form-label">备注</text>
+          <textarea class="form-textarea" placeholder="请输入备注信息" value="{{addStudentForm.remark}}" bindinput="onAddRemarkInput"></textarea>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel-btn" bindtap="onCloseAddModal">取消</button>
+        <button class="modal-btn confirm-btn" bindtap="onAddStudent" disabled="{{addingStudent}}">{{addingStudent ? '添加中...' : '添加'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="modal-overlay" wx:if="{{showMergeModal}}" bindtap="onCloseMergeModal">
+    <view class="modal-content merge-content" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">合并学生</text>
+        <text class="modal-close" bindtap="onCloseMergeModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="merge-info">
+          <text class="merge-label">待合并学生：</text>
+          <text class="merge-value">{{mergeSourceStudent.studentName}}</text>
+        </view>
+        <view class="form-item">
+          <text class="form-label">选择目标学生（已绑定）</text>
+          <view class="target-student-list">
+            <view class="target-student-item {{mergeTargetStudent && mergeTargetStudent.studentId === item.studentId ? 'selected' : ''}}" wx:for="{{boundStudents}}" wx:key="studentId" bindtap="onSelectMergeTarget" data-student="{{item}}">
+              <image class="target-avatar" src="{{item.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
+              <text class="target-name">{{item.studentName}}</text>
+              <view class="check-icon" wx:if="{{mergeTargetStudent && mergeTargetStudent.studentId === item.studentId}}">✓</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel-btn" bindtap="onCloseMergeModal">取消</button>
+        <button class="modal-btn confirm-btn" bindtap="onMergeStudents" disabled="{{!mergeTargetStudent}}">确认合并</button>
+      </view>
+    </view>
+  </view>
+</view>

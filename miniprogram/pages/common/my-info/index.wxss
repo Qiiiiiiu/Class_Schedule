@@ -1,0 +1,104 @@
+.container {
+  min-height: 100vh;
+  background: #e8ecf1;
+  padding: 30rpx;
+}
+
+.user-card {
+  background: linear-gradient(145deg, #001a6e, #1e4dc8);
+  border-radius: 24rpx;
+  padding: 50rpx 40rpx;
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 6rpx 6rpx 16rpx rgba(0, 47, 167, 0.2), -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.5);
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #eef2fb, #ced9f7);
+  box-shadow: 4rpx 4rpx 10rpx rgba(0, 26, 110, 0.3), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.1);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.name {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 8rpx 24rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+  width: fit-content;
+}
+
+.role-teacher {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.role-student {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.info-list {
+  background: #e8ecf1;
+  border-radius: 20rpx;
+  padding: 20rpx 0;
+  margin-bottom: 40rpx;
+  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 40rpx;
+  border-bottom: 1rpx solid rgba(0, 47, 167, 0.08);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 28rpx;
+  color: #5a6072;
+}
+
+.info-value {
+  font-size: 28rpx;
+  color: #1a1d28;
+  font-weight: 500;
+}
+
+.logout-btn {
+  width: 100%;
+  height: 96rpx;
+  background: #e8ecf1;
+  border: none;
+  border-radius: 48rpx;
+  font-size: 32rpx;
+  color: #ef4444;
+  box-shadow: 4rpx 4rpx 10rpx #d1d6dd, -4rpx -4rpx 10rpx #ffffff;
+}
+
+.logout-btn:active {
+  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
+}
+
+.logout-btn::after {
+  border: none;
+}

@@ -1,0 +1,97 @@
+/**app.wxss — 克莱因蓝 + 轻拟态设计系统 **/
+
+/* ========== 基础重置 ========== */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+button {
+  background: initial;
+}
+
+button:focus {
+  outline: 0;
+}
+
+button::after {
+  border: none;
+}
+
+page {
+  background: #e8ecf1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  --kb-900: #001a6e;
+  --kb-700: #002FA7;
+  --kb-500: #1e4dc8;
+  --kb-300: #6b8fe8;
+  --kb-100: #ced9f7;
+  --kb-50:  #eef2fb;
+  --bg-page:    #e8ecf1;
+  --bg-surface: #edf0f5;
+  --bg-card:    #e8ecf1;
+  --text-primary:   #1a1d28;
+  --text-secondary: #5a6072;
+  --text-hint:      #959dad;
+  --text-on-primary: #ffffff;
+  --success:       #10b981;
+  --success-light: #d1fae5;
+  --warning:       #f59e0b;
+  --warning-light: #fef3c7;
+  --danger:        #ef4444;
+  --danger-light:  #fee2e2;
+  --white:         #ffffff;
+  --shadow-dark:   #d1d6dd;
+  --shadow-light:  #ffffff;
+}
+
+/* ========== 轻拟态阴影工具类 ========== */
+.nm-raised {
+  background: #e8ecf1;
+  box-shadow: 6rpx 6rpx 12rpx #d1d6dd, -6rpx -6rpx 12rpx #ffffff;
+}
+
+.nm-raised-sm {
+  background: #e8ecf1;
+  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+}
+
+.nm-inset {
+  background: #e8ecf1;
+  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
+}
+
+.nm-convex {
+  background: linear-gradient(145deg, #dde1e8, #f4f6f9);
+  box-shadow: 6rpx 6rpx 12rpx #d1d6dd, -6rpx -6rpx 12rpx #ffffff;
+}
+
+/* ========== 克莱因蓝系按钮 ========== */
+.btn-primary {
+  background: linear-gradient(145deg, #001a6e, #002FA7);
+  color: #ffffff;
+  border: none;
+  box-shadow: 4rpx 4rpx 8rpx rgba(0, 47, 167, 0.25), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.6);
+}
+
+.btn-primary:active {
+  box-shadow: inset 4rpx 4rpx 8rpx rgba(0, 0, 0, 0.2), inset -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.1);
+}
+
+/* ========== 星期选择器 (复写) ========== */
+.weekday-item {
+  background: #e8ecf1 !important;
+  color: #5a6072 !important;
+  border: none !important;
+  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+}
+
+.weekday-item.selected {
+  background: #002FA7 !important;
+  color: #ffffff !important;
+  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.25), inset -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.1);
+}

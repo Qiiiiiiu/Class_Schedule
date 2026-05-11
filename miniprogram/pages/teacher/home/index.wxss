@@ -1,0 +1,352 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #001a6e 0%, #002FA7 40%, #1e4dc8 100%);
+  padding: 30rpx;
+  padding-top: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 60rpx 30rpx 40rpx;
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.subtitle {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #eef2fb, #ced9f7);
+  box-shadow: 4rpx 4rpx 10rpx rgba(0, 26, 110, 0.3), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.1);
+}
+
+/* ===== 日历 ===== */
+.calendar-section {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin: 0 30rpx 24rpx;
+  backdrop-filter: blur(10px);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.calendar-nav {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.15), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.08);
+}
+
+.calendar-nav:active {
+  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.2), inset -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.05);
+}
+
+.nav-btn {
+  font-size: 40rpx;
+  color: #ffffff;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.calendar-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.calendar-weekdays {
+  display: flex;
+  margin-bottom: 20rpx;
+  padding: 0 8rpx;
+}
+
+.weekday-item {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 8rpx;
+  border-radius: 12rpx;
+  margin: 0 4rpx;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.weekday-item:first-child,
+.weekday-item:last-child {
+  background: rgba(239, 68, 68, 0.18) !important;
+}
+
+.weekday {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.weekday-item:first-child .weekday,
+.weekday-item:last-child .weekday {
+  color: #fca5a5;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+
+.calendar-day {
+  width: calc((100% - 48rpx) / 7);
+  aspect-ratio: 1;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4rpx;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 2rpx 2rpx 4rpx rgba(0, 0, 0, 0.1), -1rpx -1rpx 3rpx rgba(255, 255, 255, 0.06);
+}
+
+.day-num {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.day-num.today {
+  background: #ffffff;
+  color: #002FA7;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.2);
+}
+
+.day-hours {
+  font-size: 18rpx;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== 收入统计卡片 ===== */
+.income-section {
+  width: calc(100% - 60rpx);
+  max-width: 680rpx;
+  background: #e8ecf1;
+  border-radius: 20rpx;
+  padding: 0rpx;
+  margin: 0 auto 30rpx;
+  box-shadow: 6rpx 6rpx 14rpx rgba(0, 26, 110, 0.18), -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.4);
+}
+
+.income-main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 60rpx;
+}
+
+.income-left {
+  display: flex;
+  gap: 60rpx;
+}
+
+.income-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.income-label {
+  font-size: 24rpx;
+  color: #5a6072;
+}
+
+.income-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #002FA7;
+  width: 200rpx;
+  text-align: center;
+}
+
+.income-right {
+  display: flex;
+  align-items: center;
+}
+
+.eye-icon {
+  font-size: 40rpx;
+  padding: 10rpx;
+}
+
+.income-footer {
+  padding-top: 20rpx;
+  margin-top: 16rpx;
+  border-top: 1rpx dashed rgba(0, 47, 167, 0.15);
+  text-align: center;
+}
+
+.total-hours {
+  font-size: 24rpx;
+  color: #5a6072;
+}
+
+/* ===== 统计卡片 ===== */
+.stats-grid {
+  width: calc(100% - 60rpx);
+  max-width: 680rpx;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.stat-card {
+  background: #e8ecf1;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+}
+
+.stat-card:active {
+  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
+}
+
+.stat-icon {
+  font-size: 50rpx;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.stat-num {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #002FA7;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #5a6072;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ffffff;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+/* ===== 快捷操作 ===== */
+.quick-actions {
+  margin-top: 50rpx;
+  padding: 0 10rpx;
+}
+
+.action-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+}
+
+.action-item {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16rpx;
+  padding: 30rpx 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.12), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.08);
+}
+
+.action-item:active {
+  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.2);
+}
+
+.action-icon {
+  font-size: 40rpx;
+}
+
+.action-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ===== 待处理列表 ===== */
+.pending-list {
+  margin-top: 50rpx;
+  padding: 0 10rpx;
+}
+
+.pending-item {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.12), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.08);
+}
+
+.pending-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.pending-type {
+  font-size: 24rpx;
+  color: #ced9f7;
+}
+
+.pending-name {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.pending-arrow {
+  font-size: 40rpx;
+  color: rgba(255, 255, 255, 0.5);
+}

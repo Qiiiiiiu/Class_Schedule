@@ -1,0 +1,166 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #001a6e 0%, #002FA7 40%, #1e4dc8 100%);
+  padding: 30rpx;
+  padding-top: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 60rpx 20rpx 40rpx;
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.subtitle {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #eef2fb, #ced9f7);
+  box-shadow: 4rpx 4rpx 10rpx rgba(0, 26, 110, 0.3), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.1);
+}
+
+/* ===== 统计卡片 ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+  padding: 0 10rpx;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 20rpx;
+  padding: 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  box-shadow: 3rpx 3rpx 8rpx rgba(0, 0, 0, 0.12), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.stat-icon {
+  font-size: 50rpx;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.stat-num {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ffffff;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+/* ===== 快捷操作 ===== */
+.quick-actions {
+  margin-top: 50rpx;
+  padding: 0 10rpx;
+}
+
+.action-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+}
+
+.action-item {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16rpx;
+  padding: 30rpx 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.12), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.08);
+}
+
+.action-item:active {
+  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.2);
+}
+
+.action-icon {
+  font-size: 40rpx;
+}
+
+.action-text {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ===== 课程列表 ===== */
+.course-list {
+  margin-top: 50rpx;
+  padding: 0 10rpx;
+}
+
+.course-item {
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.12), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.08);
+}
+
+.course-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.course-name {
+  font-size: 30rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.course-time,
+.course-room {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.course-teacher {
+  text-align: right;
+}
+
+.teacher-name {
+  font-size: 26rpx;
+  color: #ced9f7;
+}

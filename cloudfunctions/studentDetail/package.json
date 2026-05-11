@@ -1,0 +1,9 @@
+{
+  "name": "studentDetail",
+  "version": "1.0.0",
+  "description": "学生详细信息管理",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

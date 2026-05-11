@@ -1,0 +1,215 @@
+<view class="container">
+  <view class="form-section" wx:if="{{!lockedParentInfo}}">
+    <view class="section-header">
+      <text class="section-title">课程归属</text>
+      <text class="section-desc">选择是否绑定到已有课程</text>
+    </view>
+
+    <view class="form-item">
+      <text class="label">绑定到已有课程</text>
+      <view class="content-wrap">
+        <view class="switch-wrap">
+          <switch checked="{{bindToExisting}}" 
+                  bindchange="onBindToExistingChange" 
+                  color="#002FA7" />
+          <text class="switch-label">{{bindToExisting ? '是' : '否'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item" wx:if="{{bindToExisting}}">
+      <text class="label">选择父课程</text>
+      <view class="content-wrap">
+        <picker mode="selector" 
+                range="{{parentCourses}}" 
+                range-key="name" 
+                value="{{selectedParentCourseIndex}}" 
+                bindchange="onParentCourseChange">
+          <view class="picker-value">
+            {{parentCourses.length > 0 ? (selectedParentCourseId ? '已选择' : '请选择课程') : '暂无课程'}}
+          </view>
+        </picker>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-section {{bindToExisting || lockedParentInfo ? 'locked' : ''}}">
+    <view class="section-header">
+      <text class="section-title">基本信息</text>
+      <view class="section-badge" wx:if="{{bindToExisting || lockedParentInfo}}">
+        <text class="badge-text">已绑定</text>
+      </view>
+    </view>
+    <view class="form-item">
+      <text class="label">课程名称</text>
+      <view class="content-wrap">
+        <input class="input {{bindToExisting || lockedParentInfo ? 'input-disabled' : ''}}" 
+               placeholder="{{bindToExisting || lockedParentInfo ? '' : '绑定学生后可生成课程名称'}}" 
+               value="{{courseName}}" 
+               bindinput="onCourseNameInput" 
+               disabled="{{bindToExisting || lockedParentInfo}}" />
+      </view>
+    </view>
+    <view class="form-item" wx:if="{{bindToExisting || lockedParentInfo}}">
+      <text class="label">绑定学生</text>
+      <view class="content-wrap">
+        <view class="student-names-wrap">
+          <text class="student-names">{{selectedStudentNames || '暂无绑定学生'}}</text>
+        </view>
+      </view>
+    </view>
+    <text class="label" wx:if="{{!bindToExisting && !lockedParentInfo && students.length > 0}}">绑定学生</text>
+    <view class="student-list" wx:if="{{!bindToExisting && !lockedParentInfo && students.length > 0}}">
+      <view class="student-item {{item.selected ? 'selected' : ''}}"
+            wx:for="{{students}}" wx:key="studentId"
+            bindtap="onStudentSelect" data-student-id="{{item.studentId}}">
+        <view class="student-info">
+          <text class="student-name">{{item.studentName}}</text>
+          <text class="student-phone" wx:if="{{item.phone}}">{{item.phone}}</text>
+        </view>
+        <view class="student-check">
+          <text wx:if="{{item.selected}}">✓</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty-tip" wx:if="{{!bindToExisting && !lockedParentInfo && students.length === 0}}">
+      <text>暂无学生，请先添加学生</text>
+    </view>
+  </view>
+
+  <view class="form-section" wx:if="{{!lockedParentInfo}}">
+    <view class="section-header">
+      <text class="section-title">课程安排</text>
+    </view>
+
+    <view class="form-item">
+      <text class="label">是否重复</text>
+      <view class="content-wrap">
+        <view class="switch-wrap">
+          <switch checked="{{isRepeat}}" bindchange="onRepeatChange" color="#002FA7" />
+          <text class="switch-label">{{isRepeat ? '重复课程' : '单次课程'}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="form-item">
+      <text class="label">课程单价</text>
+      <view class="content-wrap">
+        <view class="price-input-wrap">
+          <text class="price-symbol">¥</text>
+          <input class="input price-input" placeholder="请输入课程单价" type="digit" value="{{price}}" bindinput="onPriceInput" />
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item" wx:if="{{!isRepeat}}">
+      <text class="label">上课日期</text>
+      <view class="content-wrap">
+        <picker mode="date" value="{{courseDate}}" bindchange="onDateChange">
+          <view class="picker-value">{{courseDate || '请选择日期'}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="form-item" wx:if="{{isRepeat}}">
+      <text class="label">重复星期</text>
+      <view class="content-wrap">
+        <view class="weekday-picker">
+          <view class="weekday-item {{item.selected ? 'selected' : ''}}"
+                wx:for="{{weekdayOptions}}" wx:key="value"
+                bindtap="onWeekdayTap" data-value="{{item.value}}">
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item" wx:if="{{isRepeat}}">
+      <text class="label">重复次数</text>
+      <view class="content-wrap">
+        <view class="repeat-count-wrap">
+          <input class="input repeat-count-input" type="number" placeholder="请输入次数" value="{{repeatCount}}" bindinput="onRepeatCountInput" />
+          <view class="repeat-count-tip">默认=选择的星期数</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">上课时间</text>
+      <view class="content-wrap">
+        <view class="time-picker">
+          <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
+            <view class="picker-value">{{startTime || '开始时间'}}</view>
+          </picker>
+          <text class="time-separator">至</text>
+          <picker mode="time" value="{{endTime}}" bindchange="onEndTimeChange">
+            <view class="picker-value">{{endTime || '结束时间'}}</view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">上课地点</text>
+      <view class="content-wrap">
+        <input class="input" placeholder="请输入上课地点" value="{{classroom}}" bindinput="onClassroomInput" />
+      </view>
+    </view>
+
+    <view class="add-course-btn-wrap">
+      <button class="add-course-btn" type="primary" bindtap="onSave" loading="{{loading}}">
+        添加课程
+      </button>
+    </view>
+  </view>
+
+  <view class="form-section">
+    <text class="section-title">提醒设置</text>
+    <view class="form-item">
+      <text class="label">提前提醒</text>
+      <view class="content-wrap">
+        <picker mode="selector" range="{{reminderOptions}}" range-key="label" value="{{reminderIndex}}" bindchange="onReminderChange">
+          <view class="picker-value">{{reminderOptions[reminderIndex].label}}</view>
+        </picker>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-section">
+    <text class="section-title">课程状态</text>
+    <view class="form-item">
+      <text class="label">状态</text>
+      <view class="content-wrap">
+        <view class="switch-wrap">
+          <switch checked="{{status === 'available'}}" bindchange="onStatusChange" color="#002FA7" />
+          <text class="switch-label">{{status === 'available' ? '进行中' : '已停课'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="form-section" wx:if="{{generatedCourses && generatedCourses.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">已添加的课程</text>
+      <text class="section-count">共{{generatedCourses.length}}节</text>
+    </view>
+    <view class="child-course-list">
+      <view class="child-course-item" wx:for="{{generatedCourses}}" wx:key="_id">
+        <view class="child-course-info">
+          <text class="child-course-name">{{item.name}}</text>
+          <text class="child-course-schedule">{{item.scheduleStr}}</text>
+          <text class="child-course-price">¥{{item.price || 0}}</text>
+          <text class="child-course-room">{{item.schedule.classroom || '未设置地点'}}</text>
+        </view>
+        <view class="child-course-actions">
+          <view class="action-btn edit-btn" bindtap="onEditChildCourse" data-index="{{index}}">
+            <text>修改</text>
+          </view>
+          <view class="action-btn delete-btn" bindtap="onDeleteChildCourse" data-id="{{item._id}}" data-parentid="{{item.parentId}}">
+            <text>删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

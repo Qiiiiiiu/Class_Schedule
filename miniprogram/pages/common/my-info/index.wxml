@@ -1,0 +1,26 @@
+<view class="container">
+  <view class="user-card">
+    <image class="avatar" src="{{userInfo.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
+    <view class="info">
+      <text class="name">{{userInfo.name}}</text>
+      <text class="role-badge role-{{userInfo.role}}">{{userInfo.role === 'teacher' ? '教师' : '学生'}}</text>
+    </view>
+  </view>
+
+  <view class="info-list">
+    <view class="info-item">
+      <text class="info-label">手机号</text>
+      <text class="info-value">{{userInfo.phone || '未填写'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">角色</text>
+      <text class="info-value">{{userInfo.role === 'teacher' ? '教师' : '学生'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="info-label">注册时间</text>
+      <text class="info-value">{{createTime}}</text>
+    </view>
+  </view>
+
+  <button class="logout-btn" bindtap="onLogout">退出登录</button>
+</view>

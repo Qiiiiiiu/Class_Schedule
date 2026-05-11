@@ -1,0 +1,203 @@
+const cloud = require('./cloud.js')
+
+async function callFunction(name, data = {}) {
+  try {
+    const res = await cloud.callFunction(name, data)
+    if (res.result.code === 0) {
+      return res.result.data
+    } else {
+      wx.showToast({
+        title: res.result.message || '操作失败',
+        icon: 'none'
+      })
+      return null
+    }
+  } catch (err) {
+    console.error(`Cloud function ${name} error:`, err)
+    wx.showToast({
+      title: '网络错误',
+      icon: 'none'
+    })
+    return null
+  }
+}
+
+async function login() {
+  return await callFunction('login')
+}
+
+async function getUserInfo(openid) {
+  return await callFunction('getUserInfo', { openid })
+}
+
+async function getStudents(teacherId) {
+  return await callFunction('getStudents', { teacherId })
+}
+
+async function addStudentByTeacher(teacherId, name, nativePlace, grade, subject, remark) {
+  return await callFunction('addStudentByTeacher', { 
+    teacherId, 
+    studentName: name, 
+    studentPhone: '',
+    nativePlace, 
+    grade, 
+    subject, 
+    remark 
+  })
+}
+
+async function getStudentDetail(teacherId, studentId) {
+  return await callFunction('studentDetail', { teacherId, studentId })
+}
+
+async function saveStudentDetail(teacherId, studentId, detail) {
+  return await callFunction('studentDetail', { 
+    teacherId, 
+    studentId, 
+    detail,
+    action: 'save'
+  })
+}
+
+async function addCourse(courseData) {
+  return await callFunction('addCourse', courseData)
+}
+
+async function editCourse(courseId, courseData) {
+  return await callFunction('editCourse', { courseId, ...courseData })
+}
+
+async function deleteCourse(courseId, teacherId) {
+  return await callFunction('deleteCourse', {
+    courseId,
+    teacherId
+  })
+}
+
+async function getCourses(teacherId) {
+  return await callFunction('getCourses', { teacherId })
+}
+
+async function getSchedule(teacherId) {
+  return await callFunction('getSchedule', { teacherId })
+}
+
+async function sendReminder(courseId, teacherId) {
+  return await callFunction('sendReminder', { courseId, teacherId })
+}
+
+async function getCourseApplications(teacherId) {
+  return await callFunction('getPendingApplications', { teacherId })
+}
+
+async function handleCourseApplication(applicationId, status) {
+  return await callFunction('handleCourseApplication', { applicationId, status })
+}
+
+async function getBindApplications(teacherId) {
+  return await callFunction('getPendingBindings', { teacherId })
+}
+
+async function getPendingBindings(teacherId) {
+  return await callFunction('getPendingBindings', { teacherId })
+}
+
+async function getPendingApplications(teacherId) {
+  return await callFunction('getPendingApplications', { teacherId })
+}
+
+async function handleBindApplication(applicationId, status) {
+  return await callFunction('handleBindApplication', { applicationId, status })
+}
+
+async function bindTeacher(studentId, teacherId) {
+  return await callFunction('bindTeacher', { studentId, teacherId })
+}
+
+async function applyCourse(studentId, courseId) {
+  return await callFunction('applyCourse', { studentId, courseId })
+}
+
+async function getTeachers(studentId) {
+  return await callFunction('getTeachers', { studentId })
+}
+
+async function getMyCourses(studentId) {
+  return await callFunction('getMyCourses', { studentId })
+}
+
+async function getMyApplications(studentId) {
+  return await callFunction('getMyApplications', { studentId })
+}
+
+async function bindStudent(teacherId, studentId) {
+  return await callFunction('bindStudent', { teacherId, studentId })
+}
+
+async function getStudentCourses(studentId, teacherId) {
+  return await callFunction('getStudentCourses', { studentId, teacherId })
+}
+
+async function deleteStudent(teacherId, studentId) {
+  return await callFunction('deleteStudent', { teacherId, studentId })
+}
+
+async function getCourseSchedules(parentId) {
+  return await callFunction('getCourseSchedules', { parentId })
+}
+
+async function editCourseSchedule(id, data) {
+  return await callFunction('editCourseSchedule', { id, data })
+}
+
+async function deleteCourseSchedule(id) {
+  return await callFunction('deleteCourseSchedule', { id })
+}
+
+async function addCourseSchedule(scheduleData) {
+  return await callFunction('addCourseSchedule', scheduleData)
+}
+
+async function generateBindCode(teacherId) {
+  return await callFunction('generateBindCode', { teacherId })
+}
+
+async function verifyBindCode(studentId, studentName, verifyCode) {
+  return await callFunction('verifyBindCode', { studentId, studentName, verifyCode })
+}
+
+module.exports = {
+  login,
+  getUserInfo,
+  getStudents,
+  addStudentByTeacher,
+  getStudentDetail,
+  saveStudentDetail,
+  addCourse,
+  editCourse,
+  deleteCourse,
+  getCourses,
+  getSchedule,
+  sendReminder,
+  getCourseApplications,
+  handleCourseApplication,
+  getBindApplications,
+  getPendingBindings,
+  getPendingApplications,
+  handleBindApplication,
+  bindTeacher,
+  applyCourse,
+  getTeachers,
+  getMyCourses,
+  getMyApplications,
+  bindStudent,
+  getStudentCourses,
+  deleteStudent,
+  getCourseSchedules,
+  editCourseSchedule,
+  deleteCourseSchedule,
+  addCourseSchedule,
+  generateBindCode,
+  verifyBindCode,
+  callFunction
+}

@@ -1,0 +1,42 @@
+{
+  "pages": [
+    "pages/common/login/index",
+    "pages/common/my-info/index",
+    "pages/teacher/home/index",
+    "pages/teacher/students/index",
+    "pages/teacher/courses/index",
+    "pages/teacher/courses/add",
+    "pages/teacher/schedule/index",
+    "pages/teacher/bindings/index",
+    "pages/student/home/index",
+    "pages/student/teachers/index",
+    "pages/student/applications/index",
+    "pages/student/my-courses/index"
+  ],
+  "window": {
+    "backgroundColor": "#F6F6F6",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTitleText": "课程管理",
+    "navigationBarTextStyle": "black"
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#002FA7",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/common/login/index",
+        "text": "登录"
+      },
+      {
+        "pagePath": "pages/common/my-info/index",
+        "text": "我的"
+      }
+    ]
+  }
+}

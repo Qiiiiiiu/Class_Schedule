@@ -1,0 +1,9 @@
+{
+  "name": "verifyBindCode",
+  "version": "1.0.0",
+  "description": "验证验证码并绑定师生",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

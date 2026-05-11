@@ -1,0 +1,62 @@
+<view class="container">
+  <view class="bind-code-section">
+    <view class="section-header">
+      <text class="section-title">绑定教师</text>
+      <text class="section-desc">请输入教师提供的绑定码</text>
+    </view>
+    <view class="code-input-row">
+      <input class="code-input" type="number" placeholder="请输入6位绑定码" maxlength="6" value="{{bindCode}}" bindinput="onBindCodeInput" />
+      <button class="bind-btn {{bindCode.length === 6 ? 'active' : 'disabled'}}" bindtap="onVerifyBindCode" disabled="{{bindCode.length !== 6}}">绑定</button>
+    </view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab-item {{currentTab === 'teachers' ? 'active' : ''}}" bindtap="switchTab" data-tab="teachers">
+      已绑定教师
+    </view>
+    <view class="tab-item {{currentTab === 'applications' ? 'active' : ''}}" bindtap="switchTab" data-tab="applications">
+      绑定记录
+      <view class="badge" wx:if="{{pendingCount > 0}}">{{pendingCount}}</view>
+    </view>
+  </view>
+
+  <view class="tab-content">
+    <view wx:if="{{currentTab === 'teachers'}}">
+      <view class="teacher-list" wx:if="{{boundTeachers.length > 0}}">
+        <view class="teacher-item" wx:for="{{boundTeachers}}" wx:key="_id">
+          <view class="teacher-info">
+            <view class="teacher-avatar"></view>
+            <view class="teacher-text">
+              <text class="teacher-name">{{item.teacherName}}</text>
+              <text class="teacher-meta" wx:if="{{item.phone}}">{{item.phone}} | {{item.subject || '暂无科目'}}</text>
+              <text class="teacher-meta" wx:else>{{item.subject || '暂无科目'}}</text>
+            </view>
+          </view>
+          <view class="teacher-status status-approved">已绑定</view>
+        </view>
+      </view>
+
+      <view class="empty-state" wx:else>
+        <text class="empty-icon">👨‍🏫</text>
+        <text class="empty-text">暂无已绑定教师</text>
+      </view>
+    </view>
+
+    <view wx:if="{{currentTab === 'applications'}}">
+      <view class="application-list" wx:if="{{applications.length > 0}}">
+        <view class="application-item" wx:for="{{applications}}" wx:key="_id">
+          <view class="app-info">
+            <text class="app-title">{{item.teacherName}}</text>
+            <text class="app-time">申请时间: {{item.applyTimeStr}}</text>
+            <text class="app-status status-{{item.status}}">{{item.statusStr}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="empty-state" wx:else>
+        <text class="empty-icon">📋</text>
+        <text class="empty-text">暂无绑定记录</text>
+      </view>
+    </view>
+  </view>
+</view>

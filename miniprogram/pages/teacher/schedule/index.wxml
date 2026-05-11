@@ -1,0 +1,68 @@
+<view class="container">
+  <view class="week-nav">
+    <view class="nav-arrow" bindtap="prevWeek">‹</view>
+    <text class="week-label">{{weekLabel}}</text>
+    <view class="nav-arrow" bindtap="nextWeek">›</view>
+  </view>
+
+  <view class="schedule-grid">
+    <view class="time-column">
+      <view class="time-header"></view>
+      <view class="time-slot" wx:for="{{timeSlots}}" wx:key="index">
+        {{item}}
+      </view>
+    </view>
+
+    <view class="day-column" wx:for="{{weekDays}}" wx:key="index">
+      <view class="day-header {{item.isToday ? 'today' : ''}}">
+        <text class="day-name">{{item.name}}</text>
+        <text class="day-date">{{item.date}}</text>
+      </view>
+      <view class="day-slots">
+        <view class="schedule-item {{course.status}}" 
+              wx:for="{{item.courses}}" 
+              wx:for-item="course" 
+              wx:key="courseKey"
+              style="top: {{course.top}}px; height: {{course.height}}px; background-color: {{course.bgColor}};"
+              bindtap="onCourseTap" data-course="{{course}}">
+          <text class="course-name" style="color: {{course.textColor}}">{{course.name}}</text>
+          <text class="course-time" style="color: {{course.textColor}}">{{course.schedule.startTime}}-{{course.schedule.endTime}}</text>
+          <text class="course-room" style="color: {{course.textColor}}">{{course.classroom}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="course-detail" wx:if="{{selectedCourse}}" bindtap="onCloseDetail">
+    <view class="detail-card" catchtap="preventBubble">
+      <view class="detail-header">
+        <text class="detail-title">{{selectedCourse.name}}</text>
+        <text class="detail-close" bindtap="onCloseDetail">✕</text>
+      </view>
+      <view class="detail-info">
+        <view class="detail-row">
+          <text class="detail-label">上课时间</text>
+          <text class="detail-value">{{selectedCourse.scheduleStr}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">上课地点</text>
+          <text class="detail-value">{{selectedCourse.schedule.classroom || '未设置'}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">选课人数</text>
+          <text class="detail-value">{{selectedCourse.studentCount || 0}}人</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">课程状态</text>
+          <text class="detail-value status-{{selectedCourse.status}}">
+            {{selectedCourse.status === 'available' ? '进行中' : '已停课'}}
+          </text>
+        </view>
+      </view>
+      <view class="detail-actions">
+        <button class="detail-btn" bindtap="onSendReminder">发送提醒</button>
+        <button class="detail-btn" bindtap="onEditCourse">编辑课程</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,223 @@
+const app = getApp()
+const checkRole = require('../../../utils/checkRole.js')
+const api = require('../../../utils/api.js')
+
+Page({
+  data: {
+    weekLabel: '',
+    currentWeekStart: null,
+    weekDays: [],
+    timeSlots: ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
+    selectedCourse: null,
+    courseColors: [
+      { bg: '#002FA7', text: '#fff' },
+      { bg: '#1e4dc8', text: '#fff' },
+      { bg: '#4b7be5', text: '#fff' },
+      { bg: '#6b8fe8', text: '#fff' },
+      { bg: '#059669', text: '#fff' },
+      { bg: '#d97706', text: '#fff' },
+      { bg: '#7c3aed', text: '#fff' },
+      { bg: '#dc2626', text: '#fff' },
+      { bg: '#0891b2', text: '#fff' },
+      { bg: '#4f46e5', text: '#fff' },
+      { bg: '#b45309', text: '#fff' },
+      { bg: '#be185d', text: '#fff' }
+    ]
+  },
+
+  onLoad(options) {
+    if (!checkRole.checkTeacher()) {
+      return
+    }
+    this.initWeek(options)
+    this.loadSchedule()
+  },
+
+  onShow() {
+    if (!checkRole.checkTeacher()) {
+      return
+    }
+    this.loadSchedule()
+  },
+
+  initWeek(options = {}) {
+    let weekStart
+    
+    if (options && options.weekStart) {
+      const weekStartDate = new Date(decodeURIComponent(options.weekStart))
+      if (!isNaN(weekStartDate.getTime())) {
+        weekStart = weekStartDate
+      }
+    }
+    
+    if (!weekStart) {
+      const today = new Date()
+      const dayOfWeek = today.getDay()
+      const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - offset)
+    }
+
+    this.setData({ currentWeekStart: weekStart })
+    this.updateWeekLabel()
+    this.generateWeekDays()
+  },
+
+  updateWeekLabel() {
+    const start = this.data.currentWeekStart
+    const end = new Date(start)
+    end.setDate(start.getDate() + 6)
+
+    const startStr = `${start.getMonth() + 1}/${start.getDate()}`
+    const endStr = `${end.getMonth() + 1}/${end.getDate()}`
+
+    this.setData({
+      weekLabel: `${startStr} - ${endStr}`
+    })
+  },
+
+  generateWeekDays() {
+    const start = this.data.currentWeekStart
+    const today = new Date()
+    const days = []
+    const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(start)
+      date.setDate(start.getDate() + i)
+
+      const isToday = date.toDateString() === today.toDateString()
+
+      days.push({
+        name: dayNames[i],
+        date: `${date.getMonth() + 1}/${date.getDate()}`,
+        isToday,
+        courses: []
+      })
+    }
+
+    this.setData({ weekDays: days })
+  },
+
+  getParentCourseColor(parentId) {
+    const colors = this.data.courseColors
+    if (!parentId) {
+      return colors[0]
+    }
+    
+    let hash = 5381
+    for (let i = 0; i < parentId.length; i++) {
+      hash = (hash << 5) + hash + parentId.charCodeAt(i)
+    }
+    const index = Math.abs(hash) % colors.length
+    return colors[index]
+  },
+
+  async loadSchedule() {
+    const teacherId = app.globalData.openid
+    const res = await api.getSchedule(teacherId)
+
+    if (res) {
+      const weekDays = [...this.data.weekDays]
+      const weekStart = this.data.currentWeekStart
+
+      res.forEach(course => {
+        if (course.schedule && course.schedule.date) {
+          const courseDate = new Date(course.schedule.date)
+          const startOfWeek = new Date(weekStart)
+          startOfWeek.setHours(0, 0, 0, 0)
+          const endOfWeek = new Date(startOfWeek)
+          endOfWeek.setDate(startOfWeek.getDate() + 7)
+
+          if (courseDate >= startOfWeek && courseDate < endOfWeek) {
+            const dayOfWeek = courseDate.getDay()
+            const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+            if (dayIndex >= 0 && dayIndex < 7) {
+              const startHour = parseInt(course.schedule.startTime.split(':')[0])
+              const endHour = parseInt(course.schedule.endTime.split(':')[0])
+              const top = (startHour - 6) * 60
+              const height = Math.max((endHour - startHour) * 60, 30)
+
+              const identifier = course.parentId || course.name || course._id
+              const color = this.getParentCourseColor(identifier)
+
+              weekDays[dayIndex].courses.push({
+                ...course,
+                top,
+                height,
+                scheduleStr: this.formatSchedule(course.schedule),
+                courseKey: `${course._id}_${dayIndex}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                bgColor: color.bg,
+                textColor: color.text
+              })
+            }
+          }
+        }
+      })
+
+      this.setData({ weekDays })
+    }
+  },
+
+  formatSchedule(schedule) {
+    if (schedule.date) {
+      const date = new Date(schedule.date)
+      const month = date.getMonth() + 1
+      const day = date.getDate()
+      return `${month}/${day} ${schedule.startTime}-${schedule.endTime}`
+    }
+    return `${schedule.startTime}-${schedule.endTime}`
+  },
+
+  prevWeek() {
+    const start = new Date(this.data.currentWeekStart)
+    start.setDate(start.getDate() - 7)
+    this.setData({ currentWeekStart: start })
+    this.updateWeekLabel()
+    this.generateWeekDays()
+    this.loadSchedule()
+  },
+
+  nextWeek() {
+    const start = new Date(this.data.currentWeekStart)
+    start.setDate(start.getDate() + 7)
+    this.setData({ currentWeekStart: start })
+    this.updateWeekLabel()
+    this.generateWeekDays()
+    this.loadSchedule()
+  },
+
+  onCourseTap(e) {
+    const course = e.currentTarget.dataset.course
+    this.setData({ selectedCourse: course })
+  },
+
+  onCloseDetail() {
+    this.setData({ selectedCourse: null })
+  },
+
+  preventBubble() {},
+
+  async onSendReminder() {
+    const course = this.data.selectedCourse
+    if (!course) return
+
+    const result = await api.sendReminder(course._id, app.globalData.openid)
+    if (result) {
+      wx.showToast({
+        title: '提醒已发送',
+        icon: 'success'
+      })
+    }
+  },
+
+  onEditCourse() {
+    const course = this.data.selectedCourse
+    if (!course) return
+
+    wx.navigateTo({
+      url: `/pages/teacher/courses/add?mode=edit&courseId=${course._id}&courseData=${JSON.stringify(course)}`
+    })
+    this.onCloseDetail()
+  }
+})

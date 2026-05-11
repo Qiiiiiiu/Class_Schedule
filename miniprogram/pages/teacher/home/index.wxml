@@ -1,0 +1,98 @@
+<view class="container">
+  <view class="header">
+    <view class="welcome">
+      <text class="title">您好，{{userInfo.name}}</text>
+      <text class="subtitle">欢迎使用课程管理系统</text>
+    </view>
+    <image class="avatar" src="{{userInfo.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
+  </view>
+
+  <view class="calendar-section">
+    <view class="calendar-header">
+      <view class="calendar-nav" bindtap="prevMonth">
+        <text class="nav-btn">‹</text>
+      </view>
+      <text class="calendar-title">{{calendarTitle}}</text>
+      <view class="calendar-nav" bindtap="nextMonth">
+        <text class="nav-btn">›</text>
+      </view>
+    </view>
+    <view class="calendar-weekdays">
+      <view class="weekday-item" wx:for="{{weeklyDays}}" wx:key="index">
+        <text class="weekday">{{item}}</text>
+      </view>
+    </view>
+    <view class="calendar-grid">
+      <view class="calendar-day {{item.empty ? 'empty' : ''}}" wx:for="{{calendar}}" wx:key="index" style="background: {{item.empty ? 'transparent' : item.bgColor}}" bindtap="onCalendarDayTap" data-date="{{item.fullDate}}">
+        <text wx:if="{{!item.empty}}" class="day-num {{item.isToday ? 'today' : ''}}">{{item.date}}</text>
+        <text wx:if="{{!item.empty && item.hours > 0}}" class="day-hours">{{item.hours}}h</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="income-section">
+    <view class="income-main">
+      <view class="income-left">
+        <view class="income-item">
+          <text class="income-label">本月收入</text>
+          <text class="income-value">¥{{showAmount ? monthlyIncome : '****'}}</text>
+        </view>
+        <view class="income-item">
+          <text class="income-label">时薪</text>
+          <text class="income-value">¥{{showAmount ? hourlyRate : '****'}}/h</text>
+        </view>
+      </view>
+      <view class="income-right">
+        <text class="eye-icon" bindtap="toggleAmount">{{showAmount ? '👁️' : '🙈'}}</text>
+      </view>
+    </view>
+    <view class="income-footer">
+      <text class="total-hours">本月授课时长: {{totalHours}}小时</text>
+    </view>
+  </view>
+
+  <view class="stats-grid">
+    <view class="stat-card" bindtap="goToStudents">
+      <view class="stat-icon student-icon">👨‍🎓</view>
+      <view class="stat-info">
+        <text class="stat-num">{{stats.studentCount}}</text>
+        <text class="stat-label">绑定学生</text>
+      </view>
+    </view>
+
+    <view class="stat-card" bindtap="goToCourses">
+      <view class="stat-icon course-icon">📚</view>
+      <view class="stat-info">
+        <text class="stat-num">{{stats.courseCount}}</text>
+        <text class="stat-label">开设课程</text>
+      </view>
+    </view>
+
+    <view class="stat-card" bindtap="goToBindings">
+      <view class="stat-icon binding-icon">📝</view>
+      <view class="stat-info">
+        <text class="stat-num">{{stats.pendingBindings}}</text>
+        <text class="stat-label">待处理绑定</text>
+      </view>
+    </view>
+
+    <view class="stat-card" bindtap="goToSchedule">
+      <view class="stat-icon schedule-icon">📅</view>
+      <view class="stat-info">
+        <text class="stat-num">{{scheduleCount}}</text>
+        <text class="stat-label">查看课表</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="pending-list" wx:if="{{recentPending.length > 0}}">
+    <text class="section-title">待处理事项</text>
+    <view class="pending-item" wx:for="{{recentPending}}" wx:key="index" bindtap="onPendingTap" data-item="{{item}}">
+      <view class="pending-left">
+        <text class="pending-type">{{item.type === 'binding' ? '绑定申请' : '课程预约'}}</text>
+        <text class="pending-name">{{item.name}}</text>
+      </view>
+      <text class="pending-arrow">›</text>
+    </view>
+  </view>
+</view>

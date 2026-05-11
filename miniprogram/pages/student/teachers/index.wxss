@@ -1,0 +1,246 @@
+.container {
+  min-height: 100vh;
+  background: #e8ecf1;
+}
+
+/* ===== 绑定码区 ===== */
+.bind-code-section {
+  background: linear-gradient(145deg, #001a6e, #1e4dc8);
+  padding: 40rpx 30rpx;
+  box-shadow: 4rpx 4rpx 12rpx rgba(0, 47, 167, 0.2);
+}
+
+.section-header {
+  margin-bottom: 30rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #ffffff;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.section-desc {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.code-input-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.code-input {
+  flex: 1;
+  height: 80rpx;
+  background: #e8ecf1;
+  border-radius: 40rpx;
+  padding: 0 40rpx;
+  font-size: 32rpx;
+  letter-spacing: 8rpx;
+  text-align: center;
+  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
+}
+
+.bind-btn {
+  height: 80rpx;
+  padding: 0 40rpx;
+  border: none;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.15), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.08);
+}
+
+.bind-btn.active {
+  background: #ffffff;
+  color: #002FA7;
+  box-shadow: 4rpx 4rpx 10rpx rgba(0, 47, 167, 0.25), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.3);
+}
+
+.bind-btn.disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  box-shadow: none;
+}
+
+/* ===== Tab ===== */
+.tabs {
+  background: #e8ecf1;
+  display: flex;
+  padding: 0 30rpx;
+  border-bottom: 1rpx solid rgba(0, 47, 167, 0.08);
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 30rpx 0;
+  font-size: 28rpx;
+  color: #5a6072;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #002FA7;
+  font-weight: bold;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60rpx;
+  height: 6rpx;
+  background: #002FA7;
+  border-radius: 3rpx;
+}
+
+.badge {
+  position: absolute;
+  top: 20rpx;
+  right: 30rpx;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 20rpx;
+  min-width: 32rpx;
+  text-align: center;
+}
+
+/* ===== 教师列表 ===== */
+.teacher-list {
+  background: #e8ecf1;
+  border-radius: 20rpx;
+  margin: 30rpx;
+  overflow: hidden;
+  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+}
+
+.teacher-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid rgba(0, 47, 167, 0.06);
+}
+
+.teacher-item:active {
+  background: #eef2fb;
+}
+
+.teacher-item:last-child {
+  border-bottom: none;
+}
+
+.teacher-info {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.teacher-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ced9f7, #eef2fb);
+  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+}
+
+.teacher-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.teacher-name {
+  font-size: 30rpx;
+  color: #1a1d28;
+  font-weight: 500;
+}
+
+.teacher-meta {
+  font-size: 24rpx;
+  color: #5a6072;
+}
+
+.teacher-status {
+  font-size: 24rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.status-approved {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ===== 预约列表 ===== */
+.application-list {
+  padding: 30rpx;
+}
+
+.application-item {
+  background: #e8ecf1;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+}
+
+.app-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.app-title {
+  font-size: 30rpx;
+  color: #1a1d28;
+  font-weight: 500;
+}
+
+.app-time {
+  font-size: 24rpx;
+  color: #5a6072;
+}
+
+.app-status {
+  font-size: 24rpx;
+  margin-top: 8rpx;
+}
+
+/* ===== 空状态 ===== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100rpx 0;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 30rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #5a6072;
+}

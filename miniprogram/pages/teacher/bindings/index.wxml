@@ -1,0 +1,39 @@
+<view class="container">
+  <view class="tabs">
+    <view class="tab-item {{currentTab === 'pending' ? 'active' : ''}}" bindtap="switchTab" data-tab="pending">
+      待审核
+      <view class="badge" wx:if="{{pendingCount > 0}}">{{pendingCount}}</view>
+    </view>
+    <view class="tab-item {{currentTab === 'approved' ? 'active' : ''}}" bindtap="switchTab" data-tab="approved">
+      已绑定
+    </view>
+    <view class="tab-item {{currentTab === 'rejected' ? 'active' : ''}}" bindtap="switchTab" data-tab="rejected">
+      已拒绝
+    </view>
+  </view>
+
+  <view class="binding-list" wx:if="{{(currentTab === 'pending' && pendingList.length > 0) || (currentTab === 'approved' && approvedList.length > 0) || (currentTab === 'rejected' && rejectedList.length > 0)}}">
+    <view class="binding-item" wx:for="{{currentTab === 'pending' ? pendingList : (currentTab === 'approved' ? approvedList : rejectedList)}}" wx:key="_id">
+      <view class="binding-info">
+        <image class="student-avatar" src="{{item.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
+        <view class="info-text">
+          <text class="student-name">{{item.studentName}}</text>
+          <text class="apply-time">申请时间: {{item.applyTimeStr}}</text>
+          <text class="remark" wx:if="{{item.remark}}">备注: {{item.remark}}</text>
+        </view>
+      </view>
+      <view class="binding-actions" wx:if="{{currentTab === 'pending'}}">
+        <button class="approve-btn" bindtap="onApprove" data-item="{{item}}">通过</button>
+        <button class="reject-btn" bindtap="onReject" data-item="{{item}}">拒绝</button>
+      </view>
+      <view class="binding-status" wx:else>
+        {{item.statusStr}}
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:else>
+    <text class="empty-icon">📋</text>
+    <text class="empty-text">{{emptyText}}</text>
+  </view>
+</view>

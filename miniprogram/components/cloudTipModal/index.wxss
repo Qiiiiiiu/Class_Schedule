@@ -1,0 +1,73 @@
+.install_tip_back {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.install_tip_close {
+  position: absolute;
+  right: 10rpx;
+  top: 10rpx;
+  width: 32px;
+  height: 32px;
+}
+
+.install_tip_detail {
+  position: fixed;
+  background: #e8ecf1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 50rpx 50rpx 100rpx 50rpx;
+  z-index: 9;
+  box-shadow: 0 -8rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.install_tip_detail_title {
+  font-weight: 600;
+  font-size: 40rpx;
+  text-align: center;
+  color: #1a1d28;
+}
+
+.install_tip_detail_tip {
+  font-size: 25rpx;
+  color: #5a6072;
+  margin-top: 20rpx;
+  text-align: left;
+}
+
+.install_tip_detail_buttons {
+  padding-top: 50rpx;
+  display: flex;
+}
+
+.install_tip_detail_button {
+  color: #002FA7;
+  font-weight: 500;
+  background: #e8ecf1;
+  width: 40%;
+  text-align: center;
+  border-radius: 10rpx;
+  margin: 0 auto;
+  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+}
+
+.install_tip_detail_button:active {
+  box-shadow: inset 3rpx 3rpx 6rpx #d1d6dd, inset -3rpx -3rpx 6rpx #ffffff;
+}
+
+.install_tip_detail_button_primary {
+  background: linear-gradient(145deg, #001a6e, #002FA7);
+  color: #ffffff;
+  box-shadow: 4rpx 4rpx 8rpx rgba(0, 47, 167, 0.3), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.2);
+}
+
+.install_tip_detail_button_primary:active {
+  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.2);
+}
