@@ -65,24 +65,30 @@
       <view class="modal-body">
         <view class="form-item">
           <text class="form-label">籍贯</text>
-          <input class="form-input" placeholder="请输入籍贯" value="{{studentDetail.nativePlace}}" bindinput="onNativePlaceInput" />
+          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.nativePlace || '未填写'}}</text>
+          <input wx:else class="form-input" placeholder="请输入籍贯" value="{{studentDetail.nativePlace}}" bindinput="onNativePlaceInput" />
         </view>
         <view class="form-item">
           <text class="form-label">年级</text>
-          <input class="form-input" placeholder="请输入年级" value="{{studentDetail.grade}}" bindinput="onGradeInput" />
+          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.grade || '未填写'}}</text>
+          <input wx:else class="form-input" placeholder="请输入年级" value="{{studentDetail.grade}}" bindinput="onGradeInput" />
         </view>
         <view class="form-item">
           <text class="form-label">科目</text>
-          <input class="form-input" placeholder="请输入科目" value="{{studentDetail.subject}}" bindinput="onSubjectInput" />
+          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.subject || '未填写'}}</text>
+          <input wx:else class="form-input" placeholder="请输入科目" value="{{studentDetail.subject}}" bindinput="onSubjectInput" />
         </view>
         <view class="form-item">
           <text class="form-label">备注</text>
-          <textarea class="form-textarea" placeholder="请输入备注信息" value="{{studentDetail.remark}}" bindinput="onRemarkInput"></textarea>
+          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.remark || '未填写'}}</text>
+          <textarea wx:else class="form-textarea" placeholder="请输入备注信息" value="{{studentDetail.remark}}" bindinput="onRemarkInput"></textarea>
         </view>
       </view>
       <view class="modal-footer">
-        <button class="modal-btn cancel-btn" bindtap="onCloseDetailModal">取消</button>
-        <button class="modal-btn confirm-btn" bindtap="onSaveDetail">保存</button>
+        <button wx:if="{{!editingDetail}}" class="modal-btn cancel-btn" bindtap="onCloseDetailModal">关闭</button>
+        <button wx:if="{{!editingDetail}}" class="modal-btn confirm-btn" bindtap="onStartEditDetail">编辑</button>
+        <button wx:if="{{editingDetail}}" class="modal-btn cancel-btn" bindtap="onCloseDetailModal">取消</button>
+        <button wx:if="{{editingDetail}}" class="modal-btn confirm-btn" bindtap="onSaveDetail">保存</button>
       </view>
     </view>
   </view>

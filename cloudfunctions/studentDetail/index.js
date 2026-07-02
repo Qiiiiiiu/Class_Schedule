@@ -19,23 +19,34 @@ exports.main = async (event, context) => {
 
   try {
     if (type === 'get') {
-      const res = await db.collection('student_details').where({
-        teacherId,
-        studentId
+      const userRes = await db.collection('users').where({
+        openid: studentId
       }).get()
+
+      if (userRes.data.length > 0) {
+        const user = userRes.data[0]
+        return {
+          code: 0,
+          data: {
+            nativePlace: user.nativePlace || '',
+            grade: user.grade || '',
+            subject: user.subject || '',
+            remark: user.remark || ''
+          }
+        }
+      }
 
       return {
         code: 0,
-        data: res.data.length > 0 ? res.data[0] : null
+        data: null
       }
     } else if (type === 'save') {
-      const checkRes = await db.collection('student_details').where({
-        teacherId,
-        studentId
+      const userRes = await db.collection('users').where({
+        openid: studentId
       }).get()
 
-      if (checkRes.data.length > 0) {
-        await db.collection('student_details').doc(checkRes.data[0]._id).update({
+      if (userRes.data.length > 0) {
+        await db.collection('users').doc(userRes.data[0]._id).update({
           data: {
             ...studentDetail,
             updateTime: db.serverDate()
@@ -47,19 +58,9 @@ exports.main = async (event, context) => {
           message: '更新成功'
         }
       } else {
-        await db.collection('student_details').add({
-          data: {
-            teacherId,
-            studentId,
-            ...studentDetail,
-            createTime: db.serverDate(),
-            updateTime: db.serverDate()
-          }
-        })
-
         return {
-          code: 0,
-          message: '保存成功'
+          code: 1,
+          message: '未找到该学生记录'
         }
       }
     }

@@ -4,7 +4,6 @@ cloud.init({
 })
 
 const db = cloud.database()
-const _ = db.command
 
 exports.main = async (event, context) => {
   const { teacherId, studentId } = event
@@ -22,10 +21,15 @@ exports.main = async (event, context) => {
       studentId
     }).remove()
 
-    await db.collection('users').where({
-      openid: studentId,
-      role: 'student'
-    }).remove()
+    if (studentId.startsWith('teacher_add_')) {
+      const usersRes = await db.collection('users').where({
+        openid: studentId
+      }).get()
+
+      if (usersRes.data && usersRes.data.length > 0) {
+        await db.collection('users').doc(usersRes.data[0]._id).remove()
+      }
+    }
 
     return {
       code: 0,

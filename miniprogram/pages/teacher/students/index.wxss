@@ -397,6 +397,12 @@
   box-sizing: border-box;
 }
 
+.form-value {
+  font-size: 28rpx;
+  color: #f1f5f9;
+  line-height: 88rpx;
+}
+
 .target-student-list {
   max-height: 400rpx;
   overflow-y: auto;

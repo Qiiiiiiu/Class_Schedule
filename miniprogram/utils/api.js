@@ -51,32 +51,20 @@ async function addStudentByTeacher(teacherId, name, nativePlace, grade, subject,
 }
 
 async function getStudentDetail(teacherId, studentId) {
-  try {
-    const res = await cloud.callFunction('studentDetail', {
-      type: 'get',
-      teacherId,
-      studentId
-    })
-    return res.result
-  } catch (err) {
-    console.error('getStudentDetail error:', err)
-    return null
-  }
+  return await callFunction('studentDetail', {
+    type: 'get',
+    teacherId,
+    studentId
+  })
 }
 
 async function saveStudentDetail(teacherId, studentId, detail) {
-  try {
-    const res = await cloud.callFunction('studentDetail', {
-      type: 'save',
-      teacherId,
-      studentId,
-      studentDetail: detail
-    })
-    return res.result
-  } catch (err) {
-    console.error('saveStudentDetail error:', err)
-    return null
-  }
+  return await callFunction('studentDetail', {
+    type: 'save',
+    teacherId,
+    studentId,
+    studentDetail: detail
+  })
 }
 
 async function addCourse(courseData) {

@@ -29,7 +29,8 @@ Page({
     boundStudents: [],
     currentVerifyCode: '',
     expireTimeStr: '',
-    addingStudent: false
+    addingStudent: false,
+    editingDetail: false
   },
 
   onLoad() {
@@ -283,6 +284,7 @@ Page({
     this.setData({
       showDetailModal: true,
       currentStudent: student,
+      editingDetail: false,
       studentDetail: {
         nativePlace: detail ? (detail.nativePlace || '') : '',
         grade: detail ? (detail.grade || '') : '',
@@ -290,6 +292,10 @@ Page({
         remark: detail ? (detail.remark || '') : ''
       }
     })
+  },
+
+  onStartEditDetail() {
+    this.setData({ editingDetail: true })
   },
 
   onCloseDetailModal() {
