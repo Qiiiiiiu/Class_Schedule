@@ -102,6 +102,9 @@ Page({
         }
 
         this.setData({ courses: coursesWithSchedule })
+      } else {
+        app.globalData.coursesCache = null
+        this.setData({ courses: [] })
       }
     } catch (err) {
       console.error('loadCourses 失败:', err)
@@ -147,6 +150,9 @@ Page({
               title: '删除成功',
               icon: 'success'
             })
+            app.globalData.coursesCache = null
+            app.globalData.dashboardCache = null
+            app.globalData.refreshSchedule = true
             this.loadCourses()
           }
         }

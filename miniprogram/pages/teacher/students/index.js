@@ -28,7 +28,8 @@ Page({
     mergeTargetStudent: null,
     boundStudents: [],
     currentVerifyCode: '',
-    expireTimeStr: ''
+    expireTimeStr: '',
+    addingStudent: false
   },
 
   onLoad() {
@@ -165,6 +166,10 @@ Page({
   },
 
   async onAddStudent() {
+    if (this.data.addingStudent) {
+      return
+    }
+
     const { addStudentForm } = this.data
 
     if (!addStudentForm.name.trim()) {
@@ -175,22 +180,28 @@ Page({
       return
     }
 
-    const result = await api.addStudentByTeacher(
-      app.globalData.openid,
-      addStudentForm.name,
-      addStudentForm.nativePlace,
-      addStudentForm.grade,
-      addStudentForm.subject,
-      addStudentForm.remark
-    )
+    this.setData({ addingStudent: true })
 
-    if (result) {
-      wx.showToast({
-        title: '添加成功',
-        icon: 'success'
-      })
-      this.setData({ showAddModal: false })
-      this.loadStudents()
+    try {
+      const result = await api.addStudentByTeacher(
+        app.globalData.openid,
+        addStudentForm.name,
+        addStudentForm.nativePlace,
+        addStudentForm.grade,
+        addStudentForm.subject,
+        addStudentForm.remark
+      )
+
+      if (result) {
+        wx.showToast({
+          title: '添加成功',
+          icon: 'success'
+        })
+        this.setData({ showAddModal: false })
+        this.loadStudents()
+      }
+    } finally {
+      this.setData({ addingStudent: false })
     }
   },
 

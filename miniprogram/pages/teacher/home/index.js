@@ -44,6 +44,9 @@ Page({
       currentYear: new Date().getFullYear(),
       currentMonth: new Date().getMonth()
     })
+    if (app.globalData.refreshSchedule) {
+      app.globalData.refreshSchedule = false
+    }
     this.loadStats()
   },
 

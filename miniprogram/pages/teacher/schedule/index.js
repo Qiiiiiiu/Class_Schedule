@@ -53,6 +53,11 @@ Page({
       app.globalData.navigateDate = null
     }
     
+    if (app.globalData.refreshSchedule) {
+      app.globalData.refreshSchedule = false
+      this.generateWeekDays()
+    }
+    
     this.loadSchedule()
   },
 
