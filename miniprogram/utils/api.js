@@ -93,8 +93,11 @@ async function getCourses(teacherId) {
   return await callFunction('getCourses', { teacherId })
 }
 
-async function getSchedule(teacherId) {
-  return await callFunction('getSchedule', { teacherId })
+async function getSchedule(teacherId, options = {}) {
+  const params = { teacherId }
+  if (options.startDate) params.startDate = options.startDate
+  if (options.endDate) params.endDate = options.endDate
+  return await callFunction('getSchedule', params)
 }
 
 async function sendReminder(courseId, teacherId) {
@@ -205,8 +208,11 @@ async function getCoursesWithStats(teacherId) {
   return await callFunction('getCoursesWithStats', { teacherId })
 }
 
-async function getTeacherDashboard(teacherId) {
-  return await callFunction('getTeacherDashboard', { teacherId })
+async function getTeacherDashboard(teacherId, options = {}) {
+  const params = { teacherId }
+  if (options.startDate) params.startDate = options.startDate
+  if (options.endDate) params.endDate = options.endDate
+  return await callFunction('getTeacherDashboard', params)
 }
 
 module.exports = {

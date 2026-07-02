@@ -13,6 +13,11 @@ Page({
     selectedStudentId: null,
     selectedStudentName: '全部学生',
     allCourses: [],
+    isEditing: false,
+    editDate: '',
+    editStartTime: '',
+    editEndTime: '',
+    editClassroom: '',
     courseColors: [
       { bg: '#dc2626', text: '#fff' },
       { bg: '#ea580c', text: '#fff' },
@@ -123,8 +128,12 @@ Page({
   async loadSchedule() {
     const teacherId = app.globalData.openid
     
+    const weekStart = this.data.currentWeekStart
+    const startDate = this.formatDateStr(weekStart)
+    const endDate = this.formatDateStr(new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000))
+    
     const [scheduleRes, studentsRes] = await Promise.all([
-      api.getSchedule(teacherId),
+      api.getSchedule(teacherId, { startDate, endDate }),
       api.getStudents(teacherId)
     ])
 
@@ -183,6 +192,7 @@ Page({
         })
       }
 
+      this.generateWeekDays()
       const weekDays = [...this.data.weekDays]
       const weekStart = this.data.currentWeekStart
       const colors = this.data.courseColors
@@ -209,7 +219,9 @@ Page({
 
       filteredCourses.forEach(course => {
         if (course.schedule && course.schedule.date) {
-          const courseDate = new Date(course.schedule.date)
+          const dateStr = course.schedule.date
+          const dateParts = dateStr.split('-')
+          const courseDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2])
           const startOfWeek = new Date(weekStart)
           startOfWeek.setHours(0, 0, 0, 0)
           const endOfWeek = new Date(startOfWeek)
@@ -276,6 +288,13 @@ Page({
     return `${schedule.startTime}-${schedule.endTime}`
   },
 
+  formatDateStr(date) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  },
+
   prevWeek() {
     const start = new Date(this.data.currentWeekStart)
     start.setDate(start.getDate() - 7)
@@ -322,9 +341,83 @@ Page({
     const course = this.data.selectedCourse
     if (!course) return
 
-    wx.navigateTo({
-      url: `/pages/teacher/courses/add?mode=edit&courseId=${course._id}&courseData=${JSON.stringify(course)}`
+    const schedule = course.schedule || {}
+    let dateStr = schedule.date || ''
+    if (dateStr && !dateStr.includes('-')) {
+      const date = new Date(dateStr)
+      dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    }
+
+    this.setData({
+      isEditing: true,
+      editDate: dateStr,
+      editStartTime: schedule.startTime || '',
+      editEndTime: schedule.endTime || '',
+      editClassroom: schedule.classroom || ''
     })
-    this.onCloseDetail()
+  },
+
+  onEditDateChange(e) {
+    this.setData({ editDate: e.detail.value })
+  },
+
+  onEditStartTimeChange(e) {
+    this.setData({ editStartTime: e.detail.value })
+  },
+
+  onEditEndTimeChange(e) {
+    this.setData({ editEndTime: e.detail.value })
+  },
+
+  onEditClassroomInput(e) {
+    this.setData({ editClassroom: e.detail.value })
+  },
+
+  onCancelEdit() {
+    this.setData({ isEditing: false })
+  },
+
+  async onSaveEdit() {
+    const course = this.data.selectedCourse
+    if (!course) return
+
+    const { editDate, editStartTime, editEndTime, editClassroom } = this.data
+
+    if (!editDate || !editStartTime || !editEndTime) {
+      wx.showToast({
+        title: '请填写完整信息',
+        icon: 'none'
+      })
+      return
+    }
+
+    const updateData = {}
+    if (editDate) updateData.date = editDate
+    if (editStartTime) updateData.startTime = editStartTime
+    if (editEndTime) updateData.endTime = editEndTime
+    if (editClassroom !== undefined) updateData.classroom = editClassroom
+
+    console.log('editCourseSchedule called:', {
+      courseId: course._id,
+      updateData: updateData
+    })
+
+    const result = await api.editCourseSchedule(course._id, updateData)
+
+    console.log('editCourseSchedule result:', result)
+
+    if (result) {
+      wx.showToast({
+        title: '修改成功',
+        icon: 'success'
+      })
+      this.setData({ isEditing: false })
+      this.loadSchedule()
+    } else {
+      wx.showToast({
+        title: '修改失败',
+        icon: 'none'
+      })
+    }
   }
 })

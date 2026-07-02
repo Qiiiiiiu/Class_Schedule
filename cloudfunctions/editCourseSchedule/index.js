@@ -8,6 +8,8 @@ const db = cloud.database()
 exports.main = async (event, context) => {
   const { id, data } = event
 
+  console.log('editCourseSchedule called with:', { id, data })
+
   if (!id) {
     return {
       code: 1,
@@ -28,9 +30,13 @@ exports.main = async (event, context) => {
     if (data.status !== undefined) updateData.status = data.status
     updateData.updateTime = db.serverDate()
 
+    console.log('updateData:', updateData)
+
     const res = await db.collection('course_schedule').doc(id).update({
       data: updateData
     })
+
+    console.log('update result:', res)
 
     const unfinishedRes = await db.collection('course_unfinished').where({
       scheduleId: id

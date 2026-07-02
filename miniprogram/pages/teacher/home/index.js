@@ -23,7 +23,10 @@ Page({
     currentYear: 0,
     currentMonth: 0,
     coursesData: [],
-    scheduleData: []
+    scheduleData: [],
+    studentsData: null,
+    bindingsData: null,
+    applicationsData: null
   },
 
   onLoad() {
@@ -46,6 +49,13 @@ Page({
     })
     if (app.globalData.refreshSchedule) {
       app.globalData.refreshSchedule = false
+      this.setData({
+        coursesData: [],
+        scheduleData: [],
+        studentsData: null,
+        bindingsData: null,
+        applicationsData: null
+      })
     }
     this.loadStats()
   },
@@ -53,41 +63,28 @@ Page({
   async loadStats() {
     const teacherId = app.globalData.openid
 
-    let studentsRes = []
-    let coursesRes = []
-    let bindingsRes = []
-    let applicationsRes = []
-    let scheduleRes = []
+    const year = this.data.currentYear || new Date().getFullYear()
+    const month = this.data.currentMonth !== undefined ? this.data.currentMonth : new Date().getMonth()
+    const startDate = this.formatDateStr(new Date(year, month , 1))
+    const endDate = this.formatDateStr(new Date(year, month + 1, 0))
 
-    try {
-      studentsRes = await api.callFunction('getStudents', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getStudents failed:', err)
-    }
+    const coursesRes = this.data.coursesData && this.data.coursesData.length > 0
+      ? this.data.coursesData
+      : await this.fetchCourses(teacherId)
 
-    try {
-      coursesRes = await api.callFunction('getCourses', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getCourses failed:', err)
-    }
+    const studentsRes = this.data.studentsData && this.data.studentsData.length > 0
+      ? this.data.studentsData
+      : await this.fetchStudents(teacherId)
 
-    try {
-      bindingsRes = await api.callFunction('getPendingBindings', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getPendingBindings failed:', err)
-    }
+    const bindingsRes = this.data.bindingsData
+      ? this.data.bindingsData
+      : await this.fetchBindings(teacherId)
 
-    try {
-      applicationsRes = await api.callFunction('getPendingApplications', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getPendingApplications failed:', err)
-    }
+    const applicationsRes = this.data.applicationsData
+      ? this.data.applicationsData
+      : await this.fetchApplications(teacherId)
 
-    try {
-      scheduleRes = await api.callFunction('getSchedule', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getSchedule failed:', err)
-    }
+    const scheduleRes = await this.fetchSchedule(teacherId, startDate, endDate)
 
     const calendarData = this.generateCalendar(scheduleRes)
     const { income, hours, rate } = this.calculateIncome(coursesRes, scheduleRes)
@@ -120,8 +117,56 @@ Page({
       totalHours: hours,
       hourlyRate: rate,
       coursesData: coursesRes,
+      studentsData: studentsRes,
+      bindingsData: bindingsRes,
+      applicationsData: applicationsRes,
       scheduleData: scheduleRes
     })
+  },
+
+  async fetchStudents(teacherId) {
+    try {
+      return await api.callFunction('getStudents', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getStudents failed:', err)
+      return []
+    }
+  },
+
+  async fetchCourses(teacherId) {
+    try {
+      return await api.callFunction('getCourses', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getCourses failed:', err)
+      return []
+    }
+  },
+
+  async fetchBindings(teacherId) {
+    try {
+      return await api.callFunction('getPendingBindings', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getPendingBindings failed:', err)
+      return []
+    }
+  },
+
+  async fetchApplications(teacherId) {
+    try {
+      return await api.callFunction('getPendingApplications', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getPendingApplications failed:', err)
+      return []
+    }
+  },
+
+  async fetchSchedule(teacherId, startDate, endDate) {
+    try {
+      return await api.callFunction('getSchedule', { teacherId, startDate, endDate }, { silent: true }) || []
+    } catch (err) {
+      console.error('getSchedule failed:', err)
+      return []
+    }
   },
 
   refreshCalendar() {
@@ -152,30 +197,34 @@ Page({
     const dayCourseCount = {}
     
     courses.forEach((item, index) => {
+      let courseDate = null
+      let dateStr = ''
+      
       if (item.date) {
-        const courseDate = new Date(item.date)
-        if (!isNaN(courseDate.getTime())) {
-          if (courseDate.getFullYear() === year && courseDate.getMonth() === month) {
-            const date = courseDate.getDate()
-            if (!dayCourseCount[date]) {
-              dayCourseCount[date] = 0
-            }
-            dayCourseCount[date] += 1
-          }
-        } else {
-          console.log(`课程${index}: 日期格式无效`, item.date)
-        }
+        dateStr = item.date
       } else if (item.schedule && item.schedule.date) {
-        const courseDate = new Date(item.schedule.date)
-        if (!isNaN(courseDate.getTime())) {
-          if (courseDate.getFullYear() === year && courseDate.getMonth() === month) {
-            const date = courseDate.getDate()
-            if (!dayCourseCount[date]) {
-              dayCourseCount[date] = 0
-            }
-            dayCourseCount[date] += 1
-          }
+        dateStr = item.schedule.date
+      }
+      
+      if (dateStr) {
+        const dateParts = dateStr.split('-')
+        if (dateParts.length === 3) {
+          courseDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+        } else {
+          courseDate = new Date(dateStr)
         }
+      }
+      
+      if (courseDate && !isNaN(courseDate.getTime())) {
+        if (courseDate.getFullYear() === year && courseDate.getMonth() === month) {
+          const date = courseDate.getDate()
+          if (!dayCourseCount[date]) {
+            dayCourseCount[date] = 0
+          }
+          dayCourseCount[date] += 1
+        }
+      } else if (dateStr) {
+        console.log(`课程${index}: 日期格式无效`, dateStr)
       }
     })
             
@@ -250,18 +299,28 @@ Page({
         price = coursePriceMap[item.courseId]
       }
       
-      let courseDate
-      let startTime
-      let endTime
+      let courseDate = null
+      let startTime = null
+      let endTime = null
+      let dateStr = ''
       
       if (item.date) {
-        courseDate = new Date(item.date)
+        dateStr = item.date
         startTime = item.startTime
         endTime = item.endTime
       } else if (item.schedule && item.schedule.date) {
-        courseDate = new Date(item.schedule.date)
+        dateStr = item.schedule.date
         startTime = item.schedule.startTime
         endTime = item.schedule.endTime
+      }
+      
+      if (dateStr) {
+        const dateParts = dateStr.split('-')
+        if (dateParts.length === 3) {
+          courseDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+        } else {
+          courseDate = new Date(dateStr)
+        }
       }
       
       if (courseDate && !isNaN(courseDate.getTime())) {
@@ -285,6 +344,13 @@ Page({
       hours: totalHours.toFixed(1),
       rate: hourlyRate.toFixed(2)
     }
+  },
+
+  formatDateStr(date) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   },
 
   toggleAmount() {
@@ -325,7 +391,7 @@ Page({
     }
     
     this.setData({ currentYear: year, currentMonth: month })
-    this.refreshCalendar()
+    this.loadStats()
   },
 
   nextMonth() {
@@ -339,7 +405,7 @@ Page({
     }
     
     this.setData({ currentYear: year, currentMonth: month })
-    this.refreshCalendar()
+    this.loadStats()
   },
 
   goToStudents() {

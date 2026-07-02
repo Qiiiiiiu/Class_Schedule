@@ -7,7 +7,7 @@ const db = cloud.database()
 const _ = db.command
 
 exports.main = async (event, context) => {
-  const { teacherId } = event
+  const { teacherId, startDate, endDate } = event
 
   if (!teacherId) {
     return {
@@ -17,6 +17,19 @@ exports.main = async (event, context) => {
   }
 
   try {
+    const scheduleQuery = {
+      teacherId,
+      status: 'available'
+    }
+
+    if (startDate && endDate) {
+      scheduleQuery['schedule.date'] = _.gte(startDate).and(_.lte(endDate))
+    } else if (startDate) {
+      scheduleQuery['schedule.date'] = _.gte(startDate)
+    } else if (endDate) {
+      scheduleQuery['schedule.date'] = _.lte(endDate)
+    }
+
     const [studentsRes, coursesRes, scheduleRes, bindingsCountRes, applicationsCountRes, bindingsRes, applicationsRes] = await Promise.all([
       db.collection('users').where({
         teacherId,
@@ -25,10 +38,7 @@ exports.main = async (event, context) => {
       db.collection('courses').where({
         teacherId
       }).count(),
-      db.collection('course_schedule').where({
-        teacherId,
-        status: 'available'
-      }).get(),
+      db.collection('course_schedule').where(scheduleQuery).get(),
       db.collection('teacher_student_bindings').where({
         teacherId,
         status: 'pending'

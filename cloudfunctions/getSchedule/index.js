@@ -4,9 +4,10 @@ cloud.init({
 })
 
 const db = cloud.database()
+const _ = db.command
 
 exports.main = async (event, context) => {
-  const { teacherId } = event
+  const { teacherId, startDate, endDate } = event
 
   if (!teacherId) {
     return {
@@ -16,10 +17,31 @@ exports.main = async (event, context) => {
   }
 
   try {
-    const res = await db.collection('course_schedule').where({
+    const query = {
       teacherId,
       status: 'available'
-    }).get()
+    }
+
+    if (startDate && endDate) {
+      query['schedule.date'] = _.gte(startDate).and(_.lte(endDate))
+    } else if (startDate) {
+      query['schedule.date'] = _.gte(startDate)
+    } else if (endDate) {
+      query['schedule.date'] = _.lte(endDate)
+    }
+
+    const res = await db.collection('course_schedule').where(query)
+      .field({
+        _id: true,
+        name: true,
+        parentId: true,
+        price: true,
+        status: true,
+        students: true,
+        studentCount: true,
+        schedule: true
+      })
+      .get()
 
     return {
       code: 0,
