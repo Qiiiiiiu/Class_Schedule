@@ -1,23 +1,27 @@
 const cloud = require('./cloud.js')
 
-async function callFunction(name, data = {}) {
+async function callFunction(name, data = {}, options = {}) {
   try {
     const res = await cloud.callFunction(name, data)
     if (res.result.code === 0) {
       return res.result.data
     } else {
-      wx.showToast({
-        title: res.result.message || '操作失败',
-        icon: 'none'
-      })
+      if (!options.silent) {
+        wx.showToast({
+          title: res.result.message || '操作失败',
+          icon: 'none'
+        })
+      }
       return null
     }
   } catch (err) {
     console.error(`Cloud function ${name} error:`, err)
-    wx.showToast({
-      title: '网络错误',
-      icon: 'none'
-    })
+    if (!options.silent) {
+      wx.showToast({
+        title: '网络错误',
+        icon: 'none'
+      })
+    }
     return null
   }
 }

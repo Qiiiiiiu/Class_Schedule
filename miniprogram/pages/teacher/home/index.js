@@ -21,7 +21,9 @@ Page({
     totalHours: 0,
     showAmount: true,
     currentYear: 0,
-    currentMonth: 0
+    currentMonth: 0,
+    coursesData: [],
+    scheduleData: []
   },
 
   onLoad() {
@@ -48,37 +50,82 @@ Page({
   async loadStats() {
     const teacherId = app.globalData.openid
 
-    const [studentsRes, coursesRes, bindingsRes, applicationsRes, scheduleRes] = await Promise.all([
-      api.getStudents(teacherId),
-      api.getCourses(teacherId),
-      api.getPendingBindings(teacherId),
-      api.getPendingApplications(teacherId),
-      api.getSchedule(teacherId)
-    ])
+    let studentsRes = []
+    let coursesRes = []
+    let bindingsRes = []
+    let applicationsRes = []
+    let scheduleRes = []
 
-    const calendarData = this.generateCalendar(scheduleRes || [])
-    const { income, hours, rate } = this.calculateIncome(coursesRes || [], scheduleRes || [])
+    try {
+      studentsRes = await api.callFunction('getStudents', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getStudents failed:', err)
+    }
+
+    try {
+      coursesRes = await api.callFunction('getCourses', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getCourses failed:', err)
+    }
+
+    try {
+      bindingsRes = await api.callFunction('getPendingBindings', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getPendingBindings failed:', err)
+    }
+
+    try {
+      applicationsRes = await api.callFunction('getPendingApplications', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getPendingApplications failed:', err)
+    }
+
+    try {
+      scheduleRes = await api.callFunction('getSchedule', { teacherId }, { silent: true }) || []
+    } catch (err) {
+      console.error('getSchedule failed:', err)
+    }
+
+    const calendarData = this.generateCalendar(scheduleRes)
+    const { income, hours, rate } = this.calculateIncome(coursesRes, scheduleRes)
 
     this.setData({
       stats: {
-        studentCount: studentsRes ? studentsRes.length : 0,
-        courseCount: coursesRes ? coursesRes.length : 0,
-        pendingBindings: bindingsRes ? bindingsRes.length : 0,
-        pendingApplications: applicationsRes ? applicationsRes.length : 0
+        studentCount: studentsRes.length,
+        courseCount: coursesRes.length,
+        pendingBindings: bindingsRes.length,
+        pendingApplications: applicationsRes.length
       },
-      scheduleCount: scheduleRes ? scheduleRes.length : 0,
+      scheduleCount: scheduleRes.length,
       recentPending: [
-        ...(bindingsRes || []).slice(0, 2).map(item => ({
+        ...bindingsRes.slice(0, 2).map(item => ({
           type: 'binding',
           id: item._id,
           name: item.studentName
         })),
-        ...(applicationsRes || []).slice(0, 2).map(item => ({
+        ...applicationsRes.slice(0, 2).map(item => ({
           type: 'application',
           id: item._id,
           name: item.studentName + ' - ' + item.courseName
         }))
       ],
+      calendar: calendarData.calendar,
+      calendarTitle: calendarData.title,
+      currentYear: calendarData.year,
+      currentMonth: calendarData.month,
+      monthlyIncome: income,
+      totalHours: hours,
+      hourlyRate: rate,
+      coursesData: coursesRes,
+      scheduleData: scheduleRes
+    })
+  },
+
+  refreshCalendar() {
+    const calendarData = this.generateCalendar(this.data.scheduleData)
+    const { income, hours, rate } = this.calculateIncome(this.data.coursesData, this.data.scheduleData)
+
+    this.setData({
       calendar: calendarData.calendar,
       calendarTitle: calendarData.title,
       currentYear: calendarData.year,
@@ -178,8 +225,8 @@ Page({
 
   calculateIncome(courses, scheduleList) {
     const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth()
+    const year = this.data.currentYear || now.getFullYear()
+    const month = this.data.currentMonth !== undefined ? this.data.currentMonth : now.getMonth()
     
     let totalIncome = 0
     let totalHours = 0
@@ -275,7 +322,7 @@ Page({
     }
     
     this.setData({ currentYear: year, currentMonth: month })
-    this.loadStats()
+    this.refreshCalendar()
   },
 
   nextMonth() {
@@ -289,7 +336,7 @@ Page({
     }
     
     this.setData({ currentYear: year, currentMonth: month })
-    this.loadStats()
+    this.refreshCalendar()
   },
 
   goToStudents() {
