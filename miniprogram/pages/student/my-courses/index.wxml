@@ -14,7 +14,7 @@
   <view class="course-list" wx:if="{{displayCourses.length > 0}}">
     <view class="course-item" wx:for="{{displayCourses}}" wx:key="_id">
       <view class="course-header">
-        <text class="course-name">{{item.name}}</text>
+        <text class="course-name">{{item.name || item.courseName}}</text>
         <view class="course-status status-{{item.status}}">
           {{item.status === 'available' ? '进行中' : '已停课'}}
         </view>
@@ -26,7 +26,7 @@
         </view>
         <view class="info-row">
           <text class="info-icon">📅</text>
-          <text class="info-text">{{item.scheduleStr}}</text>
+          <text class="info-text">{{item.scheduleStr || (item.schedule.date + ' ' + item.schedule.startTime + '-' + item.schedule.endTime)}}</text>
         </view>
         <view class="info-row">
           <text class="info-icon">📍</text>
@@ -34,12 +34,15 @@
         </view>
       </view>
       <view class="course-actions">
-        <button class="action-btn" bindtap="onApplyCourse" data-course="{{item}}" wx:if="{{!item.applied}}">
-          申请选课
-        </button>
-        <view class="applied-tag" wx:else>
+        <view class="applied-tag" wx:if="{{item.applied}}">
           {{item.applicationStatus === 'pending' ? '申请中' : item.applicationStatus === 'approved' ? '已选课' : '已拒绝'}}
         </view>
+        <button class="subscribe-btn {{item.subscribed ? 'subscribed' : ''}}" 
+                bindtap="onToggleSubscribe" 
+                data-schedule-id="{{item.scheduleId}}"
+                data-subscribed="{{item.subscribed}}">
+          {{item.subscribed ? '🔔 已订阅' : '🔕 订阅提醒'}}
+        </button>
       </view>
     </view>
   </view>

@@ -38,7 +38,11 @@ exports.main = async (event, context) => {
         ...binding,
         studentName: student ? student.name : binding.studentName,
         studentPhone: student ? student.phone : '',
-        studentInfo: student
+        studentInfo: student,
+        nativePlace: student ? student.nativePlace : '',
+        grade: student ? student.grade : '',
+        subject: student ? student.subject : '',
+        remark: student ? student.remark : ''
       }
     })
 

@@ -1,0 +1,30 @@
+<view class="container">
+  <view class="header">
+    <text class="title">数据迁移工具</text>
+    <text class="subtitle">将课程数据迁移到 course_unfinished</text>
+  </view>
+
+  <view class="stats-card">
+    <view class="stat-item">
+      <text class="stat-value">{{totalAdded}}</text>
+      <text class="stat-label">新增记录</text>
+    </view>
+    <view class="stat-item">
+      <text class="stat-value">{{totalSkipped}}</text>
+      <text class="stat-label">跳过记录</text>
+    </view>
+  </view>
+
+  <button class="migrate-btn {{loading ? 'loading' : ''}}" bindtap="startMigrate" disabled="{{loading}}">
+    {{loading ? '迁移中...' : (finished ? '已完成' : '开始迁移')}}
+  </button>
+
+  <view class="log-section">
+    <text class="log-title">迁移日志</text>
+    <scroll-view class="log-content" scroll-y>
+      <view wx:for="{{log}}" wx:key="index" class="log-item">
+        {{item}}
+      </view>
+    </scroll-view>
+  </view>
+</view>

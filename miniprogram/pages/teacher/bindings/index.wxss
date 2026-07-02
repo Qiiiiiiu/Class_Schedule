@@ -1,15 +1,14 @@
 .container {
   min-height: 100vh;
-  background: #e8ecf1;
+  background: #0f1419;
 }
 
 /* ===== Tab ===== */
 .tabs {
-  background: #e8ecf1;
+  background: #1a1f2e;
   display: flex;
   padding: 0 30rpx;
-  border-bottom: 1rpx solid rgba(0, 47, 167, 0.08);
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.04);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
 .tab-item {
@@ -17,12 +16,12 @@
   text-align: center;
   padding: 30rpx 0;
   font-size: 28rpx;
-  color: #5a6072;
+  color: #64748b;
   position: relative;
 }
 
 .tab-item.active {
-  color: #002FA7;
+  color: #3b82f6;
   font-weight: bold;
 }
 
@@ -34,7 +33,7 @@
   transform: translateX(-50%);
   width: 60rpx;
   height: 6rpx;
-  background: #002FA7;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
   border-radius: 3rpx;
 }
 
@@ -57,14 +56,15 @@
 }
 
 .binding-item {
-  background: #e8ecf1;
+  background: linear-gradient(145deg, #23293a, #1a1f2e);
   border-radius: 16rpx;
   padding: 30rpx;
   margin-bottom: 24rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
 .binding-info {
@@ -77,9 +77,9 @@
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  background: linear-gradient(145deg, #ced9f7, #eef2fb);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   flex-shrink: 0;
-  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.3);
 }
 
 .info-text {
@@ -90,18 +90,18 @@
 
 .student-name {
   font-size: 30rpx;
-  color: #1a1d28;
+  color: #f1f5f9;
   font-weight: 500;
 }
 
 .apply-time {
   font-size: 24rpx;
-  color: #5a6072;
+  color: #64748b;
 }
 
 .remark {
   font-size: 24rpx;
-  color: #5a6072;
+  color: #64748b;
   margin-top: 4rpx;
 }
 
@@ -120,15 +120,15 @@
 }
 
 .approve-btn {
-  background: linear-gradient(145deg, #001a6e, #002FA7);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   color: #ffffff;
-  box-shadow: 3rpx 3rpx 6rpx rgba(0, 47, 167, 0.25);
+  box-shadow: 0 2rpx 8rpx rgba(59, 130, 246, 0.3);
 }
 
 .reject-btn {
-  background: #fee2e2;
-  color: #dc2626;
-  box-shadow: 2rpx 2rpx 4rpx rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1rpx solid rgba(239, 68, 68, 0.2);
 }
 
 .binding-status {
@@ -138,13 +138,13 @@
 }
 
 .status-approved {
-  background: #d1fae5;
-  color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
 .status-rejected {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 /* ===== 空状态 ===== */
@@ -157,10 +157,11 @@
 
 .empty-icon {
   font-size: 100rpx;
+  color: #64748b;
   margin-bottom: 30rpx;
 }
 
 .empty-text {
   font-size: 28rpx;
-  color: #5a6072;
+  color: #64748b;
 }

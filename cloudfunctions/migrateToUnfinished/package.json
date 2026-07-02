@@ -1,0 +1,9 @@
+{
+  "name": "migrateToUnfinished",
+  "version": "1.0.0",
+  "description": "迁移课程数据到 course_unfinished 集合",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

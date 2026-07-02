@@ -25,6 +25,17 @@ exports.main = async (event, context) => {
       parentId: courseId
     }).remove()
 
+    // 删除 course_unfinished 中对应的记录
+    const unfinishedRes = await db.collection('course_unfinished')
+      .where({
+        parentId: courseId
+      })
+      .get()
+
+    for (const item of unfinishedRes.data) {
+      await db.collection('course_unfinished').doc(item._id).remove()
+    }
+
     return {
       code: 0,
       data: true,

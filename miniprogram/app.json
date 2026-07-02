@@ -14,28 +14,50 @@
     "pages/student/my-courses/index"
   ],
   "window": {
-    "backgroundColor": "#F6F6F6",
+    "backgroundColor": "#1a1a2e",
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarBackgroundColor": "#1a1a2e",
     "navigationBarTitleText": "课程管理",
-    "navigationBarTextStyle": "black"
+    "navigationBarTextStyle": "white"
   },
   "sitemapLocation": "sitemap.json",
   "style": "v2",
   "lazyCodeLoading": "requiredComponents",
   "tabBar": {
-    "color": "#999999",
-    "selectedColor": "#002FA7",
-    "backgroundColor": "#ffffff",
+    "color": "#666666",
+    "selectedColor": "#3b82f6",
+    "backgroundColor": "#1a1a2e",
     "borderStyle": "black",
     "list": [
       {
-        "pagePath": "pages/common/login/index",
-        "text": "登录"
+        "pagePath": "pages/teacher/home/index",
+        "text": "首页",
+        "iconPath": "images/tab/home.png",
+        "selectedIconPath": "images/tab/home-active.png"
+      },
+      {
+        "pagePath": "pages/teacher/students/index",
+        "text": "绑定学生",
+        "iconPath": "images/tab/students.png",
+        "selectedIconPath": "images/tab/students-active.png"
+      },
+      {
+        "pagePath": "pages/teacher/courses/index",
+        "text": "开设课程",
+        "iconPath": "images/tab/courses.png",
+        "selectedIconPath": "images/tab/courses-active.png"
+      },
+      {
+        "pagePath": "pages/teacher/schedule/index",
+        "text": "查看课表",
+        "iconPath": "images/tab/schedule.png",
+        "selectedIconPath": "images/tab/schedule-active.png"
       },
       {
         "pagePath": "pages/common/my-info/index",
-        "text": "我的"
+        "text": "我的信息",
+        "iconPath": "images/tab/profile.png",
+        "selectedIconPath": "images/tab/profile-active.png"
       }
     ]
   }

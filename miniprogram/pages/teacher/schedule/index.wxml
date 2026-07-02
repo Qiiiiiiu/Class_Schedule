@@ -1,8 +1,13 @@
 <view class="container">
   <view class="week-nav">
-    <view class="nav-arrow" bindtap="prevWeek">‹</view>
-    <text class="week-label">{{weekLabel}}</text>
-    <view class="nav-arrow" bindtap="nextWeek">›</view>
+    <view class="week-nav-center">
+      <view class="nav-arrow" bindtap="prevWeek">‹</view>
+      <text class="week-label">{{weekLabel}}</text>
+      <view class="nav-arrow" bindtap="nextWeek">›</view>
+    </view>
+    <view class="filter-icon" bindtap="showStudentFilter">
+      <image class="filter-icon" src="/images/icons/filter.svg"></image>
+    </view>
   </view>
 
   <view class="schedule-grid">
@@ -23,7 +28,7 @@
               wx:for="{{item.courses}}" 
               wx:for-item="course" 
               wx:key="courseKey"
-              style="top: {{course.top}}px; height: {{course.height}}px; background-color: {{course.bgColor}};"
+              style="top: {{course.top}}rpx; height: {{course.height}}rpx; background-color: {{course.bgColor}};"
               bindtap="onCourseTap" data-course="{{course}}">
           <text class="course-name" style="color: {{course.textColor}}">{{course.name}}</text>
           <text class="course-time" style="color: {{course.textColor}}">{{course.schedule.startTime}}-{{course.schedule.endTime}}</text>
@@ -39,7 +44,48 @@
         <text class="detail-title">{{selectedCourse.name}}</text>
         <text class="detail-close" bindtap="onCloseDetail">✕</text>
       </view>
-      <view class="detail-info">
+
+      <!-- 编辑模式 -->
+      <view wx:if="{{isEditing}}" class="edit-section">
+        <view class="edit-row">
+          <text class="edit-label">上课日期</text>
+          <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
+            <view class="edit-picker">
+              <text>{{editDate}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+        </view>
+        <view class="edit-row">
+          <text class="edit-label">开始时间</text>
+          <picker mode="time" value="{{editStartTime}}" bindchange="onEditStartTimeChange">
+            <view class="edit-picker">
+              <text>{{editStartTime}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+        </view>
+        <view class="edit-row">
+          <text class="edit-label">结束时间</text>
+          <picker mode="time" value="{{editEndTime}}" bindchange="onEditEndTimeChange">
+            <view class="edit-picker">
+              <text>{{editEndTime}}</text>
+              <text class="picker-arrow">▼</text>
+            </view>
+          </picker>
+        </view>
+        <view class="edit-row">
+          <text class="edit-label">上课地点</text>
+          <input class="edit-input" value="{{editClassroom}}" bindinput="onEditClassroomInput" placeholder="请输入上课地点"/>
+        </view>
+        <view class="edit-actions">
+          <button class="edit-btn cancel" bindtap="onCancelEdit">取消</button>
+          <button class="edit-btn save" bindtap="onSaveEdit">保存</button>
+        </view>
+      </view>
+
+      <!-- 查看模式 -->
+      <view wx:else class="detail-info">
         <view class="detail-row">
           <text class="detail-label">上课时间</text>
           <text class="detail-value">{{selectedCourse.scheduleStr}}</text>
@@ -59,9 +105,42 @@
           </text>
         </view>
       </view>
-      <view class="detail-actions">
+
+      <!-- 查看模式下的按钮 -->
+      <view wx:if="{{!isEditing}}" class="detail-actions">
         <button class="detail-btn" bindtap="onSendReminder">发送提醒</button>
         <button class="detail-btn" bindtap="onEditCourse">编辑课程</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="filter-modal" wx:if="{{showFilterModal}}" bindtap="closeStudentFilter">
+    <view class="filter-modal-content" catchtap="preventBubble">
+      <view class="filter-modal-header">
+        <text class="filter-modal-title">筛选学生</text>
+        <text class="filter-modal-close" bindtap="closeStudentFilter">✕</text>
+      </view>
+      <view class="filter-modal-body">
+        <view class="filter-search-wrap">
+          <input class="filter-search-input" 
+                 placeholder="输入学生名称搜索" 
+                 placeholder-class="search-placeholder"
+                 value="{{filterSearchText}}"
+                 bindinput="onFilterSearchInput"/>
+        </view>
+        <scroll-view class="filter-student-list" scroll-y>
+          <view class="filter-student-item {{item.studentId === selectedStudentId ? 'selected' : ''}}"
+                wx:for="{{filteredStudentList}}" wx:key="studentId"
+                bindtap="onSelectFilterStudent" data-student-id="{{item.studentId}}" data-student-name="{{item.name}}">
+            <text class="filter-student-name">{{item.name}}</text>
+            <view class="filter-student-check" wx:if="{{item.studentId === selectedStudentId}}">
+              <text>✓</text>
+            </view>
+          </view>
+          <view class="filter-empty" wx:if="{{filteredStudentList.length === 0}}">
+            <text>暂无学生</text>
+          </view>
+        </scroll-view>
       </view>
     </view>
   </view>

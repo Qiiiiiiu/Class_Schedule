@@ -1,4 +1,5 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "教师首页"
+  "navigationBarTitleText": "教师首页",
+  "disableScroll": true
 }

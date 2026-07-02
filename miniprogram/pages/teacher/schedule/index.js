@@ -9,6 +9,10 @@ Page({
     weekDays: [],
     timeSlots: ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'],
     selectedCourse: null,
+    studentList: [],
+    selectedStudentId: null,
+    selectedStudentName: '全部学生',
+    allCourses: [],
     courseColors: [
       { bg: '#002FA7', text: '#fff' },
       { bg: '#1e4dc8', text: '#fff' },
@@ -37,6 +41,18 @@ Page({
     if (!checkRole.checkTeacher()) {
       return
     }
+    
+    if (app.globalData.navigateWeekStart) {
+      const weekStartDate = new Date(app.globalData.navigateWeekStart)
+      if (!isNaN(weekStartDate.getTime())) {
+        this.setData({ currentWeekStart: weekStartDate })
+        this.updateWeekLabel()
+        this.generateWeekDays()
+      }
+      app.globalData.navigateWeekStart = null
+      app.globalData.navigateDate = null
+    }
+    
     this.loadSchedule()
   },
 
@@ -115,13 +131,71 @@ Page({
 
   async loadSchedule() {
     const teacherId = app.globalData.openid
-    const res = await api.getSchedule(teacherId)
+    
+    const [scheduleRes, studentsRes] = await Promise.all([
+      api.getSchedule(teacherId),
+      api.getStudents(teacherId)
+    ])
 
-    if (res) {
+    if (scheduleRes) {
+      const studentList = [{ studentId: null, name: '全部学生' }]
+      
+      if (studentsRes && studentsRes.length > 0) {
+        studentsRes.forEach(student => {
+          studentList.push({
+            studentId: student._id,
+            name: student.name || student.studentName || '未知学生'
+          })
+        })
+      }
+
+      const { selectedStudentId, selectedStudentName } = this.data
+      let filteredCourses = scheduleRes
+      
+      if (selectedStudentId) {
+        const targetId = String(selectedStudentId)
+        const targetName = selectedStudentName
+        
+        filteredCourses = scheduleRes.filter(course => {
+          if (!course.students || !Array.isArray(course.students)) {
+            return false
+          }
+          return course.students.some(s => {
+            if (typeof s === 'string') {
+              return String(s) === targetId
+            }
+            if (typeof s === 'object') {
+              const idFields = ['studentId', '_id', 'openid', 'studentOpenid', 'id']
+              const idMatch = idFields.some(field => {
+                const fieldValue = s[field]
+                if (fieldValue !== undefined && fieldValue !== null) {
+                  return String(fieldValue) === targetId
+                }
+                return false
+              })
+              
+              if (idMatch) return true
+              
+              const nameFields = ['name', 'studentName']
+              const nameMatch = nameFields.some(field => {
+                const fieldValue = s[field]
+                if (typeof fieldValue === 'string') {
+                  return fieldValue === targetName || fieldValue.includes(targetName)
+                }
+                return false
+              })
+              
+              return nameMatch
+            }
+            return false
+          })
+        })
+      }
+
       const weekDays = [...this.data.weekDays]
       const weekStart = this.data.currentWeekStart
 
-      res.forEach(course => {
+      filteredCourses.forEach(course => {
         if (course.schedule && course.schedule.date) {
           const courseDate = new Date(course.schedule.date)
           const startOfWeek = new Date(weekStart)
@@ -133,10 +207,13 @@ Page({
             const dayOfWeek = courseDate.getDay()
             const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1
             if (dayIndex >= 0 && dayIndex < 7) {
-              const startHour = parseInt(course.schedule.startTime.split(':')[0])
-              const endHour = parseInt(course.schedule.endTime.split(':')[0])
-              const top = (startHour - 6) * 60
-              const height = Math.max((endHour - startHour) * 60, 30)
+              const [startHour, startMin] = course.schedule.startTime.split(':').map(Number)
+              const [endHour, endMin] = course.schedule.endTime.split(':').map(Number)
+              const startMinutes = startHour * 60 + startMin
+              const endMinutes = endHour * 60 + endMin
+              const durationMinutes = endMinutes - startMinutes
+              const top = (startMinutes - 6 * 60) * 2
+              const height = Math.max(durationMinutes * 2, 60)
 
               const identifier = course.parentId || course.name || course._id
               const color = this.getParentCourseColor(identifier)
@@ -155,8 +232,27 @@ Page({
         }
       })
 
-      this.setData({ weekDays })
+      this.setData({ 
+        weekDays,
+        allCourses: scheduleRes,
+        studentList
+      })
     }
+  },
+
+  onStudentFilterChange(e) {
+    const index = e.detail.value
+    const selectedStudent = this.data.studentList[index]
+    const selectedStudentId = selectedStudent.studentId
+    const selectedStudentName = selectedStudent.name
+
+    this.setData({
+      selectedStudentId,
+      selectedStudentName
+    })
+
+    this.generateWeekDays()
+    this.loadSchedule()
   },
 
   formatSchedule(schedule) {

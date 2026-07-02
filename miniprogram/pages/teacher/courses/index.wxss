@@ -1,266 +1,207 @@
-.container {
+page {
+  width: 100%;
+  overflow-x: hidden !important;
+}
+
+.page-container {
   min-height: 100vh;
-  background: #e8ecf1;
-  padding-bottom: 120rpx;
+  background: #0f1419;
+  padding: 20rpx;
+  padding-bottom: 160rpx;
   width: 100%;
+  max-width: 750rpx;
+  margin: 0 auto;
   box-sizing: border-box;
-  overflow-x: hidden;
 }
 
-/* ===== Tab 标签栏 ===== */
-.tabs {
-  background: #e8ecf1;
+.reminder-section {
   display: flex;
-  padding: 0 30rpx;
-  border-bottom: 1rpx solid rgba(0, 47, 167, 0.08);
-  width: 100%;
-  box-sizing: border-box;
-  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.04);
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
 }
 
-.tab-content {
-  width: 100%;
-  box-sizing: border-box;
+.reminder-btn {
+  background: linear-gradient(145deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  border-radius: 28rpx;
+  padding: 16rpx 32rpx;
+  font-size: 26rpx;
 }
 
-.tab-item {
-  flex: 1;
-  text-align: center;
-  padding: 30rpx 0;
-  font-size: 28rpx;
-  color: #5a6072;
-  position: relative;
+.info-icon {
+  font-size: 32rpx;
+  cursor: pointer;
 }
 
-.tab-item.active {
-  color: #002FA7;
-  font-weight: bold;
-}
-
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60rpx;
-  height: 6rpx;
-  background: #002FA7;
-  border-radius: 3rpx;
-}
-
-.badge {
-  position: absolute;
-  top: 20rpx;
-  right: 30rpx;
-  background: #ef4444;
-  color: #ffffff;
-  font-size: 20rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 20rpx;
-  min-width: 32rpx;
-  text-align: center;
-}
-
-/* ===== 课程列表 ===== */
 .course-list {
-  padding: 30rpx;
-  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 .course-item {
-  background: #e8ecf1;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+  background: #23293a;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
   width: 100%;
+  max-width: 710rpx;
   box-sizing: border-box;
-  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  position: relative;
 }
 
 .course-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.info-icon {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .course-name {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: bold;
-  color: #1a1d28;
+  color: #f1f5f9;
 }
 
 .course-status {
-  font-size: 22rpx;
-  padding: 6rpx 16rpx;
-  border-radius: 20rpx;
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 16rpx;
 }
 
 .status-available {
-  background: #d1fae5;
-  color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
 .status-unavailable {
-  background: #e8ecf1;
-  color: #5a6072;
-  box-shadow: inset 2rpx 2rpx 4rpx #d1d6dd, inset -2rpx -2rpx 4rpx #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
 }
 
 .course-info {
   display: flex;
-  gap: 30rpx;
-  margin-bottom: 20rpx;
-  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+  flex-basis: 100%;
 }
 
 .info-item {
-  font-size: 26rpx;
-  color: #5a6072;
-  flex-shrink: 0;
+  font-size: 24rpx;
+  color: #94a3b8;
 }
 
-/* ===== 课程操作按钮 ===== */
-.course-actions {
+.course-amount {
   display: flex;
   gap: 20rpx;
+  margin-bottom: 16rpx;
+  flex-basis: 100%;
+}
+
+.amount-item {
+  font-size: 24rpx;
+  color: #3b82f6;
+}
+
+.course-actions {
+  display: flex;
+  gap: 10rpx;
   width: 100%;
   box-sizing: border-box;
 }
 
-.action-btn {
+.course-actions button {
   flex: 1;
-  height: 64rpx;
-  background: #e8ecf1;
-  border: none;
-  border-radius: 32rpx;
-  font-size: 24rpx;
-  color: #5a6072;
-  box-sizing: border-box;
-  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
-}
-
-.action-btn:active {
-  box-shadow: inset 3rpx 3rpx 6rpx #d1d6dd, inset -3rpx -3rpx 6rpx #ffffff;
-}
-
-.action-btn.delete {
-  color: #dc2626;
-}
-
-/* ===== 预约列表 ===== */
-.application-list {
-  padding: 30rpx;
-}
-
-.application-item {
-  background: #e8ecf1;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 24rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 28rpx;
+  font-size: 22rpx;
+  color: #94a3b8;
+  padding: 0;
+  margin: 0;
+  width: calc(33.333% - 7rpx);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+  justify-content: center;
+  line-height: 1;
 }
 
-.app-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-}
-
-.app-title {
-  font-size: 28rpx;
-  color: #1a1d28;
-  font-weight: 500;
-}
-
-.app-course {
-  font-size: 26rpx;
-  color: #002FA7;
-}
-
-.app-time {
-  font-size: 24rpx;
-  color: #5a6072;
-}
-
-.app-actions {
-  display: flex;
-  gap: 16rpx;
-}
-
-.approve-btn,
-.reject-btn {
-  width: 120rpx;
-  height: 60rpx;
+.course-actions button::after {
   border: none;
-  border-radius: 30rpx;
-  font-size: 24rpx;
 }
 
-.approve-btn {
-  background: linear-gradient(145deg, #001a6e, #002FA7);
-  color: #ffffff;
-  box-shadow: 3rpx 3rpx 6rpx rgba(0, 47, 167, 0.25);
+.course-actions button:nth-child(2) {
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.reject-btn {
-  background: #fee2e2;
-  color: #dc2626;
-  box-shadow: 2rpx 2rpx 4rpx rgba(239, 68, 68, 0.12);
+.course-actions button:nth-child(3) {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
 }
 
-/* ===== 空状态 ===== */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 100rpx 0;
+  padding: 80rpx 0;
 }
 
 .empty-icon {
-  font-size: 100rpx;
-  margin-bottom: 30rpx;
+  font-size: 80rpx;
+  color: #64748b;
+  margin-bottom: 20rpx;
 }
 
 .empty-text {
-  font-size: 28rpx;
-  color: #5a6072;
-  margin-bottom: 40rpx;
+  font-size: 26rpx;
+  color: #64748b;
+  margin-bottom: 30rpx;
 }
 
-/* ===== 添加按钮 ===== */
 .add-btn {
-  width: 240rpx;
-  height: 80rpx;
-  background: linear-gradient(145deg, #001a6e, #002FA7);
+  width: 200rpx;
+  height: 72rpx;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   border: none;
-  border-radius: 40rpx;
+  border-radius: 36rpx;
   color: #ffffff;
-  font-size: 28rpx;
-  box-shadow: 4rpx 4rpx 10rpx rgba(0, 47, 167, 0.3), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.4);
+  font-size: 26rpx;
 }
 
 .add-floating-btn {
   position: fixed;
-  right: 40rpx;
-  bottom: 60rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background: linear-gradient(145deg, #001a6e, #002FA7);
+  right: 20rpx;
+  bottom: 130rpx;
+  width: 88rpx;
+  height: 88rpx;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 6rpx 6rpx 16rpx rgba(0, 47, 167, 0.35), -3rpx -3rpx 8rpx rgba(255, 255, 255, 0.25);
+  z-index: 100;
 }
 
 .add-floating-btn text {
-  font-size: 60rpx;
+  font-size: 56rpx;
   color: #ffffff;
   font-weight: 300;
 }

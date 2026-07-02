@@ -6,7 +6,7 @@ cloud.init({
 const db = cloud.database()
 
 exports.main = async (event, context) => {
-  const { name, price, teacherId, teacherName, schedule, reminderTime, status, students, isRepeat, weekdays, repeatCount } = event
+  const { name, price, teacherId, teacherName, schedule, reminderTime, status, students, isRepeat, weekdays, repeatCount, repeatStartDate } = event
 
   if (!name || !teacherId) {
     return {
@@ -19,49 +19,57 @@ exports.main = async (event, context) => {
     const now = new Date()
 
     if (isRepeat && weekdays && weekdays.length > 0) {
-      const scheduleItems = []
-      const today = new Date()
-      const startDate = schedule.date ? new Date(schedule.date) : today
+    const scheduleItems = []
+    const today = new Date()
+    
+    let startDate
+    if (repeatStartDate) {
+      const dateParts = repeatStartDate.split('-')
+      startDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+    } else if (schedule.date) {
+      const dateParts = schedule.date.split('-')
+      startDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]))
+    } else {
+      startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    }
 
-      let count = 0
-      const maxCount = repeatCount === -1 ? 100 : repeatCount
-      const interval = 7
+    let count = 0
+    const maxCount = repeatCount === -1 ? 100 : repeatCount
+    const interval = 7
 
-      for (let i = 0; count < maxCount; i++) {
-        for (const weekday of weekdays) {
-          if (count >= maxCount) break
+    for (let i = 0; count < maxCount; i++) {
+      for (const weekday of weekdays) {
+        if (count >= maxCount) break
 
-          const targetDate = new Date(startDate)
-          targetDate.setDate(startDate.getDate() + i * interval)
+        const targetDate = new Date(startDate)
+        targetDate.setDate(targetDate.getDate() + i * interval)
 
-          const currentWeekday = targetDate.getDay()
-          const daysToAdd = (weekday - currentWeekday + 7) % 7
-          targetDate.setDate(targetDate.getDate() + daysToAdd)
+        const currentWeekday = targetDate.getDay()
+        const daysToAdd = (weekday - currentWeekday + 7) % 7
+        targetDate.setDate(targetDate.getDate() + daysToAdd)
 
-          if (targetDate >= today) {
-            const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`
+        const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`
 
-            scheduleItems.push({
-              name,
-              price: price || 0,
-              teacherId,
-              teacherName,
-              schedule: {
-                date: dateStr,
-                startTime: schedule.startTime,
-                endTime: schedule.endTime,
-                classroom: schedule.classroom
-              },
-              reminderTime: reminderTime || 0,
-              status: status || 'available',
-              students: students || [],
-              createTime: now,
-              updateTime: now
-            })
-            count++
-          }
-        }
+        scheduleItems.push({
+          name,
+          price: price || 0,
+          teacherId,
+          teacherName,
+          schedule: {
+            date: dateStr,
+            startTime: schedule.startTime,
+            endTime: schedule.endTime,
+            classroom: schedule.classroom
+          },
+          reminderTime: reminderTime || 0,
+          status: status || 'available',
+          students: students || [],
+          createTime: now,
+          updateTime: now
+        })
+        count++
       }
+    }
 
       if (scheduleItems.length === 0) {
         return {
@@ -102,9 +110,32 @@ exports.main = async (event, context) => {
         parentId: parentId
       }))
 
-      await db.collection('course_schedule').add({
-        data: scheduleItemsWithParentId
+      const scheduleResults = []
+      for (const item of scheduleItemsWithParentId) {
+        const res = await db.collection('course_schedule').add({
+          data: item
+        })
+        scheduleResults.push({
+          scheduleId: res._id,
+          item
+        })
+      }
+
+      // 添加到未完成课程数据集
+      const unfinishedPromises = scheduleResults.map(res => {
+        return db.collection('course_unfinished').add({
+          data: {
+            scheduleId: res.scheduleId,
+            schedule: res.item.schedule,
+            parentId: res.item.parentId,
+            teacherId: res.item.teacherId,
+            name: res.item.name,
+            createTime: now
+          }
+        })
       })
+
+      await Promise.all(unfinishedPromises)
 
       return {
         code: 0,
@@ -157,8 +188,20 @@ exports.main = async (event, context) => {
         updateTime: now
       }
 
-      await db.collection('course_schedule').add({
+      const scheduleRes = await db.collection('course_schedule').add({
         data: scheduleItem
+      })
+
+      // 添加到未完成课程数据集
+      await db.collection('course_unfinished').add({
+        data: {
+          scheduleId: scheduleRes._id,
+          schedule: scheduleItem.schedule,
+          parentId: scheduleItem.parentId,
+          teacherId: scheduleItem.teacherId,
+          name: scheduleItem.name,
+          createTime: now
+        }
       })
 
       return {

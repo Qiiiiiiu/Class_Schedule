@@ -47,16 +47,32 @@ async function addStudentByTeacher(teacherId, name, nativePlace, grade, subject,
 }
 
 async function getStudentDetail(teacherId, studentId) {
-  return await callFunction('studentDetail', { teacherId, studentId })
+  try {
+    const res = await cloud.callFunction('studentDetail', {
+      type: 'get',
+      teacherId,
+      studentId
+    })
+    return res.result
+  } catch (err) {
+    console.error('getStudentDetail error:', err)
+    return null
+  }
 }
 
 async function saveStudentDetail(teacherId, studentId, detail) {
-  return await callFunction('studentDetail', { 
-    teacherId, 
-    studentId, 
-    detail,
-    action: 'save'
-  })
+  try {
+    const res = await cloud.callFunction('studentDetail', {
+      type: 'save',
+      teacherId,
+      studentId,
+      studentDetail: detail
+    })
+    return res.result
+  } catch (err) {
+    console.error('saveStudentDetail error:', err)
+    return null
+  }
 }
 
 async function addCourse(courseData) {
@@ -71,6 +87,13 @@ async function deleteCourse(courseId, teacherId) {
   return await callFunction('deleteCourse', {
     courseId,
     teacherId
+  })
+}
+
+async function updateCourseStatus(courseId, status) {
+  return await callFunction('updateCourseStatus', {
+    courseId,
+    status
   })
 }
 
@@ -142,6 +165,10 @@ async function deleteStudent(teacherId, studentId) {
   return await callFunction('deleteStudent', { teacherId, studentId })
 }
 
+async function getStudentSchedules(studentId) {
+  return await callFunction('getStudentSchedules', { studentId })
+}
+
 async function getCourseSchedules(parentId) {
   return await callFunction('getCourseSchedules', { parentId })
 }
@@ -166,10 +193,35 @@ async function verifyBindCode(studentId, studentName, verifyCode) {
   return await callFunction('verifyBindCode', { studentId, studentName, verifyCode })
 }
 
+async function subscribeCourse(scheduleId, studentId) {
+  return await callFunction('subscribeCourse', { action: 'subscribe', scheduleId, studentId })
+}
+
+async function unsubscribeCourse(scheduleId, studentId) {
+  return await callFunction('subscribeCourse', { action: 'unsubscribe', scheduleId, studentId })
+}
+
+async function getSubscriptionStatus(scheduleId, studentId) {
+  return await callFunction('subscribeCourse', { action: 'getSubscriptionStatus', scheduleId, studentId })
+}
+
+async function clearTeacherReminderMarks(teacherId) {
+  return await callFunction('clearTeacherReminderMarks', { teacherId })
+}
+
+async function getCoursesWithStats(teacherId) {
+  return await callFunction('getCoursesWithStats', { teacherId })
+}
+
+async function getTeacherDashboard(teacherId) {
+  return await callFunction('getTeacherDashboard', { teacherId })
+}
+
 module.exports = {
   login,
   getUserInfo,
   getStudents,
+
   addStudentByTeacher,
   getStudentDetail,
   saveStudentDetail,
@@ -177,6 +229,8 @@ module.exports = {
   editCourse,
   deleteCourse,
   getCourses,
+  getCoursesWithStats,
+  getTeacherDashboard,
   getSchedule,
   sendReminder,
   getCourseApplications,
@@ -193,11 +247,17 @@ module.exports = {
   bindStudent,
   getStudentCourses,
   deleteStudent,
+  getStudentSchedules,
   getCourseSchedules,
   editCourseSchedule,
   deleteCourseSchedule,
   addCourseSchedule,
   generateBindCode,
   verifyBindCode,
+  subscribeCourse,
+  unsubscribeCourse,
+  updateCourseStatus,
+  getSubscriptionStatus,
+  clearTeacherReminderMarks,
   callFunction
 }

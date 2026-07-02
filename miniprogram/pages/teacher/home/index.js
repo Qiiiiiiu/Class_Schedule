@@ -21,8 +21,7 @@ Page({
     totalHours: 0,
     showAmount: true,
     currentYear: 0,
-    currentMonth: 0,
-    subscribed: false
+    currentMonth: 0
   },
 
   onLoad() {
@@ -32,7 +31,6 @@ Page({
     this.setData({
       userInfo: app.globalData.userInfo
     })
-    this.loadStats()
   },
 
   onShow() {
@@ -40,7 +38,9 @@ Page({
       return
     }
     this.setData({
-      userInfo: app.globalData.userInfo
+      userInfo: app.globalData.userInfo,
+      currentYear: new Date().getFullYear(),
+      currentMonth: new Date().getMonth()
     })
     this.loadStats()
   },
@@ -48,16 +48,16 @@ Page({
   async loadStats() {
     const teacherId = app.globalData.openid
 
-    const [studentsRes, coursesRes, scheduleRes, bindingsRes, applicationsRes] = await Promise.all([
+    const [studentsRes, coursesRes, bindingsRes, applicationsRes, scheduleRes] = await Promise.all([
       api.getStudents(teacherId),
       api.getCourses(teacherId),
-      api.getSchedule(teacherId),
       api.getPendingBindings(teacherId),
-      api.getPendingApplications(teacherId)
+      api.getPendingApplications(teacherId),
+      api.getSchedule(teacherId)
     ])
 
     const calendarData = this.generateCalendar(scheduleRes || [])
-    const { income, hours, rate } = this.calculateIncome(scheduleRes || [])
+    const { income, hours, rate } = this.calculateIncome(coursesRes || [], scheduleRes || [])
 
     this.setData({
       stats: {
@@ -89,58 +89,65 @@ Page({
     })
   },
 
-  generateCalendar(courses, customYear, customMonth) {
+  generateCalendar(courses) {
     const now = new Date()
-    const year = customYear !== undefined ? customYear : now.getFullYear()
-    const month = customMonth !== undefined ? customMonth : now.getMonth()
-    
+    const year = this.data.currentYear || now.getFullYear()
+    const month = this.data.currentMonth !== undefined ? this.data.currentMonth : now.getMonth()
+        
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
     const daysInMonth = lastDay.getDate()
     const startDayOfWeek = firstDay.getDay()
     
-    const dayHours = {}
+    const dayCourseCount = {}
     
-    courses.forEach(course => {
-      if (course.schedule && course.schedule.date) {
-        const courseDate = new Date(course.schedule.date)
-        if (courseDate.getFullYear() === year && courseDate.getMonth() === month) {
-          const date = courseDate.getDate()
-          const startTime = course.schedule.startTime
-          const endTime = course.schedule.endTime
-          
-          const startHour = parseFloat(startTime.split(':')[0]) + parseFloat(startTime.split(':')[1]) / 60
-          const endHour = parseFloat(endTime.split(':')[0]) + parseFloat(endTime.split(':')[1]) / 60
-          const duration = endHour - startHour
-          
-          if (!dayHours[date]) {
-            dayHours[date] = 0
+    courses.forEach((item, index) => {
+      if (item.date) {
+        const courseDate = new Date(item.date)
+        if (!isNaN(courseDate.getTime())) {
+          if (courseDate.getFullYear() === year && courseDate.getMonth() === month) {
+            const date = courseDate.getDate()
+            if (!dayCourseCount[date]) {
+              dayCourseCount[date] = 0
+            }
+            dayCourseCount[date] += 1
           }
-          dayHours[date] += duration
+        } else {
+          console.log(`课程${index}: 日期格式无效`, item.date)
+        }
+      } else if (item.schedule && item.schedule.date) {
+        const courseDate = new Date(item.schedule.date)
+        if (!isNaN(courseDate.getTime())) {
+          if (courseDate.getFullYear() === year && courseDate.getMonth() === month) {
+            const date = courseDate.getDate()
+            if (!dayCourseCount[date]) {
+              dayCourseCount[date] = 0
+            }
+            dayCourseCount[date] += 1
+          }
         }
       }
     })
-    
+            
     const calendar = []
-    const weekDays = ['日', '一', '二', '三', '四', '五', '六']
     
     for (let i = 0; i < startDayOfWeek; i++) {
       calendar.push({ empty: true })
     }
     
     for (let i = 1; i <= daysInMonth; i++) {
-      const hours = dayHours[i] || 0
-      const clampedHours = Math.min(hours, 12)
-      const intensity = clampedHours / 12
-      const isToday = i === now.getDate()
+
+      const count = dayCourseCount[i] || 0
+      const isToday = i === now.getDate() && year === now.getFullYear() && month === now.getMonth()
       const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`
+      const { bgColor, textColor } = this.getDayColors(count)
       
       calendar.push({
         date: i,
         fullDate,
-        hours: hours.toFixed(1),
-        intensity: intensity,
-        bgColor: this.getBgColor(intensity),
+        count: count,
+        bgColor: bgColor,
+        textColor: textColor,
         isToday
       })
     }
@@ -153,59 +160,23 @@ Page({
     }
   },
 
-  prevMonth() {
-    let { currentYear, currentMonth } = this.data
-    currentMonth--
-    if (currentMonth < 0) {
-      currentMonth = 11
-      currentYear--
+  getDayColors(count) {
+    if (count === 0) {
+      return { bgColor: 'rgba(47, 59, 80, 1)', textColor: 'rgba(255, 255, 255, 1)' }
+    } else if (count === 1) {
+      return { bgColor: 'rgba(200, 240, 200, 0.9)', textColor: 'rgba(0, 100, 0, 0.85)' }
+    } else if (count === 2) {
+      return { bgColor: 'rgba(150, 220, 150, 0.9)', textColor: 'rgba(0, 100, 0, 0.85)' }
+    } else if (count === 3) {
+      return { bgColor: 'rgba(100, 190, 100, 0.9)', textColor: 'rgba(255, 255, 255, 0.9)' }
+    } else if (count === 4) {
+      return { bgColor: 'rgba(50, 150, 50, 0.9)', textColor: 'rgba(255, 255, 255, 0.95)' }
+    } else {
+      return { bgColor: 'rgba(20, 120, 20, 0.95)', textColor: 'rgba(255, 255, 255, 0.98)' }
     }
-    this.updateCalendar(currentYear, currentMonth)
   },
 
-  nextMonth() {
-    let { currentYear, currentMonth } = this.data
-    currentMonth++
-    if (currentMonth > 11) {
-      currentMonth = 0
-      currentYear++
-    }
-    this.updateCalendar(currentYear, currentMonth)
-  },
-
-  async updateCalendar(year, month) {
-    const scheduleRes = await api.getSchedule(app.globalData.openid)
-    const calendarData = this.generateCalendar(scheduleRes || [], year, month)
-    
-    this.setData({
-      calendar: calendarData.calendar,
-      calendarTitle: calendarData.title,
-      currentYear: calendarData.year,
-      currentMonth: calendarData.month
-    })
-  },
-
-  getBgColor(intensity) {
-    const hourColors = [
-      'rgba(255, 255, 255, 0.9)',
-      'rgba(230, 247, 237, 0.9)',
-      'rgba(200, 240, 218, 0.9)',
-      'rgba(170, 233, 200, 0.9)',
-      'rgba(136, 212, 174, 0.9)',
-      'rgba(100, 195, 150, 0.9)',
-      'rgba(79, 182, 142, 0.9)',
-      'rgba(60, 165, 125, 0.9)',
-      'rgba(46, 152, 111, 0.9)',
-      'rgba(35, 135, 98, 0.9)',
-      'rgba(25, 120, 85, 0.9)',
-      'rgba(20, 110, 78, 0.92)',
-      'rgba(17, 100, 70, 0.95)'
-    ]
-    const index = Math.round(intensity * 12)
-    return hourColors[Math.min(index, 12)]
-  },
-
-  calculateIncome(courses) {
+  calculateIncome(courses, scheduleList) {
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth()
@@ -213,46 +184,47 @@ Page({
     let totalIncome = 0
     let totalHours = 0
     
+    const coursePriceMap = {}
     courses.forEach(course => {
-      if (!course.schedule) return
+      coursePriceMap[course._id] = course.price || course.pricePerHour || 0
+    })
+    
+    scheduleList.forEach(item => {
+      let price = item.price || item.coursePrice || 0
       
-      const startTime = course.schedule.startTime
-      const endTime = course.schedule.endTime
+      if (!price && item.parentId && coursePriceMap[item.parentId]) {
+        price = coursePriceMap[item.parentId]
+      }
       
-      if (!startTime || !endTime) return
+      if (!price && item.courseId && coursePriceMap[item.courseId]) {
+        price = coursePriceMap[item.courseId]
+      }
       
-      const startHour = parseFloat(startTime.split(':')[0]) + parseFloat(startTime.split(':')[1]) / 60
-      const endHour = parseFloat(endTime.split(':')[0]) + parseFloat(endTime.split(':')[1]) / 60
-      const duration = endHour - startHour
+      let courseDate
+      let startTime
+      let endTime
       
-      const price = course.price || 0
+      if (item.date) {
+        courseDate = new Date(item.date)
+        startTime = item.startTime
+        endTime = item.endTime
+      } else if (item.schedule && item.schedule.date) {
+        courseDate = new Date(item.schedule.date)
+        startTime = item.schedule.startTime
+        endTime = item.schedule.endTime
+      }
       
-      if (course.schedule.date) {
-        const courseDate = new Date(course.schedule.date)
+      if (courseDate && !isNaN(courseDate.getTime())) {
         if (courseDate.getFullYear() === year && courseDate.getMonth() === month) {
-          totalIncome += duration * price
-          totalHours += duration
-        }
-      } else if (course.isRepeat && course.weekdays && course.weekdays.length > 0) {
-        const weekdays = course.weekdays
-        const repeatCount = course.repeatCount || 1
-        
-        const firstDay = new Date(year, month, 1)
-        const lastDay = new Date(year, month + 1, 0)
-        const daysInMonth = lastDay.getDate()
-        
-        let actualCount = 0
-        for (let i = 1; i <= daysInMonth; i++) {
-          const date = new Date(year, month, i)
-          const dayOfWeek = date.getDay()
-          if (weekdays.includes(dayOfWeek)) {
-            actualCount++
+          if (startTime && endTime) {
+            const startHour = parseFloat(startTime.split(':')[0]) + parseFloat(startTime.split(':')[1]) / 60
+            const endHour = parseFloat(endTime.split(':')[0]) + parseFloat(endTime.split(':')[1]) / 60
+            const duration = endHour - startHour
+            
+            totalIncome += duration * price
+            totalHours += duration
           }
         }
-        
-        const effectiveCount = Math.min(actualCount, repeatCount)
-        totalIncome += duration * price * effectiveCount
-        totalHours += duration * effectiveCount
       }
     })
     
@@ -284,9 +256,40 @@ Page({
     
     const mondayDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
     
-    wx.navigateTo({
-      url: `/pages/teacher/schedule/index?date=${encodeURIComponent(fullDate)}&weekStart=${encodeURIComponent(mondayDate)}`
+    app.globalData.navigateDate = fullDate
+    app.globalData.navigateWeekStart = mondayDate
+    
+    wx.switchTab({
+      url: '/pages/teacher/schedule/index'
     })
+  },
+
+  prevMonth() {
+    let year = this.data.currentYear || new Date().getFullYear()
+    let month = this.data.currentMonth !== undefined ? this.data.currentMonth : new Date().getMonth()
+    
+    month -= 1
+    if (month < 0) {
+      month = 11
+      year -= 1
+    }
+    
+    this.setData({ currentYear: year, currentMonth: month })
+    this.loadStats()
+  },
+
+  nextMonth() {
+    let year = this.data.currentYear || new Date().getFullYear()
+    let month = this.data.currentMonth !== undefined ? this.data.currentMonth : new Date().getMonth()
+    
+    month += 1
+    if (month > 11) {
+      month = 0
+      year += 1
+    }
+    
+    this.setData({ currentYear: year, currentMonth: month })
+    this.loadStats()
   },
 
   goToStudents() {
@@ -317,33 +320,6 @@ Page({
     wx.navigateTo({
       url: '/pages/teacher/schedule/index'
     })
-  },
-
-  async subscribeReminder() {
-    try {
-      const res = await wx.requestSubscribeMessage({
-        tmplIds: ['w223WKtyfXebjCpkNc2TbtczBuGuR4SUk2IRbMcRreU']
-      })
-
-      if (res['w223WKtyfXebjCpkNc2TbtczBuGuR4SUk2IRbMcRreU'] === 'accept') {
-        this.setData({ subscribed: true })
-        wx.showToast({
-          title: '订阅成功，将在课程开始前提醒您',
-          icon: 'success'
-        })
-      } else {
-        wx.showToast({
-          title: '订阅失败',
-          icon: 'none'
-        })
-      }
-    } catch (err) {
-      console.error('订阅失败:', err)
-      wx.showToast({
-        title: '订阅失败',
-        icon: 'none'
-      })
-    }
   },
 
   onPendingTap(e) {

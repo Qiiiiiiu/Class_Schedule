@@ -1,4 +1,4 @@
-/**app.wxss — 克莱因蓝 + 轻拟态设计系统 **/
+/**app.wxss — 深色工业风格主题 **/
 
 /* ========== 基础重置 ========== */
 .container {
@@ -21,77 +21,100 @@ button::after {
 }
 
 page {
-  background: #e8ecf1;
+  background: #0f1419;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  --kb-900: #001a6e;
-  --kb-700: #002FA7;
-  --kb-500: #1e4dc8;
-  --kb-300: #6b8fe8;
-  --kb-100: #ced9f7;
-  --kb-50:  #eef2fb;
-  --bg-page:    #e8ecf1;
-  --bg-surface: #edf0f5;
-  --bg-card:    #e8ecf1;
-  --text-primary:   #1a1d28;
-  --text-secondary: #5a6072;
-  --text-hint:      #959dad;
-  --text-on-primary: #ffffff;
-  --success:       #10b981;
-  --success-light: #d1fae5;
-  --warning:       #f59e0b;
-  --warning-light: #fef3c7;
-  --danger:        #ef4444;
-  --danger-light:  #fee2e2;
-  --white:         #ffffff;
-  --shadow-dark:   #d1d6dd;
-  --shadow-light:  #ffffff;
+  --dark-bg:         #0f1419;
+  --dark-surface:    #1a1f2e;
+  --dark-card:       #23293a;
+  --dark-border:     #2a3042;
+  --primary-blue:    #3b82f6;
+  --primary-cyan:    #06b6d4;
+  --primary-purple:  #8b5cf6;
+  --text-primary:    #f1f5f9;
+  --text-secondary:  #94a3b8;
+  --text-hint:       #64748b;
+  --success:         #10b981;
+  --warning:         #f59e0b;
+  --danger:          #ef4444;
+  --accent-green:    #10b981;
+  --accent-red:      #ef4444;
 }
 
-/* ========== 轻拟态阴影工具类 ========== */
-.nm-raised {
-  background: #e8ecf1;
-  box-shadow: 6rpx 6rpx 12rpx #d1d6dd, -6rpx -6rpx 12rpx #ffffff;
+/* ========== 深色主题阴影工具类 ========== */
+.dark-card {
+  background: linear-gradient(145deg, #23293a, #1a1f2e);
+  border-radius: 16rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
-.nm-raised-sm {
-  background: #e8ecf1;
-  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+.dark-card-hover:active {
+  background: linear-gradient(145deg, #1e2433, #171c29);
+  box-shadow: inset 0 4rpx 12rpx rgba(0, 0, 0, 0.4);
 }
 
-.nm-inset {
-  background: #e8ecf1;
-  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
-}
-
-.nm-convex {
-  background: linear-gradient(145deg, #dde1e8, #f4f6f9);
-  box-shadow: 6rpx 6rpx 12rpx #d1d6dd, -6rpx -6rpx 12rpx #ffffff;
-}
-
-/* ========== 克莱因蓝系按钮 ========== */
-.btn-primary {
-  background: linear-gradient(145deg, #001a6e, #002FA7);
+.dark-btn {
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   color: #ffffff;
   border: none;
-  box-shadow: 4rpx 4rpx 8rpx rgba(0, 47, 167, 0.25), -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.6);
+  border-radius: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.3);
 }
 
-.btn-primary:active {
-  box-shadow: inset 4rpx 4rpx 8rpx rgba(0, 0, 0, 0.2), inset -2rpx -2rpx 6rpx rgba(255, 255, 255, 0.1);
+.dark-btn:active {
+  box-shadow: inset 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
 }
 
-/* ========== 星期选择器 (复写) ========== */
+.dark-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
+  color: #f1f5f9;
+}
+
+.dark-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2rpx rgba(59, 130, 246, 0.2);
+}
+
+/* ========== 星期选择器 (深色主题) ========== */
 .weekday-item {
-  background: #e8ecf1 !important;
-  color: #5a6072 !important;
-  border: none !important;
-  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #94a3b8 !important;
+  border: 1rpx solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8rpx;
 }
 
 .weekday-item.selected {
-  background: #002FA7 !important;
+  background: linear-gradient(145deg, #3b82f6, #2563eb) !important;
   color: #ffffff !important;
-  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.25), inset -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.1);
+  border: none !important;
+  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.4);
+}
+
+/* ========== 通用文本样式 ========== */
+.text-primary {
+  color: #f1f5f9;
+}
+
+.text-secondary {
+  color: #94a3b8;
+}
+
+.text-hint {
+  color: #64748b;
+}
+
+.text-success {
+  color: #10b981;
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
+.text-warning {
+  color: #f59e0b;
 }

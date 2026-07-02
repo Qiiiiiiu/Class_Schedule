@@ -16,7 +16,19 @@ exports.main = async (event, context) => {
   }
 
   try {
+    // 删除 course_schedule 中的记录
     const res = await db.collection('course_schedule').doc(id).remove()
+
+    // 删除 course_unfinished 中对应的记录
+    const unfinishedRes = await db.collection('course_unfinished')
+      .where({
+        scheduleId: id
+      })
+      .get()
+
+    for (const item of unfinishedRes.data) {
+      await db.collection('course_unfinished').doc(item._id).remove()
+    }
 
     return {
       code: 0,

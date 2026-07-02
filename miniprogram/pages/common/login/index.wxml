@@ -5,7 +5,19 @@
     <text class="subtitle">教师端 & 学生端</text>
   </view>
 
-  <view class="login-form">
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在登录...</text>
+  </view>
+
+  <view class="login-form" wx:if="{{showLoginForm}}">
+    <!-- 错误提示 -->
+    <view class="error-message" wx:if="{{loginError}}">
+      <text class="error-icon">⚠️</text>
+      <text class="error-text">{{loginError}}</text>
+      <button class="retry-btn" bindtap="retryLogin">重新尝试</button>
+    </view>
+
     <view class="form-item">
       <text class="label">姓名</text>
       <input class="input" placeholder="请输入您的姓名" value="{{name}}" bindinput="onNameInput" />

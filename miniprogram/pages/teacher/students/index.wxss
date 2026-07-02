@@ -1,18 +1,20 @@
 .container {
   min-height: 100vh;
-  background: #e8ecf1;
+  background: #0f1419;
   padding: 30rpx;
+  padding-bottom: 180rpx;
 }
 
 .stats-header {
-  background: linear-gradient(145deg, #001a6e, #1e4dc8);
+  background: linear-gradient(145deg, #23293a, #1a1f2e);
   border-radius: 20rpx;
   padding: 40rpx;
   margin-bottom: 30rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 6rpx 6rpx 14rpx rgba(0, 47, 167, 0.18), -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
 .action-btns {
@@ -22,17 +24,18 @@
 }
 
 .add-btn {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  border: none;
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1rpx solid rgba(59, 130, 246, 0.2);
   border-radius: 30rpx;
   padding: 16rpx 32rpx;
   font-size: 26rpx;
-  box-shadow: 3rpx 3rpx 6rpx rgba(0, 0, 0, 0.12), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.08);
 }
 
 .add-btn.secondary {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .stat-item {
@@ -45,21 +48,22 @@
 .stat-num {
   font-size: 60rpx;
   font-weight: bold;
-  color: #ffffff;
+  color: #f1f5f9;
 }
 
 .stat-label {
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.85);
+  color: #94a3b8;
 }
 
 /* ===== 验证码区 ===== */
 .verify-code-section {
-  background: #e8ecf1;
+  background: linear-gradient(145deg, #23293a, #1a1f2e);
   border-radius: 20rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
-  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
 .code-header {
@@ -72,12 +76,12 @@
 .code-title {
   font-size: 28rpx;
   font-weight: 600;
-  color: #1a1d28;
+  color: #f1f5f9;
 }
 
 .code-expire {
   font-size: 24rpx;
-  color: #5a6072;
+  color: #64748b;
 }
 
 .code-display {
@@ -90,14 +94,14 @@
 .code-value {
   font-size: 60rpx;
   font-weight: bold;
-  color: #002FA7;
+  color: #3b82f6;
   letter-spacing: 8rpx;
   margin-bottom: 16rpx;
 }
 
 .code-hint {
   font-size: 24rpx;
-  color: #5a6072;
+  color: #64748b;
 }
 
 /* ===== 搜索 ===== */
@@ -106,32 +110,34 @@
 }
 
 .search-box {
-  background: #e8ecf1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
   border-radius: 50rpx;
   padding: 20rpx 30rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
-  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
 }
 
 .search-input {
   flex: 1;
   font-size: 28rpx;
+  color: #f1f5f9;
 }
 
 .search-icon {
   font-size: 28rpx;
-  color: #5a6072;
+  color: #64748b;
   padding: 10rpx;
 }
 
 /* ===== 学生列表 ===== */
 .student-list {
-  background: #e8ecf1;
+  background: linear-gradient(145deg, #23293a, #1a1f2e);
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 6rpx 6rpx 14rpx #d1d6dd, -6rpx -6rpx 14rpx #ffffff;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
 .student-item {
@@ -139,11 +145,11 @@
   justify-content: space-between;
   align-items: center;
   padding: 30rpx;
-  border-bottom: 1rpx solid rgba(0, 47, 167, 0.08);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
 .student-item:active {
-  background: #eef2fb;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .student-item:last-child {
@@ -160,8 +166,8 @@
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  background: linear-gradient(145deg, #ced9f7, #eef2fb);
-  box-shadow: 3rpx 3rpx 6rpx #d1d6dd, -3rpx -3rpx 6rpx #ffffff;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
+  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.3);
 }
 
 .info-text {
@@ -172,13 +178,13 @@
 
 .student-name {
   font-size: 30rpx;
-  color: #1a1d28;
+  color: #f1f5f9;
   font-weight: 500;
 }
 
 .student-meta {
   font-size: 24rpx;
-  color: #5a6072;
+  color: #64748b;
 }
 
 /* ===== 状态标签 ===== */
@@ -189,24 +195,23 @@
 }
 
 .status-approved {
-  background: #d1fae5;
-  color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
 .status-pending {
-  background: #fef3c7;
-  color: #d97706;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
 }
 
 .status-rejected {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 .status-unbound {
-  background: #e8ecf1;
-  color: #5a6072;
-  box-shadow: inset 2rpx 2rpx 4rpx #d1d6dd, inset -2rpx -2rpx 4rpx #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
 }
 
 .student-actions {
@@ -217,33 +222,32 @@
 }
 
 .bind-btn {
-  background: linear-gradient(145deg, #001a6e, #002FA7);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   color: #ffffff;
   border: none;
   border-radius: 20rpx;
   padding: 8rpx 20rpx;
   font-size: 24rpx;
-  box-shadow: 3rpx 3rpx 6rpx rgba(0, 47, 167, 0.2), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2rpx 8rpx rgba(59, 130, 246, 0.3);
 }
 
 .merge-btn {
-  background: linear-gradient(145deg, #b45309, #d97706);
+  background: linear-gradient(145deg, #f59e0b, #d97706);
   color: #ffffff;
   border: none;
   border-radius: 20rpx;
   padding: 8rpx 20rpx;
   font-size: 24rpx;
-  box-shadow: 3rpx 3rpx 6rpx rgba(180, 83, 9, 0.25);
+  box-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.3);
 }
 
 .delete-btn {
-  background: #fee2e2;
-  color: #dc2626;
-  border: none;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1rpx solid rgba(239, 68, 68, 0.2);
   border-radius: 20rpx;
   padding: 8rpx 20rpx;
   font-size: 24rpx;
-  box-shadow: 2rpx 2rpx 4rpx rgba(239, 68, 68, 0.12);
 }
 
 /* ===== 空状态 ===== */
@@ -256,12 +260,13 @@
 
 .empty-icon {
   font-size: 100rpx;
+  color: #64748b;
   margin-bottom: 30rpx;
 }
 
 .empty-text {
   font-size: 28rpx;
-  color: #5a6072;
+  color: #64748b;
 }
 
 /* ===== 弹窗 ===== */
@@ -271,7 +276,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -280,10 +285,11 @@
 
 .modal-content {
   width: 680rpx;
-  background: #e8ecf1;
+  background: linear-gradient(145deg, #23293a, #1a1f2e);
   border-radius: 20rpx;
   overflow: hidden;
-  box-shadow: 10rpx 10rpx 20rpx rgba(0, 0, 0, 0.15), -4rpx -4rpx 10rpx rgba(255, 255, 255, 0.3);
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.4);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 
 .modal-content.detail-content {
@@ -306,18 +312,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 30rpx;
-  border-bottom: 1rpx solid rgba(0, 47, 167, 0.1);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: #1a1d28;
+  color: #f1f5f9;
 }
 
 .modal-close {
   font-size: 36rpx;
-  color: #5a6072;
+  color: #64748b;
   padding: 10rpx;
 }
 
@@ -332,20 +338,20 @@
   display: flex;
   align-items: center;
   padding: 20rpx;
-  background: #fef3c7;
+  background: rgba(245, 158, 11, 0.15);
   border-radius: 10rpx;
   margin-bottom: 30rpx;
 }
 
 .merge-label {
   font-size: 26rpx;
-  color: #d97706;
+  color: #f59e0b;
   margin-right: 12rpx;
 }
 
 .merge-value {
   font-size: 28rpx;
-  color: #1a1d28;
+  color: #f1f5f9;
   font-weight: 500;
 }
 
@@ -360,7 +366,7 @@
 
 .form-label {
   font-size: 28rpx;
-  color: #1a1d28;
+  color: #94a3b8;
   margin-bottom: 16rpx;
   display: block;
   font-weight: 500;
@@ -370,23 +376,25 @@
   width: 100%;
   height: 88rpx;
   padding: 0 32rpx;
-  background: #e8ecf1;
-  border-radius: 10rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
   font-size: 28rpx;
+  color: #f1f5f9;
   line-height: 88rpx;
   box-sizing: border-box;
-  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
 }
 
 .form-textarea {
   width: 100%;
   padding: 28rpx 32rpx;
-  background: #e8ecf1;
-  border-radius: 10rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
   font-size: 28rpx;
+  color: #f1f5f9;
   min-height: 120rpx;
   box-sizing: border-box;
-  box-shadow: inset 4rpx 4rpx 8rpx #d1d6dd, inset -4rpx -4rpx 8rpx #ffffff;
 }
 
 .target-student-list {
@@ -398,11 +406,11 @@
   display: flex;
   align-items: center;
   padding: 24rpx;
-  background: #edf0f5;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
   border-radius: 12rpx;
   margin-bottom: 16rpx;
   transition: all 0.2s;
-  box-shadow: 2rpx 2rpx 4rpx #d1d6dd, -2rpx -2rpx 4rpx #ffffff;
 }
 
 .target-student-item:last-child {
@@ -410,65 +418,65 @@
 }
 
 .target-student-item.selected {
-  background: #ced9f7;
-  box-shadow: inset 3rpx 3rpx 6rpx rgba(0, 47, 167, 0.12), inset -2rpx -2rpx 4rpx #ffffff;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .target-avatar {
   width: 70rpx;
   height: 70rpx;
   border-radius: 50%;
-  background: linear-gradient(145deg, #ced9f7, #eef2fb);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   margin-right: 20rpx;
 }
 
 .target-name {
   flex: 1;
   font-size: 28rpx;
-  color: #1a1d28;
+  color: #f1f5f9;
 }
 
 .check-icon {
   width: 40rpx;
   height: 40rpx;
-  background: #002FA7;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   color: #ffffff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24rpx;
-  box-shadow: 3rpx 3rpx 6rpx rgba(0, 47, 167, 0.25);
+  box-shadow: 0 2rpx 8rpx rgba(59, 130, 246, 0.4);
 }
 
 .modal-footer {
   display: flex;
   gap: 20rpx;
   padding: 30rpx;
-  border-top: 1rpx solid rgba(0, 47, 167, 0.1);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-btn {
   flex: 1;
   padding: 24rpx 0;
-  border-radius: 10rpx;
+  border-radius: 12rpx;
   font-size: 28rpx;
 }
 
 .cancel-btn {
-  background: #e8ecf1;
-  color: #5a6072;
-  box-shadow: 4rpx 4rpx 8rpx #d1d6dd, -4rpx -4rpx 8rpx #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
 }
 
 .confirm-btn {
-  background: linear-gradient(145deg, #001a6e, #002FA7);
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
   color: #ffffff;
-  box-shadow: 4rpx 4rpx 8rpx rgba(0, 47, 167, 0.25), -2rpx -2rpx 4rpx rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.4);
 }
 
 .confirm-btn[disabled] {
-  background: #cbd5e0;
-  color: #959dad;
+  background: #334155;
+  color: #64748b;
   box-shadow: none;
 }

@@ -24,8 +24,8 @@
     </view>
     <view class="calendar-grid">
       <view class="calendar-day {{item.empty ? 'empty' : ''}}" wx:for="{{calendar}}" wx:key="index" style="background: {{item.empty ? 'transparent' : item.bgColor}}" bindtap="onCalendarDayTap" data-date="{{item.fullDate}}">
-        <text wx:if="{{!item.empty}}" class="day-num {{item.isToday ? 'today' : ''}}">{{item.date}}</text>
-        <text wx:if="{{!item.empty && item.hours > 0}}" class="day-hours">{{item.hours}}h</text>
+        <text wx:if="{{!item.empty}}" class="day-num {{item.isToday ? 'today' : ''}}" style="color: {{item.isToday ? '' : item.textColor}}">{{item.date}}</text>
+        <text wx:if="{{!item.empty && item.count > 0}}" class="day-count" style="color: {{item.isToday ? 'rgba(0, 0, 0, 0.7)' : item.textColor}}">{{item.count}}节</text>
       </view>
     </view>
   </view>
@@ -43,45 +43,11 @@
         </view>
       </view>
       <view class="income-right">
-        <text class="eye-icon" bindtap="toggleAmount">{{showAmount ? '👁️' : '🙈'}}</text>
+        <image class="eye-icon" src="{{showAmount ? '/images/icons/eye-line.svg' : '/images/icons/eye-off-line.svg'}}" bindtap="toggleAmount" mode="aspectFit"></image>
       </view>
     </view>
     <view class="income-footer">
       <text class="total-hours">本月授课时长: {{totalHours}}小时</text>
-    </view>
-  </view>
-
-  <view class="stats-grid">
-    <view class="stat-card" bindtap="goToStudents">
-      <view class="stat-icon student-icon">👨‍🎓</view>
-      <view class="stat-info">
-        <text class="stat-num">{{stats.studentCount}}</text>
-        <text class="stat-label">绑定学生</text>
-      </view>
-    </view>
-
-    <view class="stat-card" bindtap="goToCourses">
-      <view class="stat-icon course-icon">📚</view>
-      <view class="stat-info">
-        <text class="stat-num">{{stats.courseCount}}</text>
-        <text class="stat-label">开设课程</text>
-      </view>
-    </view>
-
-    <view class="stat-card" bindtap="goToBindings">
-      <view class="stat-icon binding-icon">📝</view>
-      <view class="stat-info">
-        <text class="stat-num">{{stats.pendingBindings}}</text>
-        <text class="stat-label">待处理绑定</text>
-      </view>
-    </view>
-
-    <view class="stat-card" bindtap="goToSchedule">
-      <view class="stat-icon schedule-icon">📅</view>
-      <view class="stat-info">
-        <text class="stat-num">{{scheduleCount}}</text>
-        <text class="stat-label">查看课表</text>
-      </view>
     </view>
   </view>
 

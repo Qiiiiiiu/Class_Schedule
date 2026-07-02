@@ -1,64 +1,39 @@
-<view class="container">
-  <view class="tabs">
-    <view class="tab-item {{currentTab === 'courses' ? 'active' : ''}}" bindtap="switchTab" data-tab="courses">
-      课程列表
-    </view>
-    <view class="tab-item {{currentTab === 'applications' ? 'active' : ''}}" bindtap="switchTab" data-tab="applications">
-      预约申请
-      <view class="badge" wx:if="{{pendingCount > 0}}">{{pendingCount}}</view>
-    </view>
+<view class="page-container">
+  <view class="reminder-section">
+    <button class="reminder-btn" bindtap="onReopenReminder">重新开启上课提醒</button>
+    <image class="info-icon"  bindlongpress="onShowReminderInfo" src="/images/icons/information-line.svg"></image>
+
   </view>
-
-  <view class="tab-content">
-    <view wx:if="{{currentTab === 'courses'}}">
-      <view class="course-list" wx:if="{{courses.length > 0}}">
-        <view class="course-item" wx:for="{{courses}}" wx:key="_id">
-          <view class="course-header">
-            <text class="course-name">{{item.name}}</text>
-            <view class="course-status status-{{item.status}}">
-              {{item.status === 'available' ? '进行中' : '已停课'}}
-            </view>
-          </view>
-          <view class="course-info">
-            <text class="info-item">📅 {{item.childCourseCount || 0}}节课程</text>
-            <text class="info-item">👨‍🎓 {{item.studentCount || 0}}名学生</text>
-          </view>
-          <view class="course-actions">
-            <button class="action-btn" bindtap="onEditCourse" data-course="{{item}}">编辑</button>
-            <button class="action-btn" bindtap="onSendReminder" data-course-id="{{item._id}}">提醒</button>
-            <button class="action-btn delete" bindtap="onDeleteCourse" data-course-id="{{item._id}}">删除</button>
-          </view>
-        </view>
+  <view class="course-list" wx:if="{{courses.length > 0}}">
+    <view class="course-item" wx:for="{{courses}}" wx:key="_id">
+      <view class="course-status status-{{item.status}}" bindtap="onToggleCourseStatus" data-course="{{item}}">
+        {{item.status === 'available' ? '进行中' : '已停课'}}
       </view>
-      <view class="empty-state" wx:else>
-        <text class="empty-icon">📚</text>
-        <text class="empty-text">暂无课程</text>
-        <button class="add-btn" bindtap="onAddCourse">添加课程</button>
+      <view class="course-header">
+        <text class="course-name">{{item.name}}</text>
       </view>
-    </view>
-
-    <view wx:if="{{currentTab === 'applications'}}">
-      <view class="application-list" wx:if="{{applications.length > 0}}">
-        <view class="application-item" wx:for="{{applications}}" wx:key="_id">
-          <view class="app-info">
-            <text class="app-title">{{item.studentName}} 申请加入</text>
-            <text class="app-course">{{item.courseName}}</text>
-            <text class="app-time">申请时间: {{item.applyTimeStr}}</text>
-          </view>
-          <view class="app-actions">
-            <button class="approve-btn" bindtap="onAccept" data-application-id="{{item._id}}">通过</button>
-            <button class="reject-btn" bindtap="onReject" data-application-id="{{item._id}}">拒绝</button>
-          </view>
-        </view>
+      <view class="course-info">
+        <text class="info-item">📅 {{item.childCourseCount || 0}}节课程</text>
+        <text class="info-item">👨‍🎓 {{item.studentCount || 0}}名学生</text>
       </view>
-      <view class="empty-state" wx:else>
-        <text class="empty-icon">📋</text>
-        <text class="empty-text">暂无待处理申请</text>
+      <view class="course-amount">
+        <text class="amount-item">💰 已获金额：¥{{item.earnedAmount || 0}}</text>
+        <text class="amount-item">📊 总金额：¥{{item.totalAmount || 0}}</text>
+      </view>
+      <view class="course-actions">
+        <button class="action-btn" bindtap="onEditCourse" data-course="{{item}}">编辑</button>
+        <button class="action-btn" bindtap="onSendReminder" data-course-id="{{item._id}}">提醒</button>
+        <button class="action-btn delete" bindtap="onDeleteCourse" data-course-id="{{item._id}}">删除</button>
       </view>
     </view>
   </view>
+  <view class="empty-state" wx:else>
+    <text class="empty-icon">📚</text>
+    <text class="empty-text">暂无课程</text>
+    <button class="add-btn" bindtap="onAddCourse">添加课程</button>
+  </view>
 
-  <view class="add-floating-btn" bindtap="onAddCourse" wx:if="{{currentTab === 'courses'}}">
+  <view class="add-floating-btn" bindtap="onAddCourse">
     <text>+</text>
   </view>
 </view>

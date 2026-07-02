@@ -42,14 +42,14 @@ Page({
       api.getMyApplications(studentId)
     ])
 
-    const teacherCount = teachersRes ? teachersRes.filter(t => t.bindingStatus === 'approved').length : 0
+    const teacherCount = teachersRes ? teachersRes.filter(t => t.status === 'approved').length : 0
     const courseCount = coursesRes ? coursesRes.length : 0
     const myPendingApplications = myAppsRes ? myAppsRes.filter(a => a.status === 'pending').length : 0
 
     let pendingApplications = 0
     const teachersRes2 = await api.getTeachers(studentId)
     if (teachersRes2) {
-      pendingApplications = teachersRes2.filter(t => t.bindingStatus === 'pending').length
+      pendingApplications = teachersRes2.filter(t => t.status === 'pending').length
     }
 
     const todayCourses = this.getTodayCourses(coursesRes || [])

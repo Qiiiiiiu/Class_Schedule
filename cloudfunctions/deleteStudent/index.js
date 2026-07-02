@@ -22,7 +22,10 @@ exports.main = async (event, context) => {
       studentId
     }).remove()
 
-    await db.collection('users').doc(studentId).remove()
+    await db.collection('users').where({
+      openid: studentId,
+      role: 'student'
+    }).remove()
 
     return {
       code: 0,

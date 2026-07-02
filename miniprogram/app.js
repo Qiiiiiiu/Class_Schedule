@@ -3,7 +3,11 @@ App({
     this.globalData = {
       env: 'cloudbase-3g9lbidb4b420308',
       openid: null,
-      userInfo: null
+      userInfo: null,
+      coursesCache: null,
+      dashboardCache: null,
+      navigateWeekStart: null,
+      navigateDate: null
     };
 
     if (!wx.cloud) {
@@ -14,5 +18,10 @@ App({
         traceUser: true
       });
     }
+  },
+
+  clearCache() {
+    this.globalData.coursesCache = null
+    this.globalData.dashboardCache = null
   }
 });
