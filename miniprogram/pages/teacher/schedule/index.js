@@ -14,18 +14,18 @@ Page({
     selectedStudentName: '全部学生',
     allCourses: [],
     courseColors: [
-      { bg: '#002FA7', text: '#fff' },
-      { bg: '#1e4dc8', text: '#fff' },
-      { bg: '#4b7be5', text: '#fff' },
-      { bg: '#6b8fe8', text: '#fff' },
-      { bg: '#059669', text: '#fff' },
-      { bg: '#d97706', text: '#fff' },
-      { bg: '#7c3aed', text: '#fff' },
       { bg: '#dc2626', text: '#fff' },
+      { bg: '#ea580c', text: '#fff' },
+      { bg: '#ca8a04', text: '#fff' },
+      { bg: '#059669', text: '#fff' },
       { bg: '#0891b2', text: '#fff' },
-      { bg: '#4f46e5', text: '#fff' },
-      { bg: '#b45309', text: '#fff' },
-      { bg: '#be185d', text: '#fff' }
+      { bg: '#2563eb', text: '#fff' },
+      { bg: '#7c3aed', text: '#fff' },
+      { bg: '#db2777', text: '#fff' },
+      { bg: '#991b1b', text: '#fff' },
+      { bg: '#4d7c0f', text: '#fff' },
+      { bg: '#1e40af', text: '#fff' },
+      { bg: '#8b5cf6', text: '#fff' }
     ]
   },
 
@@ -115,20 +115,6 @@ Page({
     this.setData({ weekDays: days })
   },
 
-  getParentCourseColor(parentId) {
-    const colors = this.data.courseColors
-    if (!parentId) {
-      return colors[0]
-    }
-    
-    let hash = 5381
-    for (let i = 0; i < parentId.length; i++) {
-      hash = (hash << 5) + hash + parentId.charCodeAt(i)
-    }
-    const index = Math.abs(hash) % colors.length
-    return colors[index]
-  },
-
   async loadSchedule() {
     const teacherId = app.globalData.openid
     
@@ -194,6 +180,27 @@ Page({
 
       const weekDays = [...this.data.weekDays]
       const weekStart = this.data.currentWeekStart
+      const colors = this.data.courseColors
+
+      const parentIds = [...new Set(scheduleRes.map(c => c.parentId).filter(Boolean))]
+      parentIds.sort()
+
+      const parentIdColorMap = {}
+      parentIds.forEach((parentId, index) => {
+        parentIdColorMap[parentId] = colors[index % colors.length]
+      })
+
+      const getCourseColor = (course) => {
+        if (course.parentId && parentIdColorMap[course.parentId]) {
+          return parentIdColorMap[course.parentId]
+        }
+        const identifier = course.name || course._id || ''
+        let hash = 5381
+        for (let i = 0; i < identifier.length; i++) {
+          hash = (hash << 5) + hash + identifier.charCodeAt(i)
+        }
+        return colors[Math.abs(hash) % colors.length]
+      }
 
       filteredCourses.forEach(course => {
         if (course.schedule && course.schedule.date) {
@@ -215,8 +222,7 @@ Page({
               const top = (startMinutes - 6 * 60) * 2
               const height = Math.max(durationMinutes * 2, 60)
 
-              const identifier = course.parentId || course.name || course._id
-              const color = this.getParentCourseColor(identifier)
+              const color = getCourseColor(course)
 
               weekDays[dayIndex].courses.push({
                 ...course,
