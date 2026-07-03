@@ -1060,3 +1060,48 @@
   background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
+
+/* ===== 点选日期月历样式 ===== */
+.select-calendar-view {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12rpx;
+  overflow: hidden;
+  margin-top: 10rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+
+.select-calendar-day-cell {
+  flex: 1;
+  height: 90rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-right: 1rpx solid rgba(255, 255, 255, 0.04);
+  box-sizing: border-box;
+}
+
+.select-calendar-day-cell:last-child {
+  border-right: none;
+}
+
+.select-calendar-day-cell.other-month {
+  opacity: 0.3;
+}
+
+.select-calendar-day-cell.today {
+  border: 2rpx solid rgba(59, 130, 246, 0.5);
+  border-radius: 8rpx;
+}
+
+.select-calendar-day-cell.selected {
+  background: #3b82f6 !important;
+  border-radius: 8rpx;
+}
+
+.select-calendar-day-cell.selected .day-number {
+  color: #ffffff !important;
+  font-weight: bold;
+}

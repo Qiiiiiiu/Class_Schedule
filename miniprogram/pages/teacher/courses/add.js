@@ -13,7 +13,10 @@ Page({
     lockedParentInfo: false,
     courseName: '',
     price: '',
-    courseDate: '',
+    selectedDates: [],
+    selectCalendarMonthStart: null,
+    selectCalendarMonthTitle: '',
+    selectCalendarDays: [],
     startTime: '09:00',
     endTime: '10:00',
     classroom: '',
@@ -81,7 +84,13 @@ Page({
 
     const now = new Date()
     const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    this.setData({ courseDate: defaultDate, repeatStartDate: defaultDate })
+    this.setData({ 
+      selectedDates: [defaultDate], 
+      repeatStartDate: defaultDate 
+    })
+
+    // 初始化点选日历
+    this.buildSelectCalendarMonth(now.getFullYear(), now.getMonth())
 
     if (mode === 'edit' && courseData) {
       try {
@@ -306,8 +315,107 @@ Page({
     this.setData({ price: e.detail.value })
   },
 
-  onDateChange(e) {
-    this.setData({ courseDate: e.detail.value })
+  buildSelectCalendarMonth(year, month) {
+    const calendarDays = []
+    const now = new Date()
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const daysInMonth = lastDay.getDate()
+    const startDayOfWeek = firstDay.getDay() === 0 ? 7 : firstDay.getDay()
+
+    const title = `${year}年${month + 1}月`
+    const selectedDates = this.data.selectedDates || []
+
+    let currentDay = 1
+    for (let i = 0; i < 6; i++) {
+      const row = []
+      for (let j = 0; j < 7; j++) {
+        if (i === 0 && j < startDayOfWeek - 1) {
+          const prevMonthLastDay = new Date(year, month, 0).getDate()
+          const day = prevMonthLastDay - (startDayOfWeek - 2) + j
+          const prevMonthDate = new Date(year, month - 1, day)
+          const dateStr = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}-${String(prevMonthDate.getDate()).padStart(2, '0')}`
+          row.push({
+            day,
+            date: dateStr,
+            isOtherMonth: true,
+            isToday: false,
+            isSelected: selectedDates.includes(dateStr)
+          })
+        } else if (currentDay > daysInMonth) {
+          const day = currentDay - daysInMonth
+          const nextMonthDate = new Date(year, month + 1, day)
+          const dateStr = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}-${String(nextMonthDate.getDate()).padStart(2, '0')}`
+          row.push({
+            day,
+            date: dateStr,
+            isOtherMonth: true,
+            isToday: false,
+            isSelected: selectedDates.includes(dateStr)
+          })
+          currentDay++
+        } else {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`
+          row.push({
+            day: currentDay,
+            date: dateStr,
+            isOtherMonth: false,
+            isToday: dateStr === todayStr,
+            isSelected: selectedDates.includes(dateStr)
+          })
+          currentDay++
+        }
+      }
+      calendarDays.push(row)
+    }
+
+    this.setData({
+      selectCalendarMonthStart: new Date(year, month, 1),
+      selectCalendarMonthTitle: title,
+      selectCalendarDays: calendarDays
+    })
+  },
+
+  onPrevSelectCalendarMonth() {
+    const current = this.data.selectCalendarMonthStart
+    if (!current) return
+
+    const prevMonth = new Date(current)
+    prevMonth.setMonth(current.getMonth() - 1)
+    this.buildSelectCalendarMonth(prevMonth.getFullYear(), prevMonth.getMonth())
+  },
+
+  onNextSelectCalendarMonth() {
+    const current = this.data.selectCalendarMonthStart
+    if (!current) return
+
+    const nextMonth = new Date(current)
+    nextMonth.setMonth(current.getMonth() + 1)
+    this.buildSelectCalendarMonth(nextMonth.getFullYear(), nextMonth.getMonth())
+  },
+
+  onSelectCalendarDayTap(e) {
+    const dayItem = e.currentTarget.dataset.day
+    if (!dayItem || !dayItem.date) return
+
+    const dateStr = dayItem.date
+    let selectedDates = [...(this.data.selectedDates || [])]
+    const index = selectedDates.indexOf(dateStr)
+
+    if (index === -1) {
+      selectedDates.push(dateStr)
+    } else {
+      selectedDates.splice(index, 1)
+    }
+
+    this.setData({ selectedDates })
+
+    const current = this.data.selectCalendarMonthStart
+    if (current) {
+      this.buildSelectCalendarMonth(current.getFullYear(), current.getMonth())
+    }
   },
 
   onRepeatStartDateChange(e) {
@@ -457,7 +565,7 @@ Page({
       return
     }
 
-    const { courseName, price, courseDate, startTime, endTime, classroom, reminderIndex, status, mode, parentCourseId, selectedStudents, isRepeat, selectedWeekdays, repeatCount, repeatStartDate } = this.data
+    const { courseName, price, selectedDates, startTime, endTime, classroom, reminderIndex, status, mode, parentCourseId, selectedStudents, isRepeat, selectedWeekdays, repeatCount, repeatStartDate } = this.data
 
     if (!courseName) {
       wx.showToast({
@@ -467,9 +575,9 @@ Page({
       return
     }
 
-    if (!isRepeat && !courseDate) {
+    if (!isRepeat && (!selectedDates || selectedDates.length === 0)) {
       wx.showToast({
-        title: '请选择上课日期',
+        title: '请在月历中至少点选一个上课日期',
         icon: 'none'
       })
       return
@@ -506,24 +614,38 @@ Page({
 
       // 编辑模式下，添加子课程到当前父课程
       if (mode === 'edit' && parentCourseId && !isRepeat) {
-        const scheduleData = {
-          name: courseName,
-          price: this.data.parentCoursePrice || 0,
-          teacherId: app.globalData.openid,
-          teacherName: app.globalData.userInfo.name,
+        const promises = selectedDates.map(date => {
+          return api.addCourseSchedule({
+            name: courseName,
+            price: this.data.parentCoursePrice || 0,
+            teacherId: app.globalData.openid,
+            teacherName: app.globalData.userInfo.name,
+            parentId: parentCourseId,
+            schedule: {
+              date,
+              startTime,
+              endTime,
+              classroom
+            },
+            reminderTime: this.data.reminderOptions[reminderIndex].value,
+            status: 'available',
+            students: selectedStudents,
+            isRepeat: false
+          })
+        })
+        const results = await Promise.all(promises)
+        
+        let allGeneratedCourses = []
+        results.forEach(res => {
+          if (res && res.courses) {
+            allGeneratedCourses = allGeneratedCourses.concat(res.courses)
+          }
+        })
+        
+        result = {
           parentId: parentCourseId,
-          schedule: {
-            date: courseDate,
-            startTime,
-            endTime,
-            classroom
-          },
-          reminderTime: this.data.reminderOptions[reminderIndex].value,
-          status: 'available',
-          students: selectedStudents,
-          isRepeat: false
+          courses: allGeneratedCourses
         }
-        result = await api.addCourseSchedule(scheduleData)
       } else if (mode === 'edit' && parentCourseId && isRepeat) {
         // 编辑模式下，添加重复子课程
         const scheduleData = {
@@ -594,33 +716,48 @@ Page({
         result = await api.addCourse(courseData)
       } else if (parentCourseId && !isRepeat) {
         // 有父课程ID，添加单次子课程
-        const scheduleData = {
-          name: courseName,
-          price: parseFloat(price) || 0,
-          teacherId: app.globalData.openid,
-          teacherName: app.globalData.userInfo.name,
+        const promises = selectedDates.map(date => {
+          return api.addCourseSchedule({
+            name: courseName,
+            price: parseFloat(price) || 0,
+            teacherId: app.globalData.openid,
+            teacherName: app.globalData.userInfo.name,
+            parentId: parentCourseId,
+            schedule: {
+              date,
+              startTime,
+              endTime,
+              classroom
+            },
+            reminderTime: this.data.reminderOptions[reminderIndex].value,
+            status,
+            students: selectedStudents,
+            isRepeat: false
+          })
+        })
+        const results = await Promise.all(promises)
+        
+        let allGeneratedCourses = []
+        results.forEach(res => {
+          if (res && res.courses) {
+            allGeneratedCourses = allGeneratedCourses.concat(res.courses)
+          }
+        })
+        
+        result = {
           parentId: parentCourseId,
-          schedule: {
-            date: courseDate,
-            startTime,
-            endTime,
-            classroom
-          },
-          reminderTime: this.data.reminderOptions[reminderIndex].value,
-          status,
-          students: selectedStudents,
-          isRepeat: false
+          courses: allGeneratedCourses
         }
-        result = await api.addCourseSchedule(scheduleData)
       } else {
         // 无父课程ID，添加单次课程（同时创建父课程）
+        const firstDate = selectedDates[0]
         const courseData = {
           name: courseName,
           price: parseFloat(price) || 0,
           teacherId: app.globalData.openid,
           teacherName: app.globalData.userInfo.name,
           schedule: {
-            date: courseDate,
+            date: firstDate,
             startTime,
             endTime,
             classroom
@@ -630,7 +767,51 @@ Page({
           students: selectedStudents,
           isRepeat: false
         }
-        result = await api.addCourse(courseData)
+        
+        const firstResult = await api.addCourse(courseData)
+        if (firstResult && firstResult.parentId) {
+          const parentId = firstResult.parentId
+          const otherDates = selectedDates.slice(1)
+          
+          if (otherDates.length > 0) {
+            const promises = otherDates.map(date => {
+              return api.addCourseSchedule({
+                name: courseName,
+                price: parseFloat(price) || 0,
+                teacherId: app.globalData.openid,
+                teacherName: app.globalData.userInfo.name,
+                parentId: parentId,
+                schedule: {
+                  date,
+                  startTime,
+                  endTime,
+                  classroom
+                },
+                reminderTime: this.data.reminderOptions[reminderIndex].value,
+                status,
+                students: selectedStudents,
+                isRepeat: false
+              })
+            })
+            const restResults = await Promise.all(promises)
+            
+            let allGeneratedCourses = [...(firstResult.courses || [])]
+            restResults.forEach(res => {
+              if (res && res.courses) {
+                allGeneratedCourses = allGeneratedCourses.concat(res.courses)
+              }
+            })
+            
+            result = {
+              parentId: parentId,
+              courses: allGeneratedCourses
+            }
+          } else {
+            result = firstResult
+          }
+        } else {
+          result = firstResult
+        }
       }
 
       if (result) {
@@ -647,12 +828,15 @@ Page({
           
           this.setData({
             price: '',
-            courseDate: defaultDate,
+            selectedDates: [defaultDate],
             startTime: '09:00',
             endTime: '10:00',
             classroom: '',
             reminderIndex: 0
           })
+
+          // 重新构建可点选月历
+          this.buildSelectCalendarMonth(now.getFullYear(), now.getMonth())
           
           // 刷新子课程列表
           this.loadChildCourses(parentCourseId)
@@ -663,13 +847,20 @@ Page({
               scheduleStr: this.formatScheduleStr(course.schedule.date, course.schedule.startTime, course.schedule.endTime)
             }))
 
+            const now = new Date()
+            const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
             this.setData({
               generatedCourses: [...this.data.generatedCourses, ...generatedCourses],
               showGeneratedCourses: true,
               parentCourseCreated: true,
               lockedParentInfo: true,
-              parentCourseId: result.parentId || parentCourseId
+              parentCourseId: result.parentId || parentCourseId,
+              selectedDates: [defaultDate]
             })
+
+            // 重新构建可点选月历
+            this.buildSelectCalendarMonth(now.getFullYear(), now.getMonth())
 
             // 更新日历视图
             this.updateCalendarView(this.data.generatedCourses)
@@ -685,13 +876,21 @@ Page({
               ...result,
               scheduleStr: this.formatScheduleStr(result.schedule.date, result.schedule.startTime, result.schedule.endTime)
             }
+            
+            const now = new Date()
+            const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
             this.setData({
               generatedCourses: [...this.data.generatedCourses, newCourse],
               showGeneratedCourses: true,
               parentCourseCreated: true,
               lockedParentInfo: true,
-              parentCourseId: result.parentId || parentCourseId
+              parentCourseId: result.parentId || parentCourseId,
+              selectedDates: [defaultDate]
             })
+
+            // 重新构建可点选月历
+            this.buildSelectCalendarMonth(now.getFullYear(), now.getMonth())
 
             // 更新日历视图
             this.updateCalendarView(this.data.generatedCourses)

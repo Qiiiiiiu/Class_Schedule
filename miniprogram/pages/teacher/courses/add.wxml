@@ -105,12 +105,37 @@
       </view>
     </view>
 
-    <view class="form-item" wx:if="{{!isRepeat}}">
-      <text class="label">上课日期</text>
-      <view class="content-wrap">
-        <picker mode="date" value="{{courseDate}}" bindchange="onDateChange">
-          <view class="picker-value">{{courseDate || '请选择日期'}}</view>
-        </picker>
+    <view class="form-item" style="flex-direction: column; align-items: stretch;" wx:if="{{!isRepeat}}">
+      <view style="display: flex; align-items: center; margin-bottom: 12rpx; padding-left: 20rpx;">
+        <text class="label" style="text-align: left; width: auto; padding-right: 16rpx; padding-top: 0; margin-bottom: 0;">点选上课日期</text>
+        <text style="font-size: 22rpx; color: #64748b; padding-top: 2rpx;">(在下方月历中点选，支持多选日期)</text>
+      </view>
+      <view class="content-wrap" style="width: 100%;">
+        <view class="select-calendar-view">
+          <view class="calendar-header">
+            <view class="calendar-nav" bindtap="onPrevSelectCalendarMonth">
+              <text class="nav-btn">‹</text>
+            </view>
+            <text class="calendar-title">{{selectCalendarMonthTitle}}</text>
+            <view class="calendar-nav" bindtap="onNextSelectCalendarMonth">
+              <text class="nav-btn">›</text>
+            </view>
+          </view>
+          <view class="calendar-weekdays">
+            <view class="weekday-item" wx:for="{{['一','二','三','四','五','六','日']}}" wx:key="index">
+              <text class="weekday">{{item}}</text>
+            </view>
+          </view>
+          <view class="calendar-grid">
+            <view class="calendar-row" wx:for="{{selectCalendarDays}}" wx:for-item="rowItem" wx:key="index">
+              <view class="select-calendar-day-cell {{dayItem.isOtherMonth ? 'other-month' : ''}} {{dayItem.isToday ? 'today' : ''}} {{dayItem.isSelected ? 'selected' : ''}}" 
+                    wx:for="{{rowItem}}" wx:for-item="dayItem" wx:key="date"
+                    bindtap="onSelectCalendarDayTap" data-day="{{dayItem}}">
+                <text class="day-number">{{dayItem.day}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
 
