@@ -1,6 +1,8 @@
 .container {
   min-height: 100vh;
   background: #0f1419;
+  padding-bottom: calc(130rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 /* ===== 绑定码区 ===== */

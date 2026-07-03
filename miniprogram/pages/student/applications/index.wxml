@@ -31,4 +31,6 @@
     <text class="empty-icon">📋</text>
     <text class="empty-text">{{emptyText}}</text>
   </view>
+
+  <student-tab-bar active="applications"></student-tab-bar>
 </view>

@@ -3,6 +3,8 @@
   background: #0f1419;
   padding: 30rpx;
   padding-top: 0;
+  padding-bottom: calc(130rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 .header {

@@ -1,0 +1,15 @@
+<view class="tab-bar">
+  <view class="tab-bar-border"></view>
+  <view class="tab-bar-item" bindtap="switchTab" data-path="/pages/student/home/index">
+    <image src="{{active === 'home' ? '/images/tab/home-active.png' : '/images/tab/home.png'}}" class="tab-icon"></image>
+    <text class="tab-text {{active === 'home' ? 'active' : ''}}">首页</text>
+  </view>
+  <view class="tab-bar-item" bindtap="switchTab" data-path="/pages/student/teachers/index">
+    <image src="{{active === 'teachers' ? '/images/tab/students-active.png' : '/images/tab/students.png'}}" class="tab-icon"></image>
+    <text class="tab-text {{active === 'teachers' ? 'active' : ''}}">教师信息</text>
+  </view>
+  <view class="tab-bar-item" bindtap="switchTab" data-path="/pages/student/my-courses/index">
+    <image src="{{active === 'my-courses' ? '/images/tab/schedule-active.png' : '/images/tab/schedule.png'}}" class="tab-icon"></image>
+    <text class="tab-text {{active === 'my-courses' ? 'active' : ''}}">课程安排</text>
+  </view>
+</view>

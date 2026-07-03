@@ -1,4 +1,6 @@
 {
-  "usingComponents": {},
-  "navigationBarTitleText": "我的申请"
+  "usingComponents": {
+    "student-tab-bar": "/components/student-tab-bar/index"
+  },
+  "navigationBarTitleText": "课程管理"
 }

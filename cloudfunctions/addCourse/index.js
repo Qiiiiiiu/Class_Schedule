@@ -6,7 +6,7 @@ cloud.init({
 const db = cloud.database()
 
 exports.main = async (event, context) => {
-  const { name, price, teacherId, teacherName, schedule, reminderTime, status, students, isRepeat, weekdays, repeatCount, repeatStartDate } = event
+  const { name, price, teacherId, teacherName, schedule, reminderTime, status, students, isRepeat, weekdays, repeatCount, repeatStartDate, createdBy, creatorRole } = event
 
   if (!name || !teacherId) {
     return {
@@ -56,6 +56,8 @@ exports.main = async (event, context) => {
           reminderTime: reminderTime || 0,
           status: status || 'available',
           students: students || [],
+          createdBy: createdBy || '',
+          creatorRole: creatorRole || '',
           createTime: now,
           updateTime: now
         })
@@ -88,6 +90,8 @@ exports.main = async (event, context) => {
         isRepeat: true,
         weekdays: weekdays,
         repeatCount: repeatCount,
+        createdBy: createdBy || '',
+        creatorRole: creatorRole || '',
         createTime: now,
         updateTime: now
       }
@@ -157,6 +161,8 @@ exports.main = async (event, context) => {
         isRepeat: false,
         weekdays: null,
         repeatCount: 1,
+        createdBy: createdBy || '',
+        creatorRole: creatorRole || '',
         createTime: now,
         updateTime: now
       }
@@ -177,6 +183,8 @@ exports.main = async (event, context) => {
         status: status || 'available',
         students: students || [],
         parentId: parentId,
+        createdBy: createdBy || '',
+        creatorRole: creatorRole || '',
         createTime: now,
         updateTime: now
       }

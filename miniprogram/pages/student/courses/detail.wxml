@@ -1,0 +1,133 @@
+<view class="container">
+  <!-- 课程信息面板 -->
+  <view class="form-section">
+    <view class="section-header">
+      <text class="section-title">课程资料</text>
+      <view class="section-badge {{isCreatedByStudent ? 'student' : 'teacher'}}">
+        <text class="badge-text">{{isCreatedByStudent ? '学生自建' : '教师开课'}}</text>
+      </view>
+    </view>
+
+    <!-- 1. 只读模式 -->
+    <block wx:if="{{!isEditMode}}">
+      <view class="detail-row">
+        <text class="detail-label">课程名称</text>
+        <text class="detail-value">{{course.name}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-label">上课教师</text>
+        <text class="detail-value">{{course.teacherName}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-label">上课时间</text>
+        <text class="detail-value">{{course.schedule.startTime}} - {{course.schedule.endTime}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-label">上课地点</text>
+        <text class="detail-value">{{course.schedule.classroom || '未安排'}}</text>
+      </view>
+    </block>
+
+    <!-- 2. 编辑模式 -->
+    <block wx:else>
+      <view class="form-item">
+        <text class="label">课程名称</text>
+        <view class="content-wrap">
+          <input class="input" value="{{editName}}" bindinput="onEditNameInput" placeholder="请输入课程名称" />
+        </view>
+      </view>
+
+      <!-- 教师选择 -->
+      <view class="form-item">
+        <text class="label">选择教师</text>
+        <view class="content-wrap">
+          <picker bindchange="onTeacherChange" range="{{teacherOptions}}" range-key="name" value="{{teacherIndex}}">
+            <view class="picker-value">{{teacherIndex !== -1 ? teacherOptions[teacherIndex].name : '请选择教师'}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <!-- 手动输入教师姓名 -->
+      <view class="form-item" wx:if="{{isCustomTeacher}}">
+        <text class="label">教师姓名</text>
+        <view class="content-wrap">
+          <input class="input" placeholder="请输入教师姓名" value="{{customTeacherName}}"
+            bindinput="onCustomTeacherNameInput" />
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">上课时间</text>
+        <view class="content-wrap">
+          <view class="time-picker">
+            <picker mode="time" value="{{editStartTime}}" bindchange="onStartTimeChange">
+              <view class="picker-value">{{editStartTime || '开始时间'}}</view>
+            </picker>
+            <text class="time-separator">至</text>
+            <picker mode="time" value="{{editEndTime}}" bindchange="onEndTimeChange">
+              <view class="picker-value">{{editEndTime || '结束时间'}}</view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">上课地点</text>
+        <view class="content-wrap">
+          <input class="input" placeholder="请输入上课地点" value="{{editClassroom}}" bindinput="onClassroomInput" />
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 课程表具体安排（月历） -->
+  <view class="form-section">
+    <view class="section-header">
+      <text class="section-title">具体日程安排</text>
+      <text class="section-desc" wx:if="{{isEditMode}}">(在月历中点选可直接增删上课日期)</text>
+    </view>
+
+    <view class="select-calendar-view">
+      <view class="calendar-header">
+        <view class="calendar-nav" bindtap="onPrevSelectCalendarMonth">
+          <text class="nav-btn">‹</text>
+        </view>
+        <text class="calendar-title">{{selectCalendarMonthTitle}}</text>
+        <view class="calendar-nav" bindtap="onNextSelectCalendarMonth">
+          <text class="nav-btn">›</text>
+        </view>
+      </view>
+      <view class="calendar-weekdays">
+        <view class="calendar-weekday-item" wx:for="{{['一','二','三','四','五','六','日']}}" wx:key="index">
+          <text class="weekday">{{item}}</text>
+        </view>
+      </view>
+      <view class="calendar-grid">
+        <view class="calendar-row" wx:for="{{selectCalendarDays}}" wx:for-item="rowItem" wx:key="index">
+          <view
+            class="select-calendar-day-cell {{dayItem.isOtherMonth ? 'other-month' : ''}} {{dayItem.isToday ? 'today' : ''}} {{isEditMode && dayItem.isSelected ? 'selected' : ''}} {{!isEditMode && dayItem.hasSchedule ? 'has-schedule' : ''}}"
+            wx:for="{{rowItem}}" wx:for-item="dayItem" wx:key="date"
+            bindtap="{{isEditMode ? 'onSelectCalendarDayTap' : ''}}" data-day="{{dayItem}}">
+            <text class="day-number">{{dayItem.day}}</text>
+            <!-- 只读模式下的小蓝点标记 -->
+            <view class="schedule-dot" wx:if="{{!isEditMode && dayItem.hasSchedule}}"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作按钮 -->
+  <view class="actions-section" wx:if="{{isCreatedByStudent}}">
+    <!-- 非编辑态下显示“编辑” -->
+    <block wx:if="{{!isEditMode}}">
+      <button class="action-btn edit-btn" bindtap="onStartEdit">编辑课程信息</button>
+      <button class="action-btn delete-btn" bindtap="onDeleteCourse">删除整门课程</button>
+    </block>
+    <!-- 编辑态下显示“保存”与“取消” -->
+    <block wx:else>
+      <button class="action-btn save-btn" type="primary" bindtap="onSaveEdit" loading="{{loading}}">保存修改</button>
+      <button class="action-btn cancel-btn" bindtap="onCancelEdit">取消</button>
+    </block>
+  </view>
+</view>

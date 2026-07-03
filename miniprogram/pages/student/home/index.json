@@ -1,4 +1,6 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "student-tab-bar": "/components/student-tab-bar/index"
+  },
   "navigationBarTitleText": "学生首页"
 }

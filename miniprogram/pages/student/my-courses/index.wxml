@@ -1,18 +1,6 @@
 <view class="container">
-  <view class="tabs">
-    <view class="tab-item {{currentTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">
-      全部课程
-    </view>
-    <view class="tab-item {{currentTab === 'today' ? 'active' : ''}}" bindtap="switchTab" data-tab="today">
-      今日课程
-    </view>
-    <view class="tab-item {{currentTab === 'week' ? 'active' : ''}}" bindtap="switchTab" data-tab="week">
-      本周课程
-    </view>
-  </view>
-
-  <view class="course-list" wx:if="{{displayCourses.length > 0}}">
-    <view class="course-item" wx:for="{{displayCourses}}" wx:key="_id">
+  <view class="course-list" wx:if="{{courses.length > 0}}">
+    <view class="course-item" wx:for="{{courses}}" wx:key="_id" bindtap="goToCourseDetail" data-id="{{item._id}}">
       <view class="course-header">
         <text class="course-name">{{item.name || item.courseName}}</text>
         <view class="course-status status-{{item.status}}">
@@ -34,9 +22,6 @@
         </view>
       </view>
       <view class="course-actions">
-        <view class="applied-tag" wx:if="{{item.applied}}">
-          {{item.applicationStatus === 'pending' ? '申请中' : item.applicationStatus === 'approved' ? '已选课' : '已拒绝'}}
-        </view>
         <button class="subscribe-btn {{item.subscribed ? 'subscribed' : ''}}" 
                 bindtap="onToggleSubscribe" 
                 data-schedule-id="{{item.scheduleId}}"
@@ -51,4 +36,10 @@
     <text class="empty-icon">📚</text>
     <text class="empty-text">{{emptyText}}</text>
   </view>
+
+  <view class="add-floating-btn" bindtap="onAddCourse">
+    <text>+</text>
+  </view>
+
+  <student-tab-bar active="my-courses"></student-tab-bar>
 </view>

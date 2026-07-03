@@ -1,4 +1,6 @@
 {
-  "usingComponents": {},
-  "navigationBarTitleText": "教师列表"
+  "usingComponents": {
+    "student-tab-bar": "/components/student-tab-bar/index"
+  },
+  "navigationBarTitleText": "教师信息"
 }

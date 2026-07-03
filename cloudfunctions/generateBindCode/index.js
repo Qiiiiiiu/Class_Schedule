@@ -16,6 +16,17 @@ exports.main = async (event, context) => {
   }
 
   try {
+    const now = new Date()
+    const _ = db.command
+    // 自动清理所有已过期的验证码记录
+    try {
+      await db.collection('bind_verify_codes').where({
+        expireTime: _.lt(now)
+      }).remove()
+    } catch (cleanErr) {
+      console.error('自动清理过期验证码失败:', cleanErr)
+    }
+
     const verifyCode = Math.random().toString().slice(2, 8).padStart(6, '0')
     const expireTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
 

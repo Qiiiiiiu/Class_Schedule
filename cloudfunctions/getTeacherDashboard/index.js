@@ -30,7 +30,7 @@ exports.main = async (event, context) => {
       scheduleQuery['schedule.date'] = _.lte(endDate)
     }
 
-    const [studentsRes, coursesRes, scheduleRes, bindingsCountRes, applicationsCountRes, bindingsRes, applicationsRes] = await Promise.all([
+    const [studentsRes, coursesRes, scheduleRes, bindingsCountRes, bindingsRes] = await Promise.all([
       db.collection('users').where({
         teacherId,
         role: 'student'
@@ -43,18 +43,10 @@ exports.main = async (event, context) => {
         teacherId,
         status: 'pending'
       }).count(),
-      db.collection('course_applications').where({
-        teacherId,
-        status: 'pending'
-      }).count(),
       db.collection('teacher_student_bindings').where({
         teacherId,
         status: 'pending'
-      }).orderBy('applyTime', 'desc').limit(2).get(),
-      db.collection('course_applications').where({
-        teacherId,
-        status: 'pending'
-      }).limit(2).get()
+      }).orderBy('applyTime', 'desc').limit(2).get()
     ])
 
     const pendingBindings = bindingsRes.data.map(item => ({
@@ -62,11 +54,7 @@ exports.main = async (event, context) => {
       studentName: item.studentName
     }))
 
-    const pendingApplications = applicationsRes.data.map(item => ({
-      _id: item._id,
-      studentName: item.studentName,
-      courseName: item.courseName
-    }))
+    const pendingApplications = []
 
     return {
       code: 0,
@@ -76,7 +64,7 @@ exports.main = async (event, context) => {
         scheduleCount: scheduleRes.data.length,
         schedules: scheduleRes.data,
         pendingBindingsCount: bindingsCountRes.total,
-        pendingApplicationsCount: applicationsCountRes.total,
+        pendingApplicationsCount: 0,
         pendingBindings,
         pendingApplications
       }

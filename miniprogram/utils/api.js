@@ -6,9 +6,10 @@ async function callFunction(name, data = {}, options = {}) {
     if (res.result.code === 0) {
       return res.result.data
     } else {
+      console.error(`Cloud function ${name} failed:`, res.result)
       if (!options.silent) {
         wx.showToast({
-          title: res.result.message || '操作失败',
+          title: (res.result.message && res.result.error) ? `${res.result.message}: ${res.result.error}` : (res.result.message || '操作失败'),
           icon: 'none'
         })
       }
@@ -72,6 +73,9 @@ async function addCourse(courseData) {
 }
 
 async function editCourse(courseId, courseData) {
+  if (typeof courseId === 'object') {
+    return await callFunction('editCourse', courseId)
+  }
   return await callFunction('editCourse', { courseId, ...courseData })
 }
 

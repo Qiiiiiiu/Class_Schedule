@@ -4,20 +4,13 @@ const api = require('../../../utils/api.js')
 
 Page({
   data: {
-    currentTab: 'teachers',
     boundTeachers: [],
-    applications: [],
-    bindCode: '',
-    pendingCount: 0
+    bindCode: ''
   },
 
-  onLoad(options) {
+  onLoad() {
     if (!checkRole.checkStudent()) {
       return
-    }
-
-    if (options.tab === 'applications') {
-      this.setData({ currentTab: 'applications' })
     }
   },
 
@@ -28,16 +21,8 @@ Page({
     this.loadData()
   },
 
-  switchTab(e) {
-    const tab = e.currentTarget.dataset.tab
-    this.setData({ currentTab: tab })
-  },
-
   async loadData() {
-    await Promise.all([
-      this.loadBoundTeachers(),
-      this.loadApplications()
-    ])
+    await this.loadBoundTeachers()
   },
 
   async loadBoundTeachers() {
@@ -56,40 +41,9 @@ Page({
       }))
 
       this.setData({
-        boundTeachers: teachers,
-        pendingCount: res.filter(t => t.bindingStatus === 'pending').length
+        boundTeachers: teachers
       })
     }
-  },
-
-  getStatusStr(status) {
-    const strs = {
-      approved: '已通过',
-      pending: '待处理',
-      rejected: '已拒绝'
-    }
-    return strs[status] || '未知'
-  },
-
-  async loadApplications() {
-    const studentId = app.globalData.openid
-    const res = await api.getMyApplications(studentId)
-
-    if (res) {
-      const applications = res.map(item => ({
-        ...item,
-        applyTimeStr: this.formatTime(item.applyTime),
-        statusStr: this.getStatusStr(item.status)
-      }))
-
-      this.setData({ applications })
-    }
-  },
-
-  formatTime(timestamp) {
-    if (!timestamp) return ''
-    const date = new Date(timestamp)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   },
 
   onBindCodeInput(e) {

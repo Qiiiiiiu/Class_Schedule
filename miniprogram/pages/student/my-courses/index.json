@@ -1,4 +1,6 @@
 {
-  "usingComponents": {},
-  "navigationBarTitleText": "我的课程"
+  "usingComponents": {
+    "student-tab-bar": "/components/student-tab-bar/index"
+  },
+  "navigationBarTitleText": "课程安排"
 }

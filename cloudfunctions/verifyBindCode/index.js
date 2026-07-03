@@ -33,6 +33,23 @@ exports.main = async (event, context) => {
     const codeRecord = codeRes.data[0]
 
     if (new Date(codeRecord.expireTime) < now) {
+      // 自动删除当前已过期的验证码
+      try {
+        await db.collection('bind_verify_codes').doc(codeRecord._id).remove()
+      } catch (delErr) {
+        console.error('删除当前过期验证码失败:', delErr)
+      }
+
+      // 自动清理所有其他已过期的验证码记录
+      try {
+        const _ = db.command
+        await db.collection('bind_verify_codes').where({
+          expireTime: _.lt(now)
+        }).remove()
+      } catch (cleanErr) {
+        console.error('清理其他过期验证码失败:', cleanErr)
+      }
+
       return {
         code: 1,
         message: '验证码已过期'

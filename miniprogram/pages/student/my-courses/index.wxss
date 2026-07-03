@@ -1,6 +1,8 @@
 .container {
   min-height: 100vh;
   background: #0f1419;
+  padding-bottom: calc(130rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
 /* ===== Tab ===== */
@@ -159,4 +161,26 @@
 .empty-text {
   font-size: 28rpx;
   color: #64748b;
+}
+
+.add-floating-btn {
+  position: fixed;
+  right: 40rpx;
+  bottom: calc(140rpx + env(safe-area-inset-bottom));
+  width: 96rpx;
+  height: 96rpx;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.4);
+}
+
+.add-floating-btn text {
+  font-size: 60rpx;
+  color: #ffffff;
+  font-weight: 300;
+  margin-top: -6rpx;
 }

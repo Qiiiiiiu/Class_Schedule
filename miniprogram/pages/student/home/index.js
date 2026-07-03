@@ -36,30 +36,20 @@ Page({
   async loadStats() {
     const studentId = app.globalData.openid
 
-    const [teachersRes, coursesRes, myAppsRes] = await Promise.all([
+    const [teachersRes, coursesRes] = await Promise.all([
       api.getTeachers(studentId),
-      api.getMyCourses(studentId),
-      api.getMyApplications(studentId)
+      api.getMyCourses(studentId)
     ])
 
     const teacherCount = teachersRes ? teachersRes.filter(t => t.status === 'approved').length : 0
     const courseCount = coursesRes ? coursesRes.length : 0
-    const myPendingApplications = myAppsRes ? myAppsRes.filter(a => a.status === 'pending').length : 0
-
-    let pendingApplications = 0
-    const teachersRes2 = await api.getTeachers(studentId)
-    if (teachersRes2) {
-      pendingApplications = teachersRes2.filter(t => t.status === 'pending').length
-    }
 
     const todayCourses = this.getTodayCourses(coursesRes || [])
 
     this.setData({
       stats: {
         teacherCount,
-        courseCount,
-        pendingApplications,
-        myPendingApplications
+        courseCount
       },
       todayCourses
     })
@@ -76,26 +66,14 @@ Page({
   },
 
   goToTeachers() {
-    wx.navigateTo({
+    wx.redirectTo({
       url: '/pages/student/teachers/index'
     })
   },
 
   goToMyCourses() {
-    wx.navigateTo({
+    wx.redirectTo({
       url: '/pages/student/my-courses/index'
-    })
-  },
-
-  goToApplications() {
-    wx.navigateTo({
-      url: '/pages/student/teachers/index?tab=applications'
-    })
-  },
-
-  goToMyApplications() {
-    wx.navigateTo({
-      url: '/pages/student/applications/index'
     })
   }
 })

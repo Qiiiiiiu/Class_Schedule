@@ -1,0 +1,141 @@
+<view class="container">
+  <!-- 基本信息 -->
+  <view class="form-section">
+    <view class="section-header">
+      <text class="section-title">基本信息</text>
+    </view>
+    <view class="form-item">
+      <text class="label">课程名称</text>
+      <view class="content-wrap">
+        <input class="input" placeholder="请输入课程名称" value="{{courseName}}" bindinput="onCourseNameInput" />
+      </view>
+    </view>
+
+    <!-- 教师姓名直接输入 -->
+    <view class="form-item">
+      <text class="label">教师姓名</text>
+      <view class="content-wrap">
+        <input class="input" 
+               placeholder="请输入教师姓名" 
+               value="{{teacherName}}" 
+               bindinput="onTeacherNameInput" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程安排区域 -->
+  <view class="form-section">
+    <view class="section-header">
+      <text class="section-title">课程安排</text>
+    </view>
+
+    <view class="form-item">
+      <text class="label">是否重复</text>
+      <view class="content-wrap">
+        <view class="switch-wrap">
+          <switch checked="{{isRepeat}}" bindchange="onRepeatChange" color="#3b82f6" />
+          <text class="switch-label">{{isRepeat ? '重复课程' : '单次课程'}}</text>
+        </view>
+      </view>
+    </view>
+
+
+    <!-- 单次课程：月历点选日期 -->
+    <view class="form-item" style="flex-direction: column; align-items: stretch;" wx:if="{{!isRepeat}}">
+      <view style="display: flex; align-items: center; margin-bottom: 12rpx; padding-left: 20rpx;">
+        <text class="label"
+          style="text-align: left; width: auto; padding-right: 16rpx; padding-top: 0; margin-bottom: 0;">点选上课日期</text>
+        <text style="font-size: 22rpx; color: #64748b; padding-top: 2rpx;">(在下方月历中点选，支持多选日期)</text>
+      </view>
+      <view class="content-wrap" style="width: 100%;">
+        <view class="select-calendar-view">
+          <view class="calendar-header">
+            <view class="calendar-nav" bindtap="onPrevSelectCalendarMonth">
+              <text class="nav-btn">‹</text>
+            </view>
+            <text class="calendar-title">{{selectCalendarMonthTitle}}</text>
+            <view class="calendar-nav" bindtap="onNextSelectCalendarMonth">
+              <text class="nav-btn">›</text>
+            </view>
+          </view>
+          <view class="calendar-weekdays">
+            <view class="weekday-item" wx:for="{{['一','二','三','四','五','六','日']}}" wx:key="index">
+              <text class="weekday">{{item}}</text>
+            </view>
+          </view>
+          <view class="calendar-grid">
+            <view class="calendar-row" wx:for="{{selectCalendarDays}}" wx:for-item="rowItem" wx:key="index">
+              <view
+                class="select-calendar-day-cell {{dayItem.isOtherMonth ? 'other-month' : ''}} {{dayItem.isToday ? 'today' : ''}} {{dayItem.isSelected ? 'selected' : ''}}"
+                wx:for="{{rowItem}}" wx:for-item="dayItem" wx:key="date" bindtap="onSelectCalendarDayTap"
+                data-day="{{dayItem}}">
+                <text class="day-number">{{dayItem.day}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 重复课程选项 -->
+    <view class="form-item" wx:if="{{isRepeat}}">
+      <text class="label">重复开始日期</text>
+      <view class="content-wrap">
+        <picker mode="date" value="{{repeatStartDate}}" bindchange="onRepeatStartDateChange">
+          <view class="picker-value">{{repeatStartDate || '请选择日期'}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="form-item" wx:if="{{isRepeat}}">
+      <text class="label">重复星期</text>
+      <view class="content-wrap">
+        <view class="weekday-picker">
+          <view class="weekday-item {{item.selected ? 'selected' : ''}}" wx:for="{{weekdayOptions}}" wx:key="value"
+            bindtap="onWeekdayTap" data-value="{{item.value}}">
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item" wx:if="{{isRepeat}}">
+      <text class="label">重复次数</text>
+      <view class="content-wrap">
+        <view class="repeat-count-wrap">
+          <input class="input repeat-count-input" type="number" placeholder="请输入次数" value="{{repeatCount}}"
+            bindinput="onRepeatCountInput" bindfocus="onRepeatCountFocus" bindblur="onRepeatCountBlur" />
+          <view class="repeat-count-tip">默认=选择的星期数</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">上课时间</text>
+      <view class="content-wrap">
+        <view class="time-picker">
+          <picker mode="time" value="{{startTime}}" bindchange="onStartTimeChange">
+            <view class="picker-value">{{startTime || '开始时间'}}</view>
+          </picker>
+          <text class="time-separator">至</text>
+          <picker mode="time" value="{{endTime}}" bindchange="onEndTimeChange">
+            <view class="picker-value">{{endTime || '结束时间'}}</view>
+          </picker>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">上课地点</text>
+      <view class="content-wrap">
+        <input class="input" placeholder="请输入上课地点" value="{{classroom}}" bindinput="onClassroomInput" />
+      </view>
+    </view>
+
+    <view class="add-course-btn-wrap">
+      <button class="add-course-btn" type="primary" bindtap="onSave" loading="{{loading}}">
+        保存并添加课程
+      </button>
+    </view>
+  </view>
+</view>

@@ -10,8 +10,9 @@
     "pages/teacher/bindings/index",
     "pages/student/home/index",
     "pages/student/teachers/index",
-    "pages/student/applications/index",
-    "pages/student/my-courses/index"
+    "pages/student/my-courses/index",
+    "pages/student/courses/add",
+    "pages/student/courses/detail"
   ],
   "window": {
     "backgroundColor": "#1a1a2e",
