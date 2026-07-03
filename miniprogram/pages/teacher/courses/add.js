@@ -97,6 +97,13 @@ Page({
         const decodedData = decodeURIComponent(courseData)
         const course = JSON.parse(decodedData)
 
+        // 动态设置导航栏标题为对应的课程名称
+        if (course && course.name) {
+          wx.setNavigationBarTitle({
+            title: course.name
+          })
+        }
+
         // 加载父课程信息并设置到页面
         const selectedStudents = course.students || []
         
@@ -555,9 +562,23 @@ Page({
     })
   },
 
+  onRepeatCountFocus(e) {
+    this.prevRepeatCount = this.data.repeatCount
+    this.setData({ repeatCount: '' })
+  },
+
   onRepeatCountInput(e) {
-    const value = parseInt(e.detail.value) || 1
-    this.setData({ repeatCount: Math.max(1, value) })
+    this.setData({ repeatCount: e.detail.value })
+  },
+
+  onRepeatCountBlur(e) {
+    const val = e.detail.value ? e.detail.value.trim() : ''
+    if (val === '') {
+      this.setData({ repeatCount: this.prevRepeatCount || 1 })
+    } else {
+      const parsedVal = parseInt(val) || 1
+      this.setData({ repeatCount: Math.max(1, parsedVal) })
+    }
   },
 
   async onSave() {
@@ -565,7 +586,8 @@ Page({
       return
     }
 
-    const { courseName, price, selectedDates, startTime, endTime, classroom, reminderIndex, status, mode, parentCourseId, selectedStudents, isRepeat, selectedWeekdays, repeatCount, repeatStartDate } = this.data
+    const { courseName, price, selectedDates, startTime, endTime, classroom, reminderIndex, status, mode, parentCourseId, selectedStudents, isRepeat, selectedWeekdays, repeatCount: rawRepeatCount, repeatStartDate } = this.data
+    const repeatCount = parseInt(rawRepeatCount) || 1
 
     if (!courseName) {
       wx.showToast({

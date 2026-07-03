@@ -165,7 +165,7 @@
       <text class="label">重复次数</text>
       <view class="content-wrap">
         <view class="repeat-count-wrap">
-          <input class="input repeat-count-input" type="number" placeholder="请输入次数" value="{{repeatCount}}" bindinput="onRepeatCountInput" />
+          <input class="input repeat-count-input" type="number" placeholder="请输入次数" value="{{repeatCount}}" bindinput="onRepeatCountInput" bindfocus="onRepeatCountFocus" bindblur="onRepeatCountBlur" />
           <view class="repeat-count-tip">默认=选择的星期数</view>
         </view>
       </view>
