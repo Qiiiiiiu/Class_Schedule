@@ -28,6 +28,7 @@ Page({
     ],
     status: 'available',
     loading: false,
+    saving: false,
     // 编辑子课程相关数据
     showEditModal: false,
     editIndex: -1,
@@ -452,6 +453,10 @@ Page({
   },
 
   async onSave() {
+    if (this.data.saving) {
+      return
+    }
+
     const { courseName, price, courseDate, startTime, endTime, classroom, reminderIndex, status, mode, parentCourseId, selectedStudents, isRepeat, selectedWeekdays, repeatCount, repeatStartDate } = this.data
 
     if (!courseName) {
@@ -494,7 +499,7 @@ Page({
       return
     }
 
-    this.setData({ loading: true })
+    this.setData({ loading: true, saving: true })
 
     try {
       let result
@@ -708,7 +713,7 @@ Page({
     } catch (err) {
       console.error('Save course error:', err)
     } finally {
-      this.setData({ loading: false })
+      this.setData({ loading: false, saving: false })
     }
   },
 
