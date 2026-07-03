@@ -42,21 +42,13 @@ exports.main = async (event, context) => {
 
       let count = 0
       const maxCount = repeatCount === -1 ? 100 : repeatCount
-      const interval = 7
-
-      for (let i = 0; count < maxCount; i++) {
-        for (const weekday of weekdays) {
-          if (count >= maxCount) break
-
-          const targetDate = new Date(startDate)
-          targetDate.setDate(startDate.getDate() + i * interval)
-
-          const currentWeekday = targetDate.getDay()
-          const daysToAdd = (weekday - currentWeekday + 7) % 7
-          targetDate.setDate(targetDate.getDate() + daysToAdd)
-
-          const dateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`
-
+      const currentDate = new Date(startDate)
+      
+      while (count < maxCount) {
+        const dayOfWeek = currentDate.getDay()
+        if (weekdays.includes(dayOfWeek)) {
+          const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`
+          
           scheduleItems.push({
             name,
             price: parseFloat(price) || 0,
@@ -80,6 +72,7 @@ exports.main = async (event, context) => {
           })
           count++
         }
+        currentDate.setDate(currentDate.getDate() + 1)
       }
 
       if (scheduleItems.length === 0) {
