@@ -13,6 +13,9 @@ Page({
     selectedStudentId: null,
     selectedStudentName: '全部学生',
     allCourses: [],
+    showFilterModal: false,
+    filterSearchText: '',
+    filteredStudentList: [],
     isEditing: false,
     editDate: '',
     editStartTime: '',
@@ -143,7 +146,7 @@ Page({
       if (studentsRes && studentsRes.length > 0) {
         studentsRes.forEach(student => {
           studentList.push({
-            studentId: student._id,
+            studentId: student.studentId || student._id,
             name: student.name || student.studentName || '未知学生'
           })
         })
@@ -255,10 +258,18 @@ Page({
         }
       })
 
+      const filterSearchText = this.data.filterSearchText || ''
+      const filtered = studentList.filter(s => {
+        if (!filterSearchText) return true
+        if (s.studentId === null) return true // Keep "全部学生"
+        return s.name && s.name.toLowerCase().includes(filterSearchText.toLowerCase())
+      })
+
       this.setData({ 
         weekDays,
         allCourses: scheduleRes,
-        studentList
+        studentList,
+        filteredStudentList: filtered
       })
     }
   },
@@ -274,6 +285,46 @@ Page({
       selectedStudentName
     })
 
+    this.generateWeekDays()
+    this.loadSchedule()
+  },
+
+  showStudentFilter() {
+    this.setData({
+      showFilterModal: true,
+      filterSearchText: '',
+      filteredStudentList: this.data.studentList
+    })
+  },
+
+  closeStudentFilter() {
+    this.setData({
+      showFilterModal: false,
+      filterSearchText: ''
+    })
+  },
+
+  onFilterSearchInput(e) {
+    const val = e.detail.value || ''
+    const filtered = this.data.studentList.filter(s => {
+      if (!val) return true
+      if (s.studentId === null) return true // Keep "全部学生"
+      return s.name && s.name.toLowerCase().includes(val.toLowerCase())
+    })
+    this.setData({
+      filterSearchText: val,
+      filteredStudentList: filtered
+    })
+  },
+
+  onSelectFilterStudent(e) {
+    const { studentId, studentName } = e.currentTarget.dataset
+    this.setData({
+      selectedStudentId: studentId,
+      selectedStudentName: studentName || '全部学生',
+      showFilterModal: false,
+      filterSearchText: ''
+    })
     this.generateWeekDays()
     this.loadSchedule()
   },
@@ -335,6 +386,40 @@ Page({
         icon: 'success'
       })
     }
+  },
+
+  async onDeleteCourse() {
+    const course = this.data.selectedCourse
+    if (!course) return
+
+    wx.showModal({
+      title: '确认删除',
+      content: '确定要删除这节课程日程吗？此操作不可恢复。',
+      success: async (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '正在删除...' })
+          try {
+            const result = await api.deleteCourseSchedule(course._id)
+            if (result) {
+              wx.showToast({
+                title: '删除成功',
+                icon: 'success'
+              })
+              this.setData({ selectedCourse: null })
+              this.loadSchedule()
+            }
+          } catch (err) {
+            console.error('删除课程日程失败:', err)
+            wx.showToast({
+              title: '删除失败',
+              icon: 'none'
+            })
+          } finally {
+            wx.hideLoading()
+          }
+        }
+      }
+    })
   },
 
   onEditCourse() {

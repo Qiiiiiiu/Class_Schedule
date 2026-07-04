@@ -110,6 +110,7 @@
       <view wx:if="{{!isEditing}}" class="detail-actions">
         <button class="detail-btn" bindtap="onSendReminder">发送提醒</button>
         <button class="detail-btn" bindtap="onEditCourse">编辑课程</button>
+        <button class="detail-btn delete" bindtap="onDeleteCourse">删除课程</button>
       </view>
     </view>
   </view>
