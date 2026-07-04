@@ -21,13 +21,6 @@ Page({
     })
   },
 
-  onPhoneInput(e) {
-    this.setData({
-      phone: e.detail.value,
-      loginError: ''
-    })
-  },
-
   onRoleChange(e) {
     this.setData({
       role: e.detail.value

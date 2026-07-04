@@ -29,7 +29,7 @@ exports.main = async (event, context) => {
 
     return {
       code: 1,
-      message: '用户不存在'
+      message: '用户不存在，新建中..'
     }
   } catch (err) {
     return {

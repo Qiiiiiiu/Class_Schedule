@@ -5,10 +5,7 @@
     <text class="subtitle">教师端 & 学生端</text>
   </view>
 
-  <view class="loading-container" wx:if="{{loading}}">
-    <view class="loading-spinner"></view>
-    <text class="loading-text">正在登录...</text>
-  </view>
+
 
   <view class="login-form" wx:if="{{showLoginForm}}">
     <!-- 错误提示 -->
@@ -27,23 +24,24 @@
       <text class="label">角色</text>
       <radio-group class="role-group" bindchange="onRoleChange">
         <label class="role-item">
-          <radio value="teacher" checked="{{role === 'teacher'}}" color="#002FA7"/>
+          <radio value="teacher" checked="{{role === 'teacher'}}" color="#002FA7" />
           <text class="role-text">教师</text>
         </label>
         <label class="role-item">
-          <radio value="student" checked="{{role === 'student'}}" color="#002FA7"/>
+          <radio value="student" checked="{{role === 'student'}}" color="#002FA7" />
           <text class="role-text">学生</text>
         </label>
       </radio-group>
-    </view>
-
-    <view class="form-item" wx:if="{{role === 'student'}}">
-      <text class="label">手机号</text>
-      <input class="input" type="number" placeholder="请输入手机号" value="{{phone}}" bindinput="onPhoneInput" />
     </view>
 
     <button class="login-btn" type="primary" bindtap="onLogin" loading="{{loading}}">
       登录
     </button>
   </view>
+
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">正在登录...</text>
+  </view>
+
 </view>

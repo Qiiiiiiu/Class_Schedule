@@ -27,8 +27,10 @@ Page({
 
     if (coursesRes) {
       const courses = coursesRes.map(course => {
+        const isCreatedByStudent = course.creatorRole === 'student' || course.createdBy === studentId
         return {
           ...course,
+          name: isCreatedByStudent ? (course.name || course.courseName || '') : ((course.teacherName || '教师') + '的课程'),
           scheduleStr: this.formatSchedule(course.schedule)
         }
       })

@@ -12,7 +12,7 @@
     <block wx:if="{{!isEditMode}}">
       <view class="detail-row">
         <text class="detail-label">课程名称</text>
-        <text class="detail-value">{{course.name}}</text>
+        <text class="detail-value">{{displayName}}</text>
       </view>
       <view class="detail-row">
         <text class="detail-label">上课教师</text>

@@ -57,12 +57,17 @@ Page({
 
   getTodayCourses(courses) {
     const today = new Date().getDay()
+    const currentOpenid = app.globalData.openid
     return courses.filter(course => {
       return course.schedule && course.schedule.dayOfWeek === today
-    }).map(course => ({
-      ...course,
-      teacherName: course.teacherName || '未知教师'
-    }))
+    }).map(course => {
+      const isCreatedByStudent = course.creatorRole === 'student' || course.createdBy === currentOpenid
+      return {
+        ...course,
+        name: isCreatedByStudent ? (course.name || course.courseName || '') : ((course.teacherName || '教师') + '的课程'),
+        teacherName: course.teacherName || '未知教师'
+      }
+    })
   },
 
   goToTeachers() {
