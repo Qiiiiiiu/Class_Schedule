@@ -1,44 +1,155 @@
 <view class="container">
-  <view class="course-list" wx:if="{{courses.length > 0}}">
-    <view class="course-item" wx:for="{{courses}}" wx:key="_id" bindtap="goToCourseDetail" data-id="{{item._id}}">
-      <view class="course-header">
-        <text class="course-name">{{item.name || item.courseName}}</text>
-        <view class="course-status status-{{item.status}}">
-          {{item.status === 'available' ? '进行中' : '已停课'}}
-        </view>
-      </view>
-      <view class="course-info">
-        <view class="info-row">
-          <text class="info-icon">👨‍🏫</text>
-          <text class="info-text">{{item.teacherName}}</text>
-        </view>
-        <view class="info-row">
-          <text class="info-icon">📅</text>
-          <text class="info-text">{{item.scheduleStr || (item.schedule.date + ' ' + item.schedule.startTime + '-' + item.schedule.endTime)}}</text>
-        </view>
-        <view class="info-row">
-          <text class="info-icon">📍</text>
-          <text class="info-text">{{item.schedule.classroom || '未设置地点'}}</text>
-        </view>
-      </view>
-      <view class="course-actions">
-        <button class="subscribe-btn {{item.subscribed ? 'subscribed' : ''}}" 
-                bindtap="onToggleSubscribe" 
-                data-schedule-id="{{item.scheduleId}}"
-                data-subscribed="{{item.subscribed}}">
-          {{item.subscribed ? '🔔 已订阅' : '🔕 订阅提醒'}}
-        </button>
-      </view>
+  <!-- 顶部 Tab 栏 -->
+  <view class="tabs">
+    <view class="tab-item {{currentTab === 'schedule' ? 'active' : ''}}" bindtap="switchTab" data-tab="schedule">
+      周课表
+    </view>
+    <view class="tab-item {{currentTab === 'list' ? 'active' : ''}}" bindtap="switchTab" data-tab="list">
+      课程列表
     </view>
   </view>
 
-  <view class="empty-state" wx:else>
-    <text class="empty-icon">📚</text>
-    <text class="empty-text">{{emptyText}}</text>
-  </view>
+  <!-- ================= 周课表视图 ================= -->
+  <block wx:if="{{currentTab === 'schedule'}}">
+    <view class="week-nav">
+      <view class="week-nav-center">
+        <view class="nav-arrow" bindtap="prevWeek">‹</view>
+        <text class="week-label">{{weekLabel}}</text>
+        <view class="nav-arrow" bindtap="nextWeek">›</view>
+      </view>
+    </view>
 
+    <scroll-view class="schedule-scroll" scroll-y>
+      <view class="schedule-grid">
+        <!-- 时间轴 (左侧) -->
+        <view class="time-column">
+          <view class="time-header"></view>
+          <view class="time-slot" wx:for="{{timeSlots}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+
+        <!-- 星期列 (右侧 7 列) -->
+        <view class="day-column" wx:for="{{weekDays}}" wx:key="index">
+          <view class="day-header {{item.isToday ? 'today' : ''}}">
+            <text class="day-name">{{item.name}}</text>
+            <text class="day-date">{{item.date}}</text>
+          </view>
+          <view class="day-slots">
+            <!-- 具体的日程项 -->
+            <view class="schedule-item {{course.status}}" 
+                  wx:for="{{item.courses}}" 
+                  wx:for-item="course" 
+                  wx:key="courseKey"
+                  style="top: {{course.top}}rpx; height: {{course.height}}rpx; background-color: {{course.bgColor}};"
+                  bindtap="onCourseTap" data-course="{{course}}">
+              <text class="course-name" style="color: {{course.textColor}}">{{course.name}}</text>
+              <text class="course-time" style="color: {{course.textColor}}">{{course.schedule.startTime}}-{{course.schedule.endTime}}</text>
+              <text class="course-room" style="color: {{course.textColor}}">{{course.schedule.classroom || '无地点'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </block>
+
+  <!-- ================= 课程列表视图 ================= -->
+  <block wx:if="{{currentTab === 'list'}}">
+    <scroll-view class="list-scroll" scroll-y>
+      <view class="course-list" wx:if="{{courses.length > 0}}">
+        <view class="course-item" wx:for="{{courses}}" wx:key="_id" bindtap="goToCourseDetail" data-id="{{item._id}}">
+          <view class="course-header">
+            <text class="course-name">{{item.name}}</text>
+            <view class="course-badge {{item.isCreatedByStudent ? 'student' : 'teacher'}}">
+              {{item.isCreatedByStudent ? '自建' : '教师课'}}
+            </view>
+            <view class="course-status status-{{item.status}}">
+              {{item.status === 'available' ? '进行中' : '已停课'}}
+            </view>
+          </view>
+          <view class="course-info">
+            <view class="info-row">
+              <text class="info-icon">👨‍🏫</text>
+              <text class="info-text">{{item.teacherName || '自建课教师'}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-icon">📅</text>
+              <text class="info-text">{{item.scheduleStr}}</text>
+            </view>
+            <view class="info-row">
+              <text class="info-icon">📍</text>
+              <text class="info-text">{{item.schedule.classroom || '未设置地点'}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="empty-state" wx:else>
+        <text class="empty-icon">📚</text>
+        <text class="empty-text">暂无已选课程</text>
+      </view>
+    </scroll-view>
+  </block>
+
+  <!-- 悬浮添加按钮 (所有视图均可见，用于添加自建课程) -->
   <view class="add-floating-btn" bindtap="onAddCourse">
     <text>+</text>
+  </view>
+
+  <!-- ================= 课程详情底部抽屉 ================= -->
+  <view class="course-detail" wx:if="{{selectedCourse}}" bindtap="onCloseDetail">
+    <view class="detail-card" catchtap="preventBubble">
+      <view class="detail-header">
+        <text class="detail-title">{{selectedCourse.name}}</text>
+        <text class="detail-close" bindtap="onCloseDetail">✕</text>
+      </view>
+
+      <view class="detail-info">
+        <view class="detail-row">
+          <text class="detail-label">课程来源</text>
+          <text class="detail-value text-secondary">{{selectedCourse.isCreatedByStudent ? '学生自建' : '教师开设'}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">授课教师</text>
+          <text class="detail-value text-secondary">{{selectedCourse.teacherName || '自建课教师'}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">上课日期</text>
+          <text class="detail-value text-secondary">{{selectedCourse.schedule.date || '常规排课'}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">上课时间</text>
+          <text class="detail-value text-secondary">{{selectedCourse.schedule.startTime}} - {{selectedCourse.schedule.endTime}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">上课地点</text>
+          <text class="detail-value text-secondary">{{selectedCourse.schedule.classroom || '未安排'}}</text>
+        </view>
+        <view class="detail-row">
+          <text class="detail-label">课程状态</text>
+          <text class="detail-value status-{{selectedCourse.status}}">
+            {{selectedCourse.status === 'available' ? '进行中' : '已停课'}}
+          </text>
+        </view>
+      </view>
+
+      <view class="detail-actions">
+        <!-- 教师课：支持提醒订阅 -->
+        <block wx:if="{{!selectedCourse.isCreatedByStudent}}">
+          <button class="detail-btn" 
+                  bindtap="onToggleSubscribe" 
+                  data-schedule-id="{{selectedCourse.scheduleId}}"
+                  data-subscribed="{{selectedCourse.subscribed}}">
+            {{selectedCourse.subscribed ? '🔔 已订阅提醒' : '🔕 订阅上课提醒'}}
+          </button>
+        </block>
+        <!-- 自建课：支持编辑/删除 -->
+        <block wx:else>
+          <button class="detail-btn edit-btn" bindtap="goToEditCourse">编辑课程</button>
+          <button class="detail-btn delete-btn" bindtap="onDeleteCourse">删除整门课程</button>
+        </block>
+      </view>
+    </view>
   </view>
 
   <student-tab-bar active="my-courses"></student-tab-bar>

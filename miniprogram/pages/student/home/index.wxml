@@ -1,4 +1,5 @@
 <view class="container">
+  <!-- 头部欢迎区 -->
   <view class="header">
     <view class="welcome">
       <text class="title">您好，{{userInfo.name}}</text>
@@ -7,49 +8,103 @@
     <image class="avatar" src="{{userInfo.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
   </view>
 
-  <view class="stats-grid">
-    <view class="stat-card" bindtap="goToTeachers">
-      <view class="stat-icon">👨‍🏫</view>
-      <view class="stat-info">
-        <text class="stat-num">{{stats.teacherCount}}</text>
-        <text class="stat-label">绑定教师</text>
+  <!-- ================= 核心新增：本月课程月历概览 ================= -->
+  <view class="calendar-section">
+    <view class="section-header-row">
+      <text class="section-title">本月日程概览</text>
+      <view class="calendar-nav-wrap">
+        <view class="calendar-nav" bindtap="prevMonth">‹</view>
+        <text class="calendar-title">{{calendarTitle}}</text>
+        <view class="calendar-nav" bindtap="nextMonth">›</view>
       </view>
     </view>
-
-    <view class="stat-card" bindtap="goToMyCourses">
-      <view class="stat-icon">📚</view>
-      <view class="stat-info">
-        <text class="stat-num">{{stats.courseCount}}</text>
-        <text class="stat-label">我的课程</text>
+    <view class="calendar-weekdays">
+      <view class="weekday-item" wx:for="{{weeklyDays}}" wx:key="index">
+        <text class="weekday">{{item}}</text>
       </view>
     </view>
-
-  </view>
-
-  <view class="quick-actions">
-    <text class="section-title">快捷操作</text>
-    <view class="action-list">
-      <view class="action-item" bindtap="goToTeachers">
-        <text class="action-icon">🔍</text>
-        <text class="action-text">查找教师</text>
-      </view>
-      <view class="action-item" bindtap="goToMyCourses">
-        <text class="action-icon">📖</text>
-        <text class="action-text">我的课程</text>
+    <view class="calendar-grid">
+      <view class="calendar-day {{item.empty ? 'empty' : ''}} {{item.isToday ? 'today-cell' : ''}}" 
+            wx:for="{{calendar}}" 
+            wx:key="index" 
+            style="background: {{item.empty ? 'transparent' : item.bgColor}}" 
+            bindtap="{{item.empty ? '' : 'onCalendarDayTap'}}" 
+            data-date="{{item.fullDate}}">
+        <text wx:if="{{!item.empty}}" class="day-num {{item.isToday ? 'today' : ''}}" style="color: {{item.isToday ? '' : item.textColor}}">{{item.date}}</text>
+        <text wx:if="{{!item.empty && item.count > 0}}" class="day-count" style="color: {{item.isToday ? '#3b82f6' : item.textColor}}">{{item.count}}节</text>
       </view>
     </view>
   </view>
 
-  <view class="course-list" wx:if="{{todayCourses.length > 0}}">
-    <text class="section-title">今日课程</text>
-    <view class="course-item" wx:for="{{todayCourses}}" wx:key="_id">
-      <view class="course-info">
-        <text class="course-name">{{item.name}}</text>
-        <text class="course-time">🕐 {{item.schedule.startTime}} - {{item.schedule.endTime}}</text>
-        <text class="course-room">📍 {{item.schedule.classroom || '未设置地点'}}</text>
+  <!-- ================= 今日日程焦点卡片 ================= -->
+  <view class="quick-peek-section">
+    <text class="section-title">今日课程焦点</text>
+    
+    <!-- 有课时：展示重点关注的下一节课 -->
+    <view class="focus-card {{focusCourse.status}}" wx:if="{{focusCourse}}" bindtap="goToMyCourses">
+      <view class="focus-badge">{{focusCourse.statusText}}</view>
+      <view class="focus-course-name">{{focusCourse.name}}</view>
+      <view class="focus-meta-row">
+        <view class="meta-item">🕐 {{focusCourse.schedule.startTime}} - {{focusCourse.schedule.endTime}}</view>
+        <view class="meta-item">📍 {{focusCourse.schedule.classroom || '未设置地点'}}</view>
       </view>
-      <view class="course-teacher">
-        <text class="teacher-name">{{item.teacherName}}</text>
+      <view class="focus-teacher-row">
+        <text class="focus-teacher-label">授课教师：</text>
+        <text class="focus-teacher-val">{{focusCourse.teacherName || '自建课教师'}}</text>
+        <view class="source-tag {{focusCourse.isCreatedByStudent ? 'student' : 'teacher'}}">
+          {{focusCourse.isCreatedByStudent ? '学生自建' : '教师开课'}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 无课时：展示温馨放松提示 -->
+    <view class="relax-card" wx:else>
+      <view class="relax-icon">☕️</view>
+      <view class="relax-text">今天没有课程安排哦，好好享受空闲时间吧！</view>
+    </view>
+  </view>
+
+  <!-- 今日课程横向滑块 (如果有多门课) -->
+  <view class="today-list-section" wx:if="{{todayCourses.length > 1}}">
+    <text class="sub-section-title">今日所有课程 (共{{todayCourses.length}}节)</text>
+    <scroll-view class="horizontal-scroll" scroll-x>
+      <view class="scroll-item {{item.status}}" wx:for="{{todayCourses}}" wx:key="_id" bindtap="goToMyCourses">
+        <view class="scroll-item-header">
+          <text class="scroll-course-name">{{item.name}}</text>
+          <text class="scroll-status-tag">{{item.statusText}}</text>
+        </view>
+        <text class="scroll-time">🕐 {{item.schedule.startTime}}-{{item.schedule.endTime}}</text>
+        <text class="scroll-room">📍 {{item.schedule.classroom || '未定'}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ================= 未来三天日程快览 ================= -->
+  <view class="upcoming-section">
+    <text class="section-title">近期日程预览</text>
+    <view class="timeline">
+      <view class="timeline-day" wx:for="{{upcomingDays}}" wx:key="dateStr">
+        <view class="timeline-header">
+          <view class="timeline-dot"></view>
+          <text class="timeline-date">{{item.label}}</text>
+          <text class="timeline-count-tag" wx:if="{{item.courses.length > 0}}">{{item.courses.length}}节课</text>
+          <text class="timeline-free-tag" wx:else>无课</text>
+        </view>
+        <view class="timeline-content">
+          <view class="timeline-course-card" wx:for="{{item.courses}}" wx:for-item="course" wx:key="_id" bindtap="goToMyCourses">
+            <view class="course-main-info">
+              <text class="upcoming-course-name">{{course.name}}</text>
+              <text class="upcoming-course-time">{{course.schedule.startTime}} - {{course.schedule.endTime}}</text>
+            </view>
+            <view class="course-sub-info">
+              <text class="upcoming-course-room">📍 {{course.schedule.classroom || '地点未定'}}</text>
+              <text class="upcoming-course-teacher">👨‍🏫 {{course.teacherName || '自建课教师'}}</text>
+            </view>
+          </view>
+          <view class="timeline-empty-card" wx:if="{{item.courses.length === 0}}">
+            🎉 今天休息，轻松一下
+          </view>
+        </view>
       </view>
     </view>
   </view>

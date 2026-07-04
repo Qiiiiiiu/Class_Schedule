@@ -58,7 +58,7 @@ Page({
         const selectedDates = schedules.map(s => s.schedule.date).filter(Boolean)
 
         const isCreatedByStudent = course.creatorRole === 'student' || course.createdBy === app.globalData.openid
-        const displayName = isCreatedByStudent ? (course.name || course.courseName || '') : ((course.teacherName || '教师') + '的课程')
+        const displayName = course.name || course.courseName || ((course.teacherName || '教师') + '的课程')
 
         this.setData({
           course,

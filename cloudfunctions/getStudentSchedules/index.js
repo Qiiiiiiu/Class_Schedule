@@ -17,27 +17,26 @@ exports.main = async (event, context) => {
   }
 
   try {
-    // 获取学生绑定的所有教师
-    const bindingsRes = await db.collection('teacher_student_bindings')
+    // 获取学生已加入的所有课程 (包含自建和教师开课)
+    const myCoursesRes = await db.collection('courses')
       .where({
-        studentId: studentId,
-        status: db.command.in(['approved', 'pending'])
+        students: _.elemMatch(_.eq(studentId))
       })
       .get()
 
-    const teacherIds = bindingsRes.data.map(b => b.teacherId)
+    const courseIds = myCoursesRes.data.map(c => c._id)
 
-    if (teacherIds.length === 0) {
+    if (courseIds.length === 0) {
       return {
         code: 0,
         data: []
       }
     }
 
-    // 获取这些教师的课程安排
+    // 获取这些课程的日程安排
     const unfinishedRes = await db.collection('course_unfinished')
       .where({
-        teacherId: _.in(teacherIds)
+        parentId: _.in(courseIds)
       })
       .orderBy('schedule.date', 'asc')
       .orderBy('schedule.startTime', 'asc')
