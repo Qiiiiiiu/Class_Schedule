@@ -30,7 +30,26 @@ exports.main = async (event, context) => {
       scheduleQuery['schedule.date'] = _.lte(endDate)
     }
 
-    const [studentsRes, coursesRes, scheduleRes, bindingsCountRes, bindingsRes] = await Promise.all([
+    const MAX_LIMIT = 100
+    let allSchedules = []
+    let offset = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const res = await db.collection('course_schedule').where(scheduleQuery)
+        .skip(offset)
+        .limit(MAX_LIMIT)
+        .get()
+
+      allSchedules = allSchedules.concat(res.data)
+      if (res.data.length < MAX_LIMIT) {
+        hasMore = false
+      } else {
+        offset += MAX_LIMIT
+      }
+    }
+
+    const [studentsRes, coursesRes, bindingsCountRes, bindingsRes] = await Promise.all([
       db.collection('users').where({
         teacherId,
         role: 'student'
@@ -38,7 +57,6 @@ exports.main = async (event, context) => {
       db.collection('courses').where({
         teacherId
       }).count(),
-      db.collection('course_schedule').where(scheduleQuery).get(),
       db.collection('teacher_student_bindings').where({
         teacherId,
         status: 'pending'
@@ -61,8 +79,8 @@ exports.main = async (event, context) => {
       data: {
         studentCount: studentsRes.total,
         courseCount: coursesRes.total,
-        scheduleCount: scheduleRes.data.length,
-        schedules: scheduleRes.data,
+        scheduleCount: allSchedules.length,
+        schedules: allSchedules,
         pendingBindingsCount: bindingsCountRes.total,
         pendingApplicationsCount: 0,
         pendingBindings,

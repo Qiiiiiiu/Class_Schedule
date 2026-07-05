@@ -16,13 +16,27 @@ exports.main = async (event, context) => {
   }
 
   try {
-    const res = await db.collection('course_schedule').where({
-      parentId
-    }).orderBy('schedule.date', 'asc').get()
+    const MAX_LIMIT = 100
+    let allSchedules = []
+    let offset = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const res = await db.collection('course_schedule').where({
+        parentId
+      }).orderBy('schedule.date', 'asc').skip(offset).limit(MAX_LIMIT).get()
+
+      allSchedules = allSchedules.concat(res.data)
+      if (res.data.length < MAX_LIMIT) {
+        hasMore = false
+      } else {
+        offset += MAX_LIMIT
+      }
+    }
 
     return {
       code: 0,
-      data: res.data
+      data: allSchedules
     }
   } catch (err) {
     return {

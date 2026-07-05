@@ -16,23 +16,44 @@ exports.main = async (event, context) => {
   }
 
   try {
-    const bindingsRes = await db.collection('teacher_student_bindings').where({
-      teacherId,
-      status: db.command.in(['pending', 'approved', 'rejected', 'unbound'])
-    }).orderBy('applyTime', 'desc').get()
+    const MAX_LIMIT = 100
+    let allBindings = []
+    let offset = 0
+    let hasMore = true
 
-    const studentIds = [...new Set(bindingsRes.data.map(item => item.studentId))]
+    while (hasMore) {
+      const res = await db.collection('teacher_student_bindings').where({
+        teacherId,
+        status: db.command.in(['pending', 'approved', 'rejected', 'unbound'])
+      }).orderBy('applyTime', 'desc').skip(offset).limit(MAX_LIMIT).get()
 
-    const studentsRes = await db.collection('users').where({
-      openid: db.command.in(studentIds)
-    }).get()
+      allBindings = allBindings.concat(res.data)
+      if (res.data.length < MAX_LIMIT) {
+        hasMore = false
+      } else {
+        offset += MAX_LIMIT
+      }
+    }
+
+    const studentIds = [...new Set(allBindings.map(item => item.studentId))]
+    let allStudents = []
+
+    for (let i = 0; i < studentIds.length; i += MAX_LIMIT) {
+      const chunk = studentIds.slice(i, i + MAX_LIMIT)
+      if (chunk.length > 0) {
+        const res = await db.collection('users').where({
+          openid: db.command.in(chunk)
+        }).get()
+        allStudents = allStudents.concat(res.data)
+      }
+    }
 
     const studentsMap = {}
-    studentsRes.data.forEach(item => {
+    allStudents.forEach(item => {
       studentsMap[item.openid] = item
     })
 
-    const result = bindingsRes.data.map(binding => {
+    const result = allBindings.map(binding => {
       const student = studentsMap[binding.studentId]
       return {
         ...binding,

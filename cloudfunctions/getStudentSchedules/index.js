@@ -34,16 +34,32 @@ exports.main = async (event, context) => {
     }
 
     // 获取这些课程的日程安排
-    const unfinishedRes = await db.collection('course_unfinished')
-      .where({
-        parentId: _.in(courseIds)
-      })
-      .orderBy('schedule.date', 'asc')
-      .orderBy('schedule.startTime', 'asc')
-      .get()
+    const MAX_LIMIT = 100
+    let allUnfinished = []
+    let offset = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const res = await db.collection('course_unfinished')
+        .where({
+          parentId: _.in(courseIds)
+        })
+        .orderBy('schedule.date', 'asc')
+        .orderBy('schedule.startTime', 'asc')
+        .skip(offset)
+        .limit(MAX_LIMIT)
+        .get()
+
+      allUnfinished = allUnfinished.concat(res.data)
+      if (res.data.length < MAX_LIMIT) {
+        hasMore = false
+      } else {
+        offset += MAX_LIMIT
+      }
+    }
 
     // 获取课程详情
-    const parentIds = [...new Set(unfinishedRes.data.map(u => u.parentId))]
+    const parentIds = [...new Set(allUnfinished.map(u => u.parentId))]
     const coursesRes = await db.collection('courses')
       .where({
         _id: _.in(parentIds)
@@ -55,7 +71,7 @@ exports.main = async (event, context) => {
       courseMap[c._id] = c
     })
 
-    const result = unfinishedRes.data.map(unfinished => {
+    const result = allUnfinished.map(unfinished => {
       const course = courseMap[unfinished.parentId]
       return {
         ...unfinished,

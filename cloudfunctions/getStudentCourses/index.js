@@ -17,15 +17,29 @@ exports.main = async (event, context) => {
   }
 
   try {
-    const res = await db.collection('courses').where({
-      teacherId,
-      students: _.elemMatch(_.eq(studentId)),
-      status: 'available'
-    }).get()
+    const MAX_LIMIT = 100
+    let allCourses = []
+    let offset = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const res = await db.collection('courses').where({
+        teacherId,
+        students: _.elemMatch(_.eq(studentId)),
+        status: 'available'
+      }).skip(offset).limit(MAX_LIMIT).get()
+
+      allCourses = allCourses.concat(res.data)
+      if (res.data.length < MAX_LIMIT) {
+        hasMore = false
+      } else {
+        offset += MAX_LIMIT
+      }
+    }
 
     return {
       code: 0,
-      data: res.data
+      data: allCourses
     }
   } catch (err) {
     console.error('获取学生课程失败:', err)

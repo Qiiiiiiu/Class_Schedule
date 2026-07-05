@@ -257,45 +257,7 @@
   margin-bottom: 24rpx;
 }
 
-/* ===== 快捷操作 ===== */
-.quick-actions {
-  width: calc(100% - 60rpx);
-  max-width: 680rpx;
-  margin: 50rpx auto 0;
-  padding: 0;
-}
 
-.action-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20rpx;
-}
-
-.action-item {
-  background: linear-gradient(145deg, #23293a, #1a1f2e);
-  border-radius: 16rpx;
-  padding: 30rpx 10rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
-}
-
-.action-item:active {
-  box-shadow: inset 0 4rpx 12rpx rgba(0, 0, 0, 0.4);
-}
-
-.action-icon {
-  font-size: 40rpx;
-  color: #3b82f6;
-}
-
-.action-text {
-  font-size: 22rpx;
-  color: #94a3b8;
-}
 
 /* ===== 待处理列表 ===== */
 .pending-list {

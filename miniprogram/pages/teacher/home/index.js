@@ -408,42 +408,16 @@ Page({
     this.loadStats()
   },
 
-  goToStudents() {
-    wx.navigateTo({
-      url: '/pages/teacher/students/index'
-    })
-  },
-
-  goToCourses() {
-    wx.navigateTo({
-      url: '/pages/teacher/courses/index'
-    })
-  },
-
-  goToBindings() {
-    wx.navigateTo({
-      url: '/pages/teacher/bindings/index'
-    })
-  },
-
-  goToApplications() {
-    wx.navigateTo({
-      url: '/pages/teacher/courses/index?tab=applications'
-    })
-  },
-
-  goToSchedule() {
-    wx.navigateTo({
-      url: '/pages/teacher/schedule/index'
-    })
-  },
-
   onPendingTap(e) {
     const item = e.currentTarget.dataset.item
     if (item.type === 'binding') {
-      this.goToBindings()
+      wx.navigateTo({
+        url: '/pages/teacher/bindings/index'
+      })
     } else {
-      this.goToApplications()
+      wx.navigateTo({
+        url: '/pages/teacher/courses/index?tab=applications'
+      })
     }
   }
 })

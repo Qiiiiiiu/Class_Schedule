@@ -30,22 +30,38 @@ exports.main = async (event, context) => {
       query['schedule.date'] = _.lte(endDate)
     }
 
-    const res = await db.collection('course_schedule').where(query)
-      .field({
-        _id: true,
-        name: true,
-        parentId: true,
-        price: true,
-        status: true,
-        students: true,
-        studentCount: true,
-        schedule: true
-      })
-      .get()
+    const MAX_LIMIT = 100
+    let allData = []
+    let offset = 0
+    let hasMore = true
+
+    while (hasMore) {
+      const res = await db.collection('course_schedule').where(query)
+        .field({
+          _id: true,
+          name: true,
+          parentId: true,
+          price: true,
+          status: true,
+          students: true,
+          studentCount: true,
+          schedule: true
+        })
+        .skip(offset)
+        .limit(MAX_LIMIT)
+        .get()
+
+      allData = allData.concat(res.data)
+      if (res.data.length < MAX_LIMIT) {
+        hasMore = false
+      } else {
+        offset += MAX_LIMIT
+      }
+    }
 
     return {
       code: 0,
-      data: res.data
+      data: allData
     }
   } catch (err) {
     return {
