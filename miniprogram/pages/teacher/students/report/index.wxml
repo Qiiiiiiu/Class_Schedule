@@ -1,0 +1,165 @@
+<view class="container {{theme}}">
+  <!-- 配置面板 -->
+  <view class="config-card">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">报告内容配置</text>
+      </view>
+      <text class="student-badge" wx:if="{{student.studentName}}">{{student.studentName}}</text>
+    </view>
+
+    <!-- 1. 课程展示范围 -->
+    <view class="config-block">
+      <text class="block-label">课程信息范围</text>
+      <view class="seg-group">
+        <view
+          class="seg-item {{courseScope === 'all' ? 'active' : ''}}"
+          bindtap="onSelectScope"
+          data-scope="all"
+        >全部课程</view>
+        <view
+          class="seg-item {{courseScope === 'single' ? 'active' : ''}}"
+          bindtap="onSelectScope"
+          data-scope="single"
+        >指定某门课</view>
+        <view
+          class="seg-item {{courseScope === 'none' ? 'active' : ''}}"
+          bindtap="onSelectScope"
+          data-scope="none"
+        >不展示课程</view>
+      </view>
+    </view>
+
+    <!-- 2. 指定某门课程时的课程选择 + 时间范围选择 -->
+    <block wx:if="{{courseScope === 'single'}}">
+      <view class="config-block" wx:if="{{coursesSummary.length > 0}}">
+        <text class="block-label">选择课程</text>
+        <scroll-view class="course-chips-scroll" scroll-x enable-flex>
+          <view class="course-chips-row">
+            <view
+              class="course-chip {{selectedCourseId === item._id ? 'active' : ''}}"
+              wx:for="{{coursesSummary}}"
+              wx:key="_id"
+              bindtap="onSelectCourse"
+              data-id="{{item._id}}"
+            >
+              <text class="chip-type">{{item.classType === 'group' ? '大班' : '1对1'}}</text>
+              <text class="chip-name">{{item.name}}</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="config-block" wx:if="{{coursesSummary.length > 0}}">
+        <view class="range-header-row">
+          <text class="block-label no-margin">排课时间范围</text>
+          <view class="preset-row">
+            <text class="preset-chip {{activePreset === 'upcoming' ? 'active' : ''}}" bindtap="onApplyPreset" data-preset="upcoming">未来排课</text>
+            <text class="preset-chip {{activePreset === 'recent30' ? 'active' : ''}}" bindtap="onApplyPreset" data-preset="recent30">近30天含已上</text>
+            <text class="preset-chip {{activePreset === 'all' ? 'active' : ''}}" bindtap="onApplyPreset" data-preset="all">全部课次</text>
+          </view>
+        </view>
+
+        <view class="date-range-row">
+          <picker class="date-picker-wrap" mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+            <view class="date-picker-box">
+              <text class="date-box-lbl">起始日期</text>
+              <text class="date-box-val">{{startDate || '选择日期'}}</text>
+            </view>
+          </picker>
+          <text class="range-sep">至</text>
+          <picker class="date-picker-wrap" mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+            <view class="date-picker-box">
+              <text class="date-box-lbl">结束日期</text>
+              <text class="date-box-val">{{endDate || '选择日期'}}</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="range-hint-bar {{includesPast ? 'past' : 'future'}}">
+          <text wx:if="{{includesPast}}">✓ 起始日期早于今天，已自动包含已上完的课程（共 {{selectedRangeCount}} 节）</text>
+          <text wx:else>ℹ 仅展示未上课程（共 {{selectedRangeCount}} 节）；将起始日期调至今天之前即可包含已上课程</text>
+        </view>
+      </view>
+
+      <view class="empty-tip-box" wx:else>
+        <text>该学生暂未加入任何课程，可切换为「不展示课程」仅生成成绩报告</text>
+      </view>
+    </block>
+
+    <!-- 3. 展示项开关 -->
+    <view class="switch-list">
+      <view class="switch-row">
+        <view class="switch-info">
+          <text class="switch-title">成绩变化折线图</text>
+          <text class="switch-sub">{{scores.length > 0 ? ('已录入 ' + scores.length + ' 次成绩记录') : '暂无成绩记录'}}</text>
+        </view>
+        <switch checked="{{showScores}}" color="#3b82f6" bindchange="onToggleScores" />
+      </view>
+
+      <view class="switch-row">
+        <view class="switch-info">
+          <text class="switch-title">课时账户统计</text>
+          <text class="switch-sub">展示剩余课时与已购课时</text>
+        </view>
+        <switch checked="{{showHours}}" color="#3b82f6" bindchange="onToggleHours" />
+      </view>
+
+      <view class="switch-row">
+        <view class="switch-info">
+          <text class="switch-title">费用信息</text>
+          <text class="switch-sub">可选展示课程单价与个人费用估算</text>
+        </view>
+        <switch checked="{{showFee}}" color="#3b82f6" bindchange="onToggleFee" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 图片预览区 -->
+  <view class="preview-card">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">报告图片预览</text>
+      </view>
+      <text class="preview-hint" wx:if="{{posterPath}}">点击图片可放大查看</text>
+    </view>
+
+    <view class="preview-stage" wx:if="{{posterPath && !rendering}}" bindtap="onPreviewPoster">
+      <image class="poster-img" src="{{posterPath}}" mode="widthFix"></image>
+    </view>
+
+    <view class="preview-loading" wx:elif="{{rendering || loading}}">
+      <text class="loading-text">{{loading ? '正在加载课程与成绩数据...' : '正在生成高清报告图片...'}}</text>
+    </view>
+
+    <view class="preview-loading" wx:else>
+      <text class="loading-text">请至少开启一项展示内容以生成报告</text>
+    </view>
+  </view>
+
+  <!-- 隐藏的离屏渲染画布 -->
+  <canvas
+    type="2d"
+    id="reportCanvas"
+    class="offscreen-canvas"
+    style="width: 750px; height: {{canvasHeight}}px;"
+  ></canvas>
+
+  <!-- 底部固定分享操作栏 -->
+  <view class="bottom-bar">
+    <button
+      class="bar-btn secondary"
+      hover-class="btn-hover"
+      bindtap="onSaveAlbum"
+      disabled="{{!posterPath || rendering}}"
+    >保存到相册</button>
+    <button
+      class="bar-btn primary"
+      hover-class="btn-hover"
+      bindtap="onShareImage"
+      disabled="{{!posterPath || rendering}}"
+    >分享给好友 / 群聊</button>
+  </view>
+</view>

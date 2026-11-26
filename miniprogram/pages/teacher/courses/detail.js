@@ -520,6 +520,16 @@ Page({
     })
   },
 
+  onOpenStudentReport(e) {
+    const studentId = e.currentTarget.dataset.studentId
+    const { classId } = this.data
+    if (!studentId) return
+    const query = classId ? `studentId=${studentId}&courseId=${classId}` : `studentId=${studentId}`
+    wx.navigateTo({
+      url: `/pages/teacher/students/report/index?${query}`
+    })
+  },
+
   // ===== 本班待审入班申请 =====
   async onApproveApp(e) {
     const item = e.currentTarget.dataset.item

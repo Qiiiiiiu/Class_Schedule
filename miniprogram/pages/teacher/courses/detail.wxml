@@ -99,7 +99,10 @@
             <text class="member-name">{{item.studentName}}</text>
             <text class="member-meta">{{item.statusStr}}{{item.remainingHours !== null ? (' · 剩余 ' + item.remainingHours + ' 课时') : ''}}</text>
           </view>
-          <text class="member-arrow">详情 ›</text>
+          <view class="member-right-ops">
+            <view class="op-chip edit" hover-class="op-hover" catchtap="onOpenStudentReport" data-student-id="{{item.studentId}}">报告</view>
+            <text class="member-arrow">详情 ›</text>
+          </view>
         </view>
       </view>
       <view class="empty-box" wx:else>

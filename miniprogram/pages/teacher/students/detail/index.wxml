@@ -19,6 +19,18 @@
     </view>
   </view>
 
+  <!-- 快捷生成学习报告长图入口 -->
+  <view class="report-entry-bar" bindtap="onOpenReportPage" hover-class="card-tap-hover">
+    <view class="report-entry-left">
+      <text class="report-entry-tag">分享长图</text>
+      <view class="report-entry-text-group">
+        <text class="report-entry-title">生成学习报告图片</text>
+        <text class="report-entry-sub">自定义课程范围、成绩趋势与费用，一键发群聊/好友</text>
+      </view>
+    </view>
+    <text class="report-entry-arrow">去生成 ›</text>
+  </view>
+
   <!-- 所在班级（一对一与大班课多班并行） -->
   <view class="card-section classes-section">
     <view class="section-header">

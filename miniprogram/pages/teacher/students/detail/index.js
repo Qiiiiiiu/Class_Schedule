@@ -638,6 +638,14 @@ Page({
     })
   },
 
+  onOpenReportPage() {
+    const { studentId } = this.data
+    if (!studentId) return
+    wx.navigateTo({
+      url: `/pages/teacher/students/report/index?studentId=${studentId}`
+    })
+  },
+
   onOpenClassDetail(e) {
     const classId = e.currentTarget.dataset.id
     if (!classId) return
