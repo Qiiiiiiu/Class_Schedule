@@ -165,3 +165,36 @@
   font-size: 28rpx;
   color: #64748b;
 }
+
+/* ========== 浅色主题适配覆盖 ========== */
+.container.light {
+  background: var(--bg-color);
+}
+.container.light .tabs {
+  background: var(--bg-surface);
+  border-bottom-color: var(--item-border);
+}
+.container.light .tab-item {
+  color: var(--text-secondary-color);
+}
+.container.light .tab-item.active {
+  color: #3b82f6;
+}
+.container.light .binding-item {
+  background: var(--card-bg-gradient);
+  border-color: var(--card-border);
+  box-shadow: 0 8rpx 24rpx var(--shadow-color);
+}
+.container.light .student-name {
+  color: var(--text-primary-color);
+}
+.container.light .apply-time,
+.container.light .remark,
+.container.light .empty-text {
+  color: var(--text-secondary-color);
+}
+.container.light .reject-btn {
+  background: var(--logout-bg);
+  color: var(--logout-color);
+  border-color: var(--logout-border);
+}

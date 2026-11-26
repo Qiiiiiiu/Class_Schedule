@@ -7,42 +7,52 @@ const db = cloud.database()
 const _ = db.command
 
 exports.main = async (event, context) => {
-  const { studentId, teacherId } = event
+  const { studentId, teacherId } = event || {}
+  const wxContext = cloud.getWXContext()
+  const callerOpenid = wxContext && wxContext.OPENID
 
-  if (!studentId || !teacherId) {
-    return {
-      code: 1,
-      message: '参数不完整'
-    }
+  const effectiveTeacherId = callerOpenid || teacherId
+  if (!studentId || !effectiveTeacherId) {
+    return { code: 1, message: '参数不完整' }
+  }
+  if (callerOpenid && teacherId && teacherId !== callerOpenid) {
+    return { code: 1, message: '无权限查看他人学生课程' }
   }
 
   try {
     const MAX_LIMIT = 100
     let allCourses = []
     let offset = 0
-    let hasMore = true
 
-    while (hasMore) {
+    while (true) {
       const res = await db.collection('courses').where({
-        teacherId,
-        students: _.elemMatch(_.eq(studentId)),
-        status: 'available'
+        teacherId: effectiveTeacherId,
+        students: _.elemMatch(_.eq(studentId))
       }).skip(offset).limit(MAX_LIMIT).get()
 
-      allCourses = allCourses.concat(res.data)
-      if (res.data.length < MAX_LIMIT) {
-        hasMore = false
-      } else {
-        offset += MAX_LIMIT
-      }
+      const batch = res.data || []
+      allCourses = allCourses.concat(batch)
+      if (batch.length < MAX_LIMIT) break
+      offset += MAX_LIMIT
     }
+
+    const normalized = allCourses.map(c => {
+      const classType = (c.classType === 'one_on_one' || c.classType === 'group')
+        ? c.classType
+        : (Array.isArray(c.students) && c.students.length > 1 ? 'group' : 'one_on_one')
+      return {
+        ...c,
+        classType,
+        studentCount: Array.isArray(c.students) ? c.students.length : 0
+      }
+    })
 
     return {
       code: 0,
-      data: allCourses
+      data: normalized
     }
   } catch (err) {
-    console.error('获取学生课程失败:', err)
+    console.error('[getStudentCourses] error:', err.message)
     return {
       code: 1,
       message: '获取失败',

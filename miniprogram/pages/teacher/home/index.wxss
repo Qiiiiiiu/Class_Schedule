@@ -1,16 +1,20 @@
 .container {
   min-height: 100vh;
-  background: #0f1419;
+  background: var(--bg-color, #0f1419);
   padding: 30rpx;
   padding-top: 0;
   padding-bottom: 180rpx;
+  transition: background-color 0.3s ease;
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding: 60rpx 30rpx 40rpx;
+  gap: 28rpx;
+  width: 105%;
+  box-sizing: border-box;
 }
 
 .welcome {
@@ -22,12 +26,14 @@
 .title {
   font-size: 40rpx;
   font-weight: bold;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
+  transition: color 0.3s ease;
 }
 
 .subtitle {
   font-size: 26rpx;
-  color: #94a3b8;
+  color: var(--text-secondary-color, #94a3b8);
+  transition: color 0.3s ease;
 }
 
 .avatar {
@@ -39,6 +45,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-emoji {
+  font-size: 52rpx;
+  line-height: 1;
 }
 
 .avatar-text {
@@ -51,12 +63,13 @@
 .calendar-section {
   width: calc(100% - 60rpx);
   max-width: 680rpx;
-  background: linear-gradient(145deg, #23293a, #1a1f2e);
+  background: var(--card-bg-gradient, linear-gradient(145deg, #23293a, #1a1f2e));
   border-radius: 20rpx;
   padding: 30rpx;
   margin: 0 auto 30rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8rpx 32rpx var(--shadow-color, rgba(0, 0, 0, 0.3)), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
+  transition: all 0.3s ease;
 }
 
 .calendar-header {
@@ -72,9 +85,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--calendar-nav-bg, rgba(255, 255, 255, 0.06));
   border-radius: 50%;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2rpx 8rpx var(--shadow-color, rgba(0, 0, 0, 0.2));
+  transition: all 0.3s ease;
 }
 
 .calendar-nav:active {
@@ -84,15 +98,17 @@
 
 .nav-btn {
   font-size: 40rpx;
-  color: #94a3b8;
+  color: var(--text-secondary-color, #94a3b8);
   font-weight: bold;
   line-height: 1;
+  transition: color 0.3s ease;
 }
 
 .calendar-title {
   font-size: 30rpx;
   font-weight: bold;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
+  transition: color 0.3s ease;
 }
 
 .calendar-weekdays {
@@ -108,7 +124,7 @@
   padding: 12rpx 4rpx;
   border-radius: 8rpx;
   background: rgba(59, 130, 246, 0.1) !important;
-  color: #94a3b8 !important;
+  color: var(--text-secondary-color, #94a3b8) !important;
   box-shadow: none !important;
   border: 1rpx solid rgba(59, 130, 246, 0.2) !important;
   box-sizing: border-box;
@@ -123,7 +139,8 @@
 .weekday {
   font-size: 26rpx;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary-color, #94a3b8);
+  transition: color 0.3s ease;
 }
 
 .weekday-item:first-child .weekday,
@@ -134,7 +151,6 @@
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4rpx;
 }
 
 .calendar-day {
@@ -145,24 +161,24 @@
   align-items: center;
   justify-content: center;
   gap: 2rpx;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
   box-sizing: border-box;
+  border: 1rpx solid transparent;
 }
 
-.calendar-day.has-course {
-  background: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.25);
+.calendar-day.empty {
+  background: transparent !important;
+  border: none !important;
 }
 
 .day-num {
   font-size: 26rpx;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-primary-color, rgba(255, 255, 255, 0.8));
+  transition: color 0.3s ease;
 }
 
 .day-num.today {
-  color: rgba(0, 0, 0, 0.808);
-  background: rgba(255, 255, 255, 0.9);
+  color: var(--bg-color, #0f1419);
+  background: var(--text-primary-color, #f1f5f9);
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
@@ -181,12 +197,13 @@
 .income-section {
   width: calc(100% - 60rpx);
   max-width: 680rpx;
-  background: linear-gradient(145deg, #23293a, #1a1f2e);
+  background: var(--card-bg-gradient, linear-gradient(145deg, #23293a, #1a1f2e));
   border-radius: 20rpx;
   padding: 30rpx;
   margin: 0 auto 30rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8rpx 32rpx var(--shadow-color, rgba(0, 0, 0, 0.3)), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
+  transition: all 0.3s ease;
 }
 
 .income-main {
@@ -210,7 +227,8 @@
 
 .income-label {
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
+  transition: color 0.3s ease;
 }
 
 .income-value {
@@ -229,8 +247,9 @@
 .eye-icon {
   width: 44rpx;
   height: 44rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
   padding: 10rpx;
+  transition: color 0.3s ease;
 }
 
 .eye-icon.active {
@@ -240,24 +259,25 @@
 .income-footer {
   padding-top: 20rpx;
   margin-top: 16rpx;
-  border-top: 1rpx dashed rgba(255, 255, 255, 0.1);
+  border-top: 1rpx dashed var(--divider-color, rgba(255, 255, 255, 0.1));
   text-align: center;
+  transition: border-color 0.3s ease;
 }
 
 .total-hours {
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
+  transition: color 0.3s ease;
 }
 
 .section-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
   display: block;
   margin-bottom: 24rpx;
+  transition: color 0.3s ease;
 }
-
-
 
 /* ===== 待处理列表 ===== */
 .pending-list {
@@ -268,19 +288,20 @@
 }
 
 .pending-item {
-  background: linear-gradient(145deg, #23293a, #1a1f2e);
+  background: var(--card-bg-gradient, linear-gradient(145deg, #23293a, #1a1f2e));
   border-radius: 16rpx;
   padding: 30rpx;
   margin-bottom: 20rpx;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4rpx 16rpx var(--shadow-color, rgba(0, 0, 0, 0.25));
+  border: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
+  transition: all 0.3s ease;
 }
 
 .pending-item:active {
-  box-shadow: inset 0 4rpx 12rpx rgba(0, 0, 0, 0.4);
+  opacity: 0.8;
 }
 
 .pending-left {
@@ -291,16 +312,140 @@
 
 .pending-type {
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
+  transition: color 0.3s ease;
 }
 
 .pending-name {
   font-size: 28rpx;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
   font-weight: 500;
+  transition: color 0.3s ease;
 }
 
 .pending-arrow {
   font-size: 40rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
+  transition: color 0.3s ease;
+}
+
+/* ===== 日历温馨提示 ===== */
+.calendar-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 24rpx;
+  padding: 12rpx 20rpx;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 12rpx;
+  gap: 8rpx;
+}
+
+.hint-icon {
+  font-size: 24rpx;
+}
+
+.hint-text {
+  font-size: 22rpx;
+  color: var(--text-hint-color, #64748b);
+  letter-spacing: 0.5rpx;
+}
+
+/* ===== 核心数据栏 ===== */
+.stats-section {
+  width: calc(100% - 60rpx);
+  max-width: 680rpx;
+  margin: 0 auto 30rpx;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.stat-card {
+  background: var(--card-bg-gradient, linear-gradient(145deg, #23293a, #1a1f2e));
+  border: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
+  border-radius: 20rpx;
+  padding: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  box-shadow: 0 8rpx 24rpx var(--shadow-color, rgba(0, 0, 0, 0.2));
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-card:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+.stat-icon-wrapper {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon-wrapper.blue {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1rpx solid rgba(59, 130, 246, 0.2);
+}
+
+.stat-icon-wrapper.green {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1rpx solid rgba(16, 185, 129, 0.2);
+}
+
+.stat-icon-wrapper.orange {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1rpx solid rgba(245, 158, 11, 0.2);
+}
+
+.stat-icon-wrapper.gray {
+  background: rgba(148, 163, 184, 0.08);
+  border: 1rpx dashed rgba(148, 163, 184, 0.2);
+}
+
+.stat-icon-emoji {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.stat-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: var(--text-primary-color, #f1f5f9);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 22rpx;
+  color: var(--text-secondary-color, #94a3b8);
+}
+
+/* 规划中卡片特殊样式 */
+.stat-card.placeholder {
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none;
+}
+
+.stat-card.placeholder .placeholder-val {
+  color: var(--text-hint-color, #64748b);
+  font-style: italic;
+}
+
+.stat-card.placeholder .stat-label {
+  color: var(--text-hint-color, #64748b);
 }

@@ -1,6 +1,7 @@
 const app = getApp()
 const checkRole = require('../../../utils/checkRole.js')
 const api = require('../../../utils/api.js')
+const config = require('../../../config.js')
 
 Page({
   data: {
@@ -11,6 +12,10 @@ Page({
     parentCourseCreated: false,
     isChildOnlyMode: false,
     lockedParentInfo: false,
+    classType: 'one_on_one',
+    capacity: '',
+    billingMode: 'per_session',
+    allowApply: false,
     courseName: '',
     price: '',
     selectedDates: [],
@@ -76,10 +81,13 @@ Page({
       return
     }
 
-    const { mode, courseId, courseData } = options
+    const { mode, courseId, courseData, classType } = options
+    const initClassType = classType === 'group' ? 'group' : 'one_on_one'
     this.setData({
       mode: mode || 'add',
-      courseId: courseId || ''
+      courseId: courseId || '',
+      classType: initClassType,
+      allowApply: initClassType === 'group'
     })
 
     const now = new Date()
@@ -106,9 +114,16 @@ Page({
 
         // 加载父课程信息并设置到页面
         const selectedStudents = course.students || []
+        const resolvedType = (course.classType === 'one_on_one' || course.classType === 'group')
+          ? course.classType
+          : (selectedStudents.length > 1 ? 'group' : 'one_on_one')
         
         this.setData({
           courseName: course.name,
+          classType: resolvedType,
+          capacity: course.capacity ? String(course.capacity) : '',
+          billingMode: course.billingMode || 'per_session',
+          allowApply: typeof course.allowApply === 'boolean' ? course.allowApply : (resolvedType === 'group'),
           parentCoursePrice: course.price || 0,
           price: '',
           courseDate: defaultDate,
@@ -135,6 +150,12 @@ Page({
     if (mode === 'edit' && courseId) {
       this.loadChildCourses(courseId)
     }
+  },
+
+  onShow() {
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
   },
 
   async loadStudentsForEdit(parentStudentIds) {
@@ -236,41 +257,103 @@ Page({
     })
   },
 
+  onClassTypeSelect(e) {
+    if (this.data.lockedParentInfo) return
+    const nextType = e.currentTarget.dataset.type
+    if (!nextType || nextType === this.data.classType) return
+
+    let students = this.data.students
+    let filteredStudents = this.data.filteredStudents
+    let selectedStudents = [...(this.data.selectedStudents || [])]
+
+    // 切回一对一时若已选多名学生，仅保留第一位
+    if (nextType === 'one_on_one' && selectedStudents.length > 1) {
+      const keepId = String(selectedStudents[0])
+      selectedStudents = [keepId]
+      students = students.map(s => ({ ...s, selected: String(s.studentId) === keepId }))
+      filteredStudents = filteredStudents.map(s => ({ ...s, selected: String(s.studentId) === keepId }))
+      wx.showToast({
+        title: '一对一班仅保留首位学生',
+        icon: 'none'
+      })
+    }
+
+    const selectedNames = students.filter(s => s.selected).map(s => s.studentName).join('、')
+    this.setData({
+      classType: nextType,
+      allowApply: nextType === 'group',
+      billingMode: nextType === 'group' ? this.data.billingMode : 'per_session',
+      students,
+      filteredStudents,
+      selectedStudents,
+      selectedStudentNames: selectedNames
+    })
+  },
+
+  onCapacityInput(e) {
+    this.setData({ capacity: e.detail.value })
+  },
+
+  onBillingModeSelect(e) {
+    const mode = e.currentTarget.dataset.mode
+    if (mode === 'per_session' || mode === 'per_student') {
+      this.setData({ billingMode: mode })
+    }
+  },
+
+  onAllowApplyChange(e) {
+    this.setData({ allowApply: !!e.detail.value })
+  },
+
   onStudentSelect(e) {
     if (this.data.lockedParentInfo) {
       wx.showToast({
-        title: '父课程已锁定，无法修改学生',
+        title: '班级信息已锁定，请在班级详情页管理学员',
         icon: 'none'
       })
       return
     }
 
     const studentId = String(e.currentTarget.dataset.studentId)
+    const isOneOnOne = this.data.classType === 'one_on_one'
+    const currentItem = this.data.students.find(item => String(item.studentId) === studentId)
+    const willSelect = currentItem ? !currentItem.selected : true
 
-    // 使用 map 方法创建新数组，确保正确更新选中状态
-    const students = this.data.students.map(item => {
-      if (String(item.studentId) === studentId) {
-        return { ...item, selected: !item.selected }
+    // 大班人数上限提示
+    if (!isOneOnOne && willSelect) {
+      const cap = parseInt(this.data.capacity, 10)
+      if (cap > 0 && (this.data.selectedStudents || []).length >= cap) {
+        wx.showToast({
+          title: `已达班级人数上限（${cap}人）`,
+          icon: 'none'
+        })
+        return
       }
-      return item
+    }
+
+    const students = this.data.students.map(item => {
+      const isTarget = String(item.studentId) === studentId
+      if (isOneOnOne) {
+        return { ...item, selected: isTarget ? willSelect : false }
+      }
+      return isTarget ? { ...item, selected: !item.selected } : item
     })
 
     const filteredStudents = this.data.filteredStudents.map(item => {
-      if (String(item.studentId) === studentId) {
-        return { ...item, selected: !item.selected }
+      const isTarget = String(item.studentId) === studentId
+      if (isOneOnOne) {
+        return { ...item, selected: isTarget ? willSelect : false }
       }
-      return item
+      return isTarget ? { ...item, selected: !item.selected } : item
     })
 
-    // 获取所有选中的学生ID数组
     const selectedStudentIds = students.filter(item => item.selected).map(item => item.studentId)
     const selectedNames = students.filter(item => item.selected).map(s => s.studentName).join('、')
 
-    if (selectedStudentIds.length === 1 && !this.data.courseName) {
-      // 选中一个学生且课程名称为空时，自动生成课程名称
+    if (isOneOnOne && selectedStudentIds.length === 1 && (!this.data.courseName || this.data.courseNameAutoGenerated)) {
       const selectedStudent = students.find(item => item.selected)
       this.setData({
-        courseName: `${selectedStudent.studentName}的课程`,
+        courseName: `${selectedStudent.studentName}一对一`,
         courseNameAutoGenerated: true,
         students,
         filteredStudents,
@@ -278,7 +361,6 @@ Page({
         selectedStudentNames: selectedNames
       })
     } else if (selectedStudentIds.length !== 1 && this.data.courseNameAutoGenerated) {
-      // 取消选中或选中多个时，如果课程名是自动生成的，清空课程名
       this.setData({
         courseName: '',
         courseNameAutoGenerated: false,
@@ -503,11 +585,12 @@ Page({
 
   async requestSubscribe(successCallback, failCallback) {
     try {
+      const templateId = config.REMINDER_TEMPLATE_ID
       const res = await wx.requestSubscribeMessage({
-        tmplIds: ['w223WKtyfXebjCpkNc2TbtczBuGuR4SUk2IRbMcRreU']
+        tmplIds: [templateId]
       })
 
-      if (res['w223WKtyfXebjCpkNc2TbtczBuGuR4SUk2IRbMcRreU'] === 'accept') {
+      if (res[templateId] === 'accept') {
         wx.showToast({
           title: '订阅成功',
           icon: 'success'
@@ -715,10 +798,17 @@ Page({
         }
         result = await api.addCourseSchedule(scheduleData)
       } else if (!parentCourseId && isRepeat) {
-        // 无父课程ID，添加重复课程（同时创建父课程）
+        // 无父课程ID，新建班级并批量生成重复排课
+        const classMeta = {
+          classType: this.data.classType,
+          capacity: this.data.classType === 'one_on_one' ? 1 : (parseInt(this.data.capacity, 10) || 0),
+          billingMode: this.data.classType === 'group' ? this.data.billingMode : 'per_session',
+          allowApply: this.data.allowApply
+        }
         const courseData = {
           name: courseName,
           price: parseFloat(price) || 0,
+          ...classMeta,
           teacherId: app.globalData.openid,
           teacherName: app.globalData.userInfo.name,
           schedule: {
@@ -771,11 +861,18 @@ Page({
           courses: allGeneratedCourses
         }
       } else {
-        // 无父课程ID，添加单次课程（同时创建父课程）
+        // 无父课程ID，新建班级并添加单次/多选日期排课
         const firstDate = selectedDates[0]
+        const classMeta = {
+          classType: this.data.classType,
+          capacity: this.data.classType === 'one_on_one' ? 1 : (parseInt(this.data.capacity, 10) || 0),
+          billingMode: this.data.classType === 'group' ? this.data.billingMode : 'per_session',
+          allowApply: this.data.allowApply
+        }
         const courseData = {
           name: courseName,
           price: parseFloat(price) || 0,
+          ...classMeta,
           teacherId: app.globalData.openid,
           teacherName: app.globalData.userInfo.name,
           schedule: {

@@ -4,6 +4,7 @@ const api = require('../../../utils/api.js')
 
 Page({
   data: {
+    allStudents: [],
     students: [],
     totalStudents: 0,
     searchKey: '',
@@ -43,6 +44,9 @@ Page({
     if (!checkRole.checkTeacher()) {
       return
     }
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
     this.loadStudents()
   },
 
@@ -57,8 +61,14 @@ Page({
         statusStr: item.status === 'approved' ? '已绑定' : item.status === 'pending' ? '待审核' : item.status === 'unbound' ? '未绑定' : '已拒绝'
       }))
 
+      const key = (this.data.searchKey || '').trim().toLowerCase()
+      const displayed = key
+        ? students.filter(s => (s.studentName || '').toLowerCase().includes(key))
+        : students
+
       this.setData({
-        students: students,
+        allStudents: students,
+        students: displayed,
         totalStudents: students.filter(s => s.status === 'approved').length,
         boundStudents: students.filter(s => s.status === 'approved')
       })
@@ -78,19 +88,21 @@ Page({
   },
 
   onClearSearch() {
-    this.setData({ searchKey: '' })
-    this.loadStudents()
+    this.setData({
+      searchKey: '',
+      students: this.data.allStudents
+    })
   },
 
   filterStudents(key) {
-    if (!key) {
-      this.loadStudents()
+    const trimmed = (key || '').trim().toLowerCase()
+    if (!trimmed) {
+      this.setData({ students: this.data.allStudents })
       return
     }
 
-    const allStudents = this.data.students
-    const filtered = allStudents.filter(s =>
-      s.studentName.toLowerCase().includes(key.toLowerCase())
+    const filtered = this.data.allStudents.filter(s =>
+      (s.studentName || '').toLowerCase().includes(trimmed)
     )
     this.setData({ students: filtered })
   },
@@ -259,6 +271,9 @@ Page({
           )
 
           if (result) {
+            if (typeof app.clearCache === 'function') {
+              app.clearCache()
+            }
             wx.showToast({
               title: '合并成功',
               icon: 'success'
@@ -275,74 +290,12 @@ Page({
     })
   },
 
-  async onViewDetail(e) {
+  onViewDetail(e) {
     const student = e.currentTarget.dataset.student
     const studentId = student.studentId
-
-    const detail = await api.getStudentDetail(app.globalData.openid, studentId)
-
-    this.setData({
-      showDetailModal: true,
-      currentStudent: student,
-      editingDetail: false,
-      studentDetail: {
-        nativePlace: detail ? (detail.nativePlace || '') : '',
-        grade: detail ? (detail.grade || '') : '',
-        subject: detail ? (detail.subject || '') : '',
-        remark: detail ? (detail.remark || '') : ''
-      }
+    wx.navigateTo({
+      url: `/pages/teacher/students/detail/index?studentId=${studentId}`
     })
-  },
-
-  onStartEditDetail() {
-    this.setData({ editingDetail: true })
-  },
-
-  onCloseDetailModal() {
-    this.setData({ showDetailModal: false })
-  },
-
-  onNativePlaceInput(e) {
-    this.setData({
-      'studentDetail.nativePlace': e.detail.value
-    })
-  },
-
-  onGradeInput(e) {
-    this.setData({
-      'studentDetail.grade': e.detail.value
-    })
-  },
-
-  onSubjectInput(e) {
-    this.setData({
-      'studentDetail.subject': e.detail.value
-    })
-  },
-
-  onRemarkInput(e) {
-    this.setData({
-      'studentDetail.remark': e.detail.value
-    })
-  },
-
-  async onSaveDetail() {
-    const { currentStudent, studentDetail } = this.data
-    const studentId = currentStudent.studentId
-
-    const result = await api.saveStudentDetail(
-      app.globalData.openid,
-      studentId,
-      studentDetail
-    )
-
-    if (result) {
-      wx.showToast({
-        title: '保存成功',
-        icon: 'success'
-      })
-      this.setData({ showDetailModal: false })
-    }
   },
 
   stopPropagation() {

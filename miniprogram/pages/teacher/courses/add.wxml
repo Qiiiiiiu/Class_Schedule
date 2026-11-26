@@ -1,43 +1,90 @@
-<view class="container">
-  <!-- 编辑模式下显示父课程信息（只读） -->
+<view class="container {{theme}}">
+  <!-- 编辑模式下显示所属班级信息（只读） -->
   <view class="form-section locked" wx:if="{{mode === 'edit' && lockedParentInfo}}">
     <view class="section-header">
-      <text class="section-title">父课程信息</text>
+      <text class="section-title">所属班级（{{classType === 'group' ? '大班课' : '一对一'}}）</text>
       <view class="section-badge">
         <text class="badge-text">只读</text>
       </view>
     </view>
     <view class="form-item">
-      <text class="label">课程名称</text>
+      <text class="label">班级名称</text>
       <view class="content-wrap">
         <input class="input input-disabled" value="{{courseName}}" disabled />
       </view>
     </view>
     <view class="form-item">
-      <text class="label">绑定学生</text>
+      <text class="label">在读学员</text>
       <view class="content-wrap">
         <view class="student-names-wrap">
-          <text class="student-names">{{selectedStudentNames || '暂无绑定学生'}}</text>
+          <text class="student-names">{{selectedStudentNames || '暂无在读学员'}}</text>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- 新建模式下的基本信息 -->
+  <!-- 新建模式下的班级基本信息 -->
   <view class="form-section" wx:if="{{mode !== 'edit'}}">
     <view class="section-header">
-      <text class="section-title">基本信息</text>
+      <text class="section-title">班级基本信息</text>
     </view>
+
+    <!-- 班级类型切换：一对一 / 大班课 -->
+    <view class="form-item" style="flex-direction: column; align-items: stretch;">
+      <text class="label" style="width: auto; margin-bottom: 14rpx;">班级类型</text>
+      <view class="class-type-selector">
+        <view class="type-option {{classType === 'one_on_one' ? 'active' : ''}}" bindtap="onClassTypeSelect" data-type="one_on_one">
+          <text class="type-option-title">一对一班</text>
+          <text class="type-option-desc">单人专属 · 上限 1 人</text>
+        </view>
+        <view class="type-option {{classType === 'group' ? 'active' : ''}}" bindtap="onClassTypeSelect" data-type="group">
+          <text class="type-option-title">大班课</text>
+          <text class="type-option-desc">多人授课 · 支持入班申请</text>
+        </view>
+      </view>
+    </view>
+
     <view class="form-item">
-      <text class="label">课程名称</text>
+      <text class="label">班级名称</text>
       <view class="content-wrap">
         <input class="input" 
-               placeholder="请输入课程名称" 
+               placeholder="{{classType === 'group' ? '例如：高二数学秋季提高班' : '请输入班级名称（选学生后自动生成）'}}" 
                value="{{courseName}}" 
                bindinput="onCourseNameInput" />
       </view>
     </view>
-    <text class="label" wx:if="{{students.length > 0}}">绑定学生</text>
+
+    <!-- 大班课专属配置：人数上限、计费方式、开放申请 -->
+    <block wx:if="{{classType === 'group'}}">
+      <view class="form-item">
+        <text class="label">人数上限</text>
+        <view class="content-wrap">
+          <input class="input" type="number" placeholder="留空表示不限人数" value="{{capacity}}" bindinput="onCapacityInput" />
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">计费方式</text>
+        <view class="content-wrap">
+          <view class="billing-selector">
+            <view class="billing-pill {{billingMode === 'per_session' ? 'active' : ''}}" bindtap="onBillingModeSelect" data-mode="per_session">按班次费</view>
+            <view class="billing-pill {{billingMode === 'per_student' ? 'active' : ''}}" bindtap="onBillingModeSelect" data-mode="per_student">按人头计费</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">开放入班申请</text>
+        <view class="content-wrap">
+          <view class="switch-wrap">
+            <switch checked="{{allowApply}}" bindchange="onAllowApplyChange" color="#3b82f6" />
+            <text class="switch-label">{{allowApply ? '已绑定学生可申请加入' : '仅教师手动添加'}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <text class="label" style="width: auto; display: block; margin-bottom: 12rpx;" wx:if="{{students.length > 0}}">{{classType === 'one_on_one' ? '选择学生（一对一单选）' : ('初始学员（多选，已选 ' + selectedStudents.length + ' 人）')}}</text>
     <view class="student-list-container" wx:if="{{students.length > 0}}">
       <view class="student-search-wrap">
         <input class="student-search-input" 

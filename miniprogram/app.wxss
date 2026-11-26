@@ -42,6 +42,69 @@ page {
   --accent-red:      #ef4444;
 }
 
+/* ========== 全局主题配色变量 ========== */
+.container, .page-container {
+  /* 默认深色系配色 */
+  --bg-color: #0f1419;
+  --card-bg-gradient: linear-gradient(145deg, #23293a, #1a1f2e);
+  --card-bg-solid: #23293a;
+  --card-border: rgba(255, 255, 255, 0.06);
+  --text-primary-color: #f1f5f9;
+  --text-secondary-color: #94a3b8;
+  --text-hint-color: #64748b;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --logout-bg: rgba(239, 68, 68, 0.15);
+  --logout-border: rgba(239, 68, 68, 0.2);
+  --logout-color: #ef4444;
+  --item-border: rgba(255, 255, 255, 0.06);
+  --calendar-nav-bg: rgba(255, 255, 255, 0.06);
+  --calendar-day-bg: rgba(255, 255, 255, 0.04);
+  --calendar-day-border: rgba(255, 255, 255, 0.06);
+  --calendar-day-has-course-bg: rgba(59, 130, 246, 0.12);
+  --calendar-day-has-course-border: rgba(59, 130, 246, 0.25);
+  --divider-color: rgba(255, 255, 255, 0.1);
+  
+  /* 弹窗专用 */
+  --modal-bg: #1a1f2e;
+  --modal-border: rgba(255, 255, 255, 0.1);
+  --modal-title-color: #f1f5f9;
+  --modal-btn-cancel-bg: rgba(255, 255, 255, 0.05);
+  --modal-btn-cancel-text: #94a3b8;
+}
+
+.container.light, .page-container.light {
+  /* 浅色系配色 */
+  --bg-color: #f4f6f9;
+  --card-bg-gradient: linear-gradient(145deg, #ffffff, #f8fafc);
+  --card-bg-solid: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --text-primary-color: #1e293b;
+  --text-secondary-color: #475569;
+  --text-hint-color: #94a3b8;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --input-bg: #f8fafc;
+  --input-border: rgba(0, 0, 0, 0.12);
+  --logout-bg: rgba(239, 68, 68, 0.08);
+  --logout-border: rgba(239, 68, 68, 0.15);
+  --logout-color: #dc2626;
+  --item-border: rgba(0, 0, 0, 0.05);
+  --calendar-nav-bg: rgba(0, 0, 0, 0.05);
+  --calendar-day-bg: rgba(0, 0, 0, 0.02);
+  --calendar-day-border: rgba(0, 0, 0, 0.05);
+  --calendar-day-has-course-bg: rgba(59, 130, 246, 0.08);
+  --calendar-day-has-course-border: rgba(59, 130, 246, 0.15);
+  --divider-color: rgba(0, 0, 0, 0.08);
+  
+  /* 弹窗专用 */
+  --modal-bg: #ffffff;
+  --modal-border: rgba(0, 0, 0, 0.08);
+  --modal-title-color: #1e293b;
+  --modal-btn-cancel-bg: rgba(0, 0, 0, 0.03);
+  --modal-btn-cancel-text: #64748b;
+}
+
 /* ========== 深色主题阴影工具类 ========== */
 .dark-card {
   background: linear-gradient(145deg, #23293a, #1a1f2e);

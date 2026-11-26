@@ -4,7 +4,9 @@ const api = require('../../../utils/api.js')
 
 Page({
   data: {
+    theme: 'dark',
     loading: false,
+    loadFailed: false,
     courseId: '',
     course: null,
     isCreatedByStudent: false,
@@ -41,47 +43,79 @@ Page({
   },
 
   onShow() {
+    if (!checkRole.checkStudent()) {
+      return
+    }
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
+
     if (this.data.courseId) {
       this.loadCourseDetail()
     }
   },
 
   async loadCourseDetail() {
-    this.setData({ loading: true })
+    this.setData({ loading: true, loadFailed: false })
     try {
-      const db = wx.cloud.database()
-      const res = await db.collection('courses').doc(this.data.courseId).get()
-      const course = res.data
+      // 直接使用已部署的 getMyCourses 查询（无需额外依赖新云函数 getCourseDetail）
+      let course = null
+      if (app.globalData.openid) {
+        const myCourses = await api.getMyCourses(app.globalData.openid).catch(() => [])
+        course = (myCourses || []).find(c => c._id === this.data.courseId) || null
+      }
+      if (!course) {
+        course = await api.getCourseDetail(this.data.courseId, { silent: true })
+      }
 
       if (course) {
         const schedules = await api.getCourseSchedules(this.data.courseId) || []
-        const selectedDates = schedules.map(s => s.schedule.date).filter(Boolean)
+        const selectedDates = schedules
+          .map(s => s && s.schedule && s.schedule.date)
+          .filter(Boolean)
 
-        const isCreatedByStudent = course.creatorRole === 'student' || course.createdBy === app.globalData.openid
+        const sch = course.schedule || {}
+        const isCreatedByStudent = course.creatorRole === 'student' || course.createdBy === app.globalData.openid || course.teacherId === 'custom_teacher'
         const displayName = course.name || course.courseName || ((course.teacherName || '教师') + '的课程')
 
         this.setData({
-          course,
+          course: { ...course, schedule: sch },
           displayName,
           isCreatedByStudent,
           selectedDates,
           editName: course.name || '',
           editPrice: course.price || '',
-          editClassroom: course.schedule.classroom || '',
-          editStartTime: course.schedule.startTime || '09:00',
-          editEndTime: course.schedule.endTime || '10:00'
+          editClassroom: sch.classroom || '',
+          editStartTime: sch.startTime || '09:00',
+          editEndTime: sch.endTime || '10:00',
+          loadFailed: false
         })
 
         // 初始化月历展示
         const now = new Date()
         this.buildSelectCalendarMonth(now.getFullYear(), now.getMonth())
+      } else {
+        this.setData({ course: null, loadFailed: true })
       }
     } catch (err) {
       console.error('获取课程详情失败:', err)
+      this.setData({ course: null, loadFailed: true })
       wx.showToast({ title: '加载失败', icon: 'none' })
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  onRetryLoad() {
+    if (this.data.courseId) {
+      this.loadCourseDetail()
+    }
+  },
+
+  onGoBack() {
+    wx.navigateBack({
+      fail: () => wx.reLaunch({ url: '/pages/student/my-courses/index' })
+    })
   },
 
   async loadBoundTeachers() {
@@ -93,10 +127,11 @@ Page({
     if (res) {
       const bound = res.filter(t => t.bindingStatus === 'approved')
       bound.forEach(item => {
+        const tName = item.teacherName || item.name || '未知教师'
         options.push({
-          name: `${item.teacherName} (学课教师)`,
+          name: `${tName} (学课教师)`,
           id: item.teacherId || item.openid,
-          realName: item.teacherName,
+          realName: tName,
           isCustom: false
         })
       })
@@ -104,16 +139,13 @@ Page({
 
     let teacherIndex = 0
     let isCustomTeacher = true
-    const currentTeacherId = this.data.course ? this.data.course.teacherId : ''
+    const currentTeacherName = this.data.course ? (this.data.course.teacherName || '') : ''
 
-    if (currentTeacherId) {
-      const idx = options.findIndex(o => o.id === currentTeacherId)
+    if (currentTeacherName) {
+      const idx = options.findIndex(o => !o.isCustom && o.realName === currentTeacherName)
       if (idx !== -1) {
         teacherIndex = idx
         isCustomTeacher = false
-      } else {
-        isCustomTeacher = true
-        teacherIndex = 0
       }
     }
 
@@ -121,7 +153,7 @@ Page({
       teacherOptions: options,
       teacherIndex,
       isCustomTeacher,
-      customTeacherName: isCustomTeacher ? (this.data.course ? this.data.course.teacherName : '') : ''
+      customTeacherName: isCustomTeacher ? currentTeacherName : ''
     })
   },
 
@@ -180,7 +212,8 @@ Page({
       return
     }
 
-    let teacherId = ''
+    // 学生自建课程 teacherId 保持空串（不用魔法字符串，也不关联到真实教师名下以免污染教师课表/收入）
+    const teacherId = ''
     let teacherName = ''
 
     if (isCustomTeacher) {
@@ -188,7 +221,6 @@ Page({
         wx.showToast({ title: '请输入教师姓名', icon: 'none' })
         return
       }
-      teacherId = 'custom_teacher'
       teacherName = customTeacherName.trim()
     } else {
       const selected = teacherOptions[teacherIndex]
@@ -196,7 +228,6 @@ Page({
         wx.showToast({ title: '请选择教师', icon: 'none' })
         return
       }
-      teacherId = selected.id
       teacherName = selected.realName
     }
 
@@ -358,6 +389,7 @@ Page({
   },
 
   onSelectCalendarDayTap(e) {
+    if (!this.data.isEditMode) return
     const dayItem = e.currentTarget.dataset.day
     if (!dayItem || !dayItem.date) return
 

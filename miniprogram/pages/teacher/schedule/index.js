@@ -12,6 +12,7 @@ Page({
     studentList: [],
     selectedStudentId: null,
     selectedStudentName: '全部学生',
+    selectedClassType: 'all',
     allCourses: [],
     showFilterModal: false,
     filterSearchText: '',
@@ -50,10 +51,17 @@ Page({
       return
     }
     
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
+    
     if (app.globalData.navigateWeekStart) {
       const weekStartDate = new Date(app.globalData.navigateWeekStart)
       if (!isNaN(weekStartDate.getTime())) {
-        this.setData({ currentWeekStart: weekStartDate })
+        this.setData({ 
+          currentWeekStart: weekStartDate,
+          selectedDateStr: app.globalData.navigateDate || ''
+        })
         this.updateWeekLabel()
         this.generateWeekDays()
       }
@@ -110,6 +118,7 @@ Page({
     const today = new Date()
     const days = []
     const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+    const selectedDateStr = this.data.selectedDateStr || ''
 
     for (let i = 0; i < 7; i++) {
       const date = new Date(start)
@@ -117,10 +126,17 @@ Page({
 
       const isToday = date.toDateString() === today.toDateString()
 
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const fullDateStr = `${year}-${month}-${day}`
+      const isSelected = (fullDateStr === selectedDateStr)
+
       days.push({
         name: dayNames[i],
         date: `${date.getMonth() + 1}/${date.getDate()}`,
         isToday,
+        isSelected,
         courses: []
       })
     }
@@ -152,14 +168,21 @@ Page({
         })
       }
 
-      const { selectedStudentId, selectedStudentName } = this.data
+      const { selectedStudentId, selectedStudentName, selectedClassType } = this.data
       let filteredCourses = scheduleRes
+
+      if (selectedClassType && selectedClassType !== 'all') {
+        filteredCourses = filteredCourses.filter(course => {
+          const cType = course.classType || (Array.isArray(course.students) && course.students.length > 1 ? 'group' : 'one_on_one')
+          return cType === selectedClassType
+        })
+      }
       
       if (selectedStudentId) {
         const targetId = String(selectedStudentId)
         const targetName = selectedStudentName
         
-        filteredCourses = scheduleRes.filter(course => {
+        filteredCourses = filteredCourses.filter(course => {
           if (!course.students || !Array.isArray(course.students)) {
             return false
           }
@@ -220,7 +243,7 @@ Page({
         return colors[Math.abs(hash) % colors.length]
       }
 
-      filteredCourses.forEach(course => {
+      filteredCourses.forEach((course, idx) => {
         if (course.schedule && course.schedule.date) {
           const dateStr = course.schedule.date
           const dateParts = dateStr.split('-')
@@ -249,7 +272,7 @@ Page({
                 top,
                 height,
                 scheduleStr: this.formatSchedule(course.schedule),
-                courseKey: `${course._id}_${dayIndex}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                courseKey: `${course._id || 's'}_${dayIndex}_${idx}`,
                 bgColor: color.bg,
                 textColor: color.text
               })
@@ -272,6 +295,23 @@ Page({
         filteredStudentList: filtered
       })
     }
+  },
+
+  onSelectClassType(e) {
+    const type = e.currentTarget.dataset.type
+    if (!type || type === this.data.selectedClassType) return
+    this.setData({ selectedClassType: type })
+    this.loadSchedule()
+  },
+
+  onViewClassDetail() {
+    const course = this.data.selectedCourse
+    if (!course) return
+    const classId = course.parentId || course._id
+    this.setData({ selectedCourse: null })
+    wx.navigateTo({
+      url: `/pages/teacher/courses/detail?id=${classId}`
+    })
   },
 
   onStudentFilterChange(e) {
@@ -330,13 +370,15 @@ Page({
   },
 
   formatSchedule(schedule) {
-    if (schedule.date) {
+    if (schedule && schedule.date) {
+      const parts = String(schedule.date).split('-').map(Number)
+      if (parts.length === 3 && !parts.some(isNaN)) {
+        return `${parts[1]}/${parts[2]} ${schedule.startTime}-${schedule.endTime}`
+      }
       const date = new Date(schedule.date)
-      const month = date.getMonth() + 1
-      const day = date.getDate()
-      return `${month}/${day} ${schedule.startTime}-${schedule.endTime}`
+      return `${date.getMonth() + 1}/${date.getDate()} ${schedule.startTime}-${schedule.endTime}`
     }
-    return `${schedule.startTime}-${schedule.endTime}`
+    return `${(schedule && schedule.startTime) || ''}-${(schedule && schedule.endTime) || ''}`
   },
 
   formatDateStr(date) {
@@ -349,7 +391,7 @@ Page({
   prevWeek() {
     const start = new Date(this.data.currentWeekStart)
     start.setDate(start.getDate() - 7)
-    this.setData({ currentWeekStart: start })
+    this.setData({ currentWeekStart: start, selectedDateStr: '' })
     this.updateWeekLabel()
     this.generateWeekDays()
     this.loadSchedule()
@@ -358,7 +400,7 @@ Page({
   nextWeek() {
     const start = new Date(this.data.currentWeekStart)
     start.setDate(start.getDate() + 7)
-    this.setData({ currentWeekStart: start })
+    this.setData({ currentWeekStart: start, selectedDateStr: '' })
     this.updateWeekLabel()
     this.generateWeekDays()
     this.loadSchedule()
@@ -379,11 +421,29 @@ Page({
     const course = this.data.selectedCourse
     if (!course) return
 
-    const result = await api.sendReminder(course._id, app.globalData.openid)
-    if (result) {
+    // 周课表记录是子课（course_schedule），需传父课程 parentId（无则降级传 _id）
+    const targetCourseId = course.parentId || course._id
+    const result = await api.sendReminder(targetCourseId, app.globalData.openid)
+    if (!result) return
+
+    if (result.teacherSuccess) {
       wx.showToast({
-        title: '提醒已发送',
+        title: result.message || '提醒已发送',
         icon: 'success'
+      })
+    } else {
+      wx.showModal({
+        title: '发送未成功',
+        content: result.message || '教师端订阅消息授权已过期或暂无待提醒课程，请前往课程管理重新开启上课提醒。',
+        confirmText: '去重新订阅',
+        cancelText: '知道了',
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            wx.navigateTo({
+              url: '/pages/teacher/courses/index'
+            })
+          }
+        }
       })
     }
   },

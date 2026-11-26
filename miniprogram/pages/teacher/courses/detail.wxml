@@ -1,0 +1,185 @@
+<view class="container {{theme}}">
+  <block wx:if="{{classInfo}}">
+    <!-- 顶部班级概览卡 -->
+    <view class="class-header-card">
+      <view class="header-top-row">
+        <view class="title-group">
+          <view class="type-badge type-{{classInfo.classType}}">{{classInfo.classTypeLabel}}</view>
+          <text class="class-title">{{classInfo.name}}</text>
+        </view>
+        <view class="status-pill status-{{classInfo.status}}" bindtap="onToggleStatus">
+          {{classInfo.status === 'available' ? '进行中' : '已停课'}}
+        </view>
+      </view>
+
+      <view class="meta-line">
+        <text class="meta-chip">单价 ¥{{classInfo.price || 0}}/小时{{classInfo.billingMode === 'per_student' ? '/人' : ''}}</text>
+        <text class="meta-chip clickable" wx:if="{{classInfo.classType === 'group'}}" bindtap="onToggleBillingMode">{{classInfo.billingLabel}} ⇄</text>
+        <text class="meta-chip">学员 {{classInfo.capacityLabel}}</text>
+      </view>
+
+      <view class="stats-grid">
+        <view class="stat-box">
+          <text class="stat-val">{{finishedCount}} / {{schedules.length}}</text>
+          <text class="stat-lbl">已上/总节次</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-val">¥{{earnedAmount}}</text>
+          <text class="stat-lbl">已获金额</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-val">¥{{totalAmount}}</text>
+          <text class="stat-lbl">预计总额</text>
+        </view>
+      </view>
+
+      <view class="header-actions">
+        <button class="hdr-btn primary" bindtap="onAddSchedule">+ 排课 / 加课</button>
+        <button class="hdr-btn" bindtap="onSendReminder">发送提醒</button>
+        <button class="hdr-btn danger" bindtap="onDeleteClass">删除班级</button>
+      </view>
+    </view>
+
+    <!-- 班级下属模块切换：课时排程 | 班级学员 -->
+    <view class="sub-tabs">
+      <view class="sub-tab {{currentTab === 'schedules' ? 'active' : ''}}" bindtap="switchTab" data-tab="schedules">
+        <text>课程排程 ({{schedules.length}})</text>
+      </view>
+      <view class="sub-tab {{currentTab === 'members' ? 'active' : ''}}" bindtap="switchTab" data-tab="members">
+        <text>班级学员 ({{members.length}})</text>
+        <view class="tab-badge" wx:if="{{classApplications.length > 0}}">{{classApplications.length}}</view>
+      </view>
+    </view>
+
+    <!-- Tab 1：本班隶属的所有课时/子课程 -->
+    <block wx:if="{{currentTab === 'schedules'}}">
+      <view class="section-list" wx:if="{{schedules.length > 0}}">
+        <view class="schedule-card {{item.isFinished ? 'finished' : ''}}" wx:for="{{schedules}}" wx:key="_id">
+          <view class="schedule-main">
+            <view class="schedule-row-top">
+              <text class="schedule-date">{{item.dateStr || '日期待定'}}</text>
+              <text class="schedule-state {{item.isFinished ? 'done' : 'todo'}}">{{item.isFinished ? '已结束' : '待上课'}}</text>
+            </view>
+            <text class="schedule-time">🕐 {{item.timeRange}}</text>
+            <text class="schedule-room">📍 {{item.classroom}}</text>
+          </view>
+          <view class="schedule-ops">
+            <button class="mini-btn" bindtap="onOpenEditSchedule" data-item="{{item}}">改期</button>
+            <button class="mini-btn danger" bindtap="onDeleteSchedule" data-id="{{item._id}}">删除</button>
+          </view>
+        </view>
+      </view>
+      <view class="empty-box" wx:else>
+        <text class="empty-text">该班级暂无排课，点击上方「+ 排课 / 加课」添加课时</text>
+      </view>
+    </block>
+
+    <!-- Tab 2：本班学员名单 + 入班审批 -->
+    <block wx:if="{{currentTab === 'members'}}">
+      <view class="member-toolbar">
+        <text class="toolbar-tip">{{classInfo.classType === 'one_on_one' ? '一对一班最多绑定 1 名学员' : '更改学员仅影响今天及之后的未来排课'}}</text>
+        <button class="manage-member-btn" bindtap="onOpenMemberModal">管理学员</button>
+      </view>
+
+      <view class="section-list" wx:if="{{members.length > 0}}">
+        <view class="member-card" wx:for="{{members}}" wx:key="studentId" bindtap="onOpenStudentDetail" data-student-id="{{item.studentId}}">
+          <view class="member-info">
+            <text class="member-name">{{item.studentName}}</text>
+            <text class="member-meta">{{item.statusStr}}{{item.remainingHours !== null ? (' · 剩余 ' + item.remainingHours + ' 课时') : ''}}</text>
+          </view>
+          <text class="member-arrow">详情 ›</text>
+        </view>
+      </view>
+      <view class="empty-box" wx:else>
+        <text class="empty-text">暂无在读学员，点击「管理学员」添加学生</text>
+      </view>
+
+      <!-- 本班待审入班申请 -->
+      <view class="pending-apps-block" wx:if="{{classApplications.length > 0}}">
+        <text class="sub-block-title">本班待审批入班申请 ({{classApplications.length}})</text>
+        <view class="app-card" wx:for="{{classApplications}}" wx:key="_id">
+          <view class="app-info">
+            <text class="app-student">{{item.studentName}}</text>
+            <text class="app-time">申请日期：{{item.applyTimeStr}}</text>
+          </view>
+          <view class="app-ops">
+            <button class="mini-btn approve" bindtap="onApproveApp" data-item="{{item}}">通过</button>
+            <button class="mini-btn danger" bindtap="onRejectApp" data-item="{{item}}">拒绝</button>
+          </view>
+        </view>
+      </view>
+    </block>
+  </block>
+
+  <view class="empty-box" wx:elif="{{!loading}}">
+    <text class="empty-text">未找到该班级信息</text>
+  </view>
+
+  <!-- 单节改期弹窗 -->
+  <view class="modal-mask" wx:if="{{showEditScheduleModal}}" bindtap="onCloseEditSchedule">
+    <view class="modal-card" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">修改课时安排</text>
+        <text class="modal-close" bindtap="onCloseEditSchedule">✕</text>
+      </view>
+      <view class="modal-body">
+        <view class="form-row">
+          <text class="form-lbl">上课日期</text>
+          <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
+            <view class="form-val">{{editDate || '请选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="form-row">
+          <text class="form-lbl">开始时间</text>
+          <picker mode="time" value="{{editStartTime}}" bindchange="onEditStartTimeChange">
+            <view class="form-val">{{editStartTime}}</view>
+          </picker>
+        </view>
+        <view class="form-row">
+          <text class="form-lbl">结束时间</text>
+          <picker mode="time" value="{{editEndTime}}" bindchange="onEditEndTimeChange">
+            <view class="form-val">{{editEndTime}}</view>
+          </picker>
+        </view>
+        <view class="form-row">
+          <text class="form-lbl">上课地点</text>
+          <input class="form-input" value="{{editClassroom}}" bindinput="onEditClassroomInput" placeholder="请输入地点" />
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="onCloseEditSchedule">取消</button>
+        <button class="modal-btn confirm" bindtap="onSaveScheduleEdit">保存改期</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 学员管理弹窗 -->
+  <view class="modal-mask" wx:if="{{showMemberModal}}" bindtap="onCloseMemberModal">
+    <view class="modal-card" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">管理班级学员（{{classInfo.classTypeLabel}}）</text>
+        <text class="modal-close" bindtap="onCloseMemberModal">✕</text>
+      </view>
+      <view class="modal-body">
+        <input class="search-input" placeholder="搜索学生姓名" value="{{memberSearchKey}}" bindinput="onMemberSearchInput" />
+        <scroll-view class="member-pick-list" scroll-y>
+          <view class="pick-item {{item.selected ? 'selected' : ''}}"
+                wx:for="{{filteredSelectableStudents}}"
+                wx:key="studentId"
+                bindtap="onToggleSelectMember"
+                data-student-id="{{item.studentId}}">
+            <view>
+              <text class="pick-name">{{item.studentName}}</text>
+              <text class="pick-sub">{{item.statusStr}}</text>
+            </view>
+            <text class="pick-check">{{item.selected ? '✓' : ''}}</text>
+          </view>
+        </scroll-view>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="onCloseMemberModal">取消</button>
+        <button class="modal-btn confirm" bindtap="onSaveMembers" loading="{{savingMembers}}">保存学员</button>
+      </view>
+    </view>
+  </view>
+</view>

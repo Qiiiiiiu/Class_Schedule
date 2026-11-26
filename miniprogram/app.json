@@ -3,16 +3,20 @@
     "pages/common/login/index",
     "pages/common/my-info/index",
     "pages/teacher/home/index",
+    "pages/teacher/management/index",
     "pages/teacher/students/index",
+    "pages/teacher/students/detail/index",
     "pages/teacher/courses/index",
     "pages/teacher/courses/add",
+    "pages/teacher/courses/detail",
     "pages/teacher/schedule/index",
     "pages/teacher/bindings/index",
     "pages/student/home/index",
     "pages/student/teachers/index",
     "pages/student/my-courses/index",
     "pages/student/courses/add",
-    "pages/student/courses/detail"
+    "pages/student/courses/detail",
+    "pages/student/applications/index"
   ],
   "window": {
     "backgroundColor": "#1a1a2e",
@@ -37,22 +41,10 @@
         "selectedIconPath": "images/tab/home-active.png"
       },
       {
-        "pagePath": "pages/teacher/students/index",
-        "text": "绑定学生",
-        "iconPath": "images/tab/students.png",
-        "selectedIconPath": "images/tab/students-active.png"
-      },
-      {
-        "pagePath": "pages/teacher/courses/index",
-        "text": "开设课程",
+        "pagePath": "pages/teacher/management/index",
+        "text": "课程管理",
         "iconPath": "images/tab/courses.png",
         "selectedIconPath": "images/tab/courses-active.png"
-      },
-      {
-        "pagePath": "pages/teacher/schedule/index",
-        "text": "查看课表",
-        "iconPath": "images/tab/schedule.png",
-        "selectedIconPath": "images/tab/schedule-active.png"
       },
       {
         "pagePath": "pages/common/my-info/index",

@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container {{theme}}">
   <!-- 顶部 Tab 栏 -->
   <view class="tabs">
     <view class="tab-item {{currentTab === 'schedule' ? 'active' : ''}}" bindtap="switchTab" data-tab="schedule">
@@ -127,8 +127,8 @@
         </view>
         <view class="detail-row">
           <text class="detail-label">课程状态</text>
-          <text class="detail-value status-{{selectedCourse.status}}">
-            {{selectedCourse.status === 'available' ? '进行中' : '已停课'}}
+          <text class="detail-value status-{{selectedCourse.isFinished ? 'finished' : selectedCourse.status}}">
+            {{selectedCourse.isFinished ? '已结束' : (selectedCourse.status === 'available' ? '进行中' : '已停课')}}
           </text>
         </view>
       </view>
@@ -137,6 +137,7 @@
         <!-- 教师课：支持提醒订阅 -->
         <block wx:if="{{!selectedCourse.isCreatedByStudent}}">
           <button class="detail-btn" 
+                  wx:if="{{!selectedCourse.isFinished}}"
                   bindtap="onToggleSubscribe" 
                   data-schedule-id="{{selectedCourse.scheduleId}}"
                   data-subscribed="{{selectedCourse.subscribed}}">
@@ -152,5 +153,5 @@
     </view>
   </view>
 
-  <student-tab-bar active="my-courses"></student-tab-bar>
+  <student-tab-bar active="my-courses" theme="{{theme}}"></student-tab-bar>
 </view>

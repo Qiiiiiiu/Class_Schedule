@@ -1,0 +1,624 @@
+.container {
+  min-height: 100vh;
+  background: #0f1419;
+  padding: 30rpx;
+  padding-bottom: 80rpx;
+  box-sizing: border-box;
+}
+
+/* ================= 头部卡片 ================= */
+.student-header-card {
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+  background: linear-gradient(145deg, #1e2536, #141724);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 4rpx 20rpx rgba(59, 130, 246, 0.3);
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.status-tag {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.status-approved {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1rpx solid rgba(16, 185, 129, 0.2);
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1rpx solid rgba(245, 158, 11, 0.2);
+}
+
+.status-rejected {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1rpx solid rgba(239, 68, 68, 0.2);
+}
+
+.status-unbound {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+/* ================= 通用卡片区域 ================= */
+.card-section {
+  background: linear-gradient(145deg, #1e2536, #141724);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.08);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+  border-left: 6rpx solid #3b82f6;
+  padding-left: 16rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* ================= 课时管理板块 ================= */
+.hours-display-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-bottom: 40rpx;
+}
+
+.hours-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-radius: 16rpx;
+  padding: 24rpx 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.2);
+}
+
+.hours-val {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 8rpx;
+  text-shadow: 0 0 10rpx rgba(59, 130, 246, 0.2);
+}
+
+.hours-lbl {
+  font-size: 22rpx;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.hours-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  border-radius: 40rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  padding: 18rpx 0;
+  margin: 0;
+  width: auto !important;
+  min-height: 0 !important;
+  line-height: 1.4;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.action-btn.buy {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4rpx 14rpx rgba(16, 185, 129, 0.3);
+}
+
+.action-btn.adjust {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 4rpx 14rpx rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.refund {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 4rpx 14rpx rgba(239, 68, 68, 0.3);
+}
+
+.action-icon {
+  font-size: 28rpx;
+}
+
+/* ================= 基本信息模块 ================= */
+.edit-toggle-btn {
+  font-size: 26rpx;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.04);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.info-item.vertical {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+
+.lbl {
+  font-size: 26rpx;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.val {
+  font-size: 28rpx;
+  color: #f1f5f9;
+  font-weight: 500;
+}
+
+.remark-val {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1rpx solid rgba(255, 255, 255, 0.04);
+  border-radius: 12rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  min-height: 120rpx;
+  line-height: 1.5;
+}
+
+/* ================= 编辑表单 ================= */
+.form-group {
+  margin-bottom: 30rpx;
+}
+
+.form-group .lbl {
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  color: #ffffff;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.form-textarea {
+  width: 100%;
+  height: 160rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  color: #ffffff;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.save-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 600;
+  padding: 22rpx 0;
+  border-radius: 40rpx;
+  box-shadow: 0 6rpx 18rpx rgba(59, 130, 246, 0.35);
+  margin-top: 40rpx;
+}
+
+/* ================= 对话框 ================= */
+.dialog-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 20, 25, 0.75);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  width: 620rpx;
+  background: linear-gradient(145deg, #202638, #151824);
+  border-radius: 28rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 50rpx rgba(0, 0, 0, 0.5);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  animation: modal-fade-in 0.25s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 40rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.dialog-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.dialog-close {
+  font-size: 36rpx;
+  color: #64748b;
+  padding: 10rpx;
+}
+
+.dialog-body {
+  padding: 40rpx;
+}
+
+.dialog-desc {
+  font-size: 28rpx;
+  color: #94a3b8;
+  margin-bottom: 24rpx;
+  display: block;
+}
+
+.dialog-input {
+  width: 100%;
+  height: 90rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 0 30rpx;
+  color: #ffffff;
+  font-size: 32rpx;
+  box-sizing: border-box;
+}
+
+.dialog-footer {
+  display: flex;
+  gap: 20rpx;
+  padding: 30rpx 40rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.dialog-btn {
+  flex: 1;
+  padding: 20rpx 0;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 0;
+  width: auto !important;
+  min-height: 0 !important;
+}
+
+.dialog-btn.cancel {
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+
+.dialog-btn.confirm {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 6rpx 16rpx rgba(59, 130, 246, 0.3);
+  border: none;
+}
+
+.btn-hover {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+.text-hover {
+  opacity: 0.7;
+}
+
+/* ========== 浅色主题适配覆盖 ========== */
+.container.light {
+  background: #f8fafc;
+}
+
+.container.light .student-header-card,
+.container.light .card-section,
+.container.light .dialog-content {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.05);
+}
+
+.container.light .name,
+.container.light .section-title,
+.container.light .val,
+.container.light .form-input,
+.container.light .form-textarea,
+.container.light .dialog-title,
+.container.light .dialog-input {
+  color: #1e293b;
+}
+
+.container.light .lbl,
+.container.light .dialog-desc {
+  color: #64748b;
+}
+
+.container.light .hours-card {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.container.light .info-item {
+  border-bottom-color: #f1f5f9;
+}
+
+.container.light .remark-val {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.container.light .form-input,
+.container.light .form-textarea,
+.container.light .dialog-input {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+
+.container.light .dialog-btn.cancel {
+  background: #e2e8f0;
+  color: #64748b;
+  border: none;
+}
+
+/* ================= 课时变动明细 ================= */
+.logs-scroll {
+  max-height: 400rpx;
+}
+
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.04);
+}
+
+.log-item:last-child {
+  border-bottom: none;
+}
+
+.log-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.log-type-tag {
+  font-size: 24rpx;
+  font-weight: 600;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+  width: fit-content;
+}
+
+.log-type-tag.tag-buy {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1rpx solid rgba(16, 185, 129, 0.2);
+}
+
+.log-type-tag.tag-adjust {
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border: 1rpx solid rgba(59, 130, 246, 0.2);
+}
+
+.log-type-tag.tag-refund {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1rpx solid rgba(239, 68, 68, 0.2);
+}
+
+.log-time {
+  font-size: 22rpx;
+  color: #64748b;
+}
+
+.log-right {
+  display: flex;
+  align-items: center;
+}
+
+.log-amount {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.log-amount.amount-buy {
+  color: #34d399;
+}
+
+.log-amount.amount-adjust {
+  color: #60a5fa;
+}
+
+.log-amount.amount-refund {
+  color: #f87171;
+}
+
+.empty-logs {
+  padding: 40rpx 0;
+  text-align: center;
+}
+
+.empty-logs-text {
+  font-size: 26rpx;
+  color: #64748b;
+}
+
+/* ========== 浅色主题适配覆盖 (课时明细) ========== */
+.container.light .log-item {
+  border-bottom-color: #f1f5f9;
+}
+
+.container.light .log-time {
+  color: #94a3b8;
+}
+
+/* ================= 所在班级板块 ================= */
+.class-summary-sub {
+  font-size: 22rpx;
+  color: #94a3b8;
+}
+
+.enrolled-class-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.enrolled-class-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  border-radius: 14rpx;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+
+.enrolled-class-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+}
+
+.class-pill {
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.class-pill.type-one_on_one {
+  background: rgba(59, 130, 246, 0.16);
+  color: #3b82f6;
+}
+
+.class-pill.type-group {
+  background: rgba(139, 92, 246, 0.16);
+  color: #8b5cf6;
+}
+
+.enrolled-class-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.enrolled-class-right {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.enrolled-class-meta {
+  font-size: 22rpx;
+  color: #94a3b8;
+}
+
+.enrolled-class-arrow {
+  font-size: 30rpx;
+  color: #3b82f6;
+}
+
+.container.light .enrolled-class-item {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.container.light .enrolled-class-name {
+  color: #1e293b;
+}

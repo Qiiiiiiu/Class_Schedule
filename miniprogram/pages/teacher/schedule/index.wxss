@@ -223,6 +223,20 @@
   box-shadow: inset 0 0 20rpx rgba(59, 130, 246, 0.1);
 }
 
+.day-header.selected {
+  background: rgba(59, 130, 246, 0.25);
+  box-shadow: inset 0 0 20rpx rgba(59, 130, 246, 0.2);
+}
+
+.day-header.selected .day-name {
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+.day-header.selected .day-date {
+  color: #f1f5f9;
+}
+
 .day-name {
   font-size: 28rpx;
   color: #94a3b8;
@@ -484,4 +498,136 @@
 
 .edit-btn:active {
   opacity: 0.85;
+}
+
+/* ========== 浅色主题适配覆盖 ========== */
+.container.light {
+  background: var(--bg-color);
+}
+.container.light .week-nav {
+  background: var(--bg-surface);
+  border-bottom-color: var(--item-border);
+}
+.container.light .week-label,
+.container.light .filter-modal-title,
+.container.light .student-name,
+.container.light .day-item .day-num,
+.container.light .detail-title,
+.container.light .detail-value,
+.container.light .edit-picker,
+.container.light .edit-input {
+  color: var(--text-primary-color);
+}
+.container.light .filter-icon {
+  background: var(--calendar-nav-bg);
+  border-color: var(--input-border);
+}
+.container.light .filter-modal-content,
+.container.light .detail-modal-content {
+  background: var(--card-bg-gradient);
+  border-color: var(--card-border);
+  box-shadow: 0 8rpx 24rpx var(--shadow-color);
+}
+.container.light .filter-modal-header,
+.container.light .detail-modal-header,
+.container.light .edit-row {
+  border-bottom-color: var(--item-border);
+}
+.container.light .student-item {
+  border-bottom-color: var(--item-border);
+}
+.container.light .student-item:active {
+  background: rgba(0, 0, 0, 0.02);
+}
+.container.light .schedule-grid-header {
+  background: var(--bg-surface);
+  border-bottom-color: var(--item-border);
+}
+.container.light .day-item {
+  border-right-color: var(--item-border);
+}
+.container.light .day-item.today {
+  background: rgba(59, 130, 246, 0.04);
+}
+.container.light .day-item .day-name {
+  color: var(--text-secondary-color);
+}
+.container.light .grid-content {
+  background: var(--bg-color);
+}
+.container.light .time-column {
+  background: var(--bg-surface);
+  border-right-color: var(--item-border);
+}
+.container.light .time-slot-label {
+  color: var(--text-secondary-color);
+}
+.container.light .grid-row {
+  border-bottom-color: var(--item-border);
+}
+.container.light .grid-cell {
+  border-right-color: var(--item-border);
+}
+.container.light .detail-row {
+  border-bottom-color: var(--item-border);
+}
+.container.light .detail-label,
+.container.light .edit-label,
+.container.light .empty-text {
+  color: var(--text-secondary-color);
+}
+.container.light .detail-btn:nth-child(2) {
+  background: var(--modal-btn-cancel-bg);
+  color: var(--modal-btn-cancel-text);
+  border-color: var(--input-border);
+}
+.container.light .detail-btn.delete {
+  background: var(--logout-bg);
+  color: var(--logout-color);
+  border-color: var(--logout-border);
+}
+.container.light .edit-picker {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .edit-btn.cancel {
+  background: var(--modal-btn-cancel-bg);
+  color: var(--modal-btn-cancel-text);
+  border-color: var(--input-border);
+}
+.container.light .search-box {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .search-input {
+  color: var(--text-primary-color);
+}
+
+/* 班级类型快捷筛选条 */
+.class-type-bar {
+  display: flex;
+  gap: 16rpx;
+  padding: 14rpx 24rpx;
+  background: var(--card-bg-solid, #1a1f2e);
+  border-bottom: 1rpx solid var(--item-border, rgba(255, 255, 255, 0.06));
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ct-pill {
+  flex: 1;
+  text-align: center;
+  padding: 10rpx 0;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary-color, #94a3b8);
+  background: var(--input-bg, rgba(255, 255, 255, 0.05));
+  border: 1rpx solid transparent;
+}
+
+.ct-pill.active {
+  background: rgba(59, 130, 246, 0.16);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.4);
+  font-weight: 600;
 }

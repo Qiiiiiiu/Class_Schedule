@@ -175,3 +175,38 @@
 .retry-btn::after {
   border: none;
 }
+
+/* ========== 浅色主题适配覆盖 ========== */
+.container.light {
+  background: var(--bg-color);
+}
+
+.container.light .title {
+  color: var(--text-primary-color);
+}
+
+.container.light .subtitle {
+  color: var(--text-secondary-color);
+}
+
+.container.light .login-form {
+  background: var(--card-bg-gradient);
+  border-color: var(--card-border);
+  box-shadow: 0 8rpx 24rpx var(--shadow-color);
+}
+
+.container.light .label,
+.container.light .role-text,
+.container.light .loading-text {
+  color: var(--text-secondary-color);
+}
+
+.container.light .input {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary-color);
+}
+
+.container.light .input:focus {
+  border-color: #3b82f6;
+}

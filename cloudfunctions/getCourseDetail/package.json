@@ -1,0 +1,9 @@
+{
+  "name": "getCourseDetail",
+  "version": "1.0.0",
+  "description": "获取单个课程详情（带归属与选课权限校验）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

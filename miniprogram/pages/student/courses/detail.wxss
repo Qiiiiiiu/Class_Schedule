@@ -1,23 +1,44 @@
 .container {
   min-height: 100vh;
-  background: #0f1419;
+  background: var(--bg-color, #0f1419);
   padding: 30rpx;
   padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
 .form-section {
-  background: #1a1f2e;
+  background: var(--card-bg-solid, #1a1f2e);
   border-radius: 30rpx;
   padding: 30rpx;
   margin-bottom: 30rpx;
-  width: 90%;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.15);
+  width: 100%;
+  box-sizing: border-box;
+  border: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
+  box-shadow: 0 4rpx 16rpx var(--shadow-color, rgba(0, 0, 0, 0.15));
+}
+
+.error-section {
+  text-align: center;
+  padding: 60rpx 40rpx;
+}
+
+.error-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: var(--text-primary-color, #f1f5f9);
+  margin-bottom: 16rpx;
+}
+
+.error-desc {
+  display: block;
+  font-size: 26rpx;
+  color: var(--text-secondary-color, #94a3b8);
 }
 
 .section-header {
   margin-bottom: 24rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1rpx solid var(--item-border, rgba(255, 255, 255, 0.06));
   padding-bottom: 16rpx;
   display: flex;
   justify-content: space-between;
@@ -27,16 +48,15 @@
 .section-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
 }
 
 .section-desc {
   font-size: 22rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
   margin-left: 10rpx;
 }
 
-/* Badge Styles */
 .section-badge {
   padding: 4rpx 16rpx;
   border-radius: 20rpx;
@@ -56,13 +76,12 @@
   border: 1rpx solid rgba(16, 185, 129, 0.3);
 }
 
-/* Detail Display Mode */
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1rpx solid var(--item-border, rgba(255, 255, 255, 0.04));
 }
 
 .detail-row:last-child {
@@ -71,26 +90,19 @@
 
 .detail-label {
   font-size: 28rpx;
-  color: #94a3b8;
+  color: var(--text-secondary-color, #94a3b8);
   flex-shrink: 0;
 }
 
 .detail-value {
   font-size: 28rpx;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
   font-weight: 500;
   text-align: right;
   flex: 1;
   margin-left: 30rpx;
 }
 
-.price-text {
-  color: #3b82f6;
-  font-size: 32rpx;
-  font-weight: bold;
-}
-
-/* Editable Form Mode */
 .form-item {
   margin-bottom: 24rpx;
   display: flex;
@@ -100,53 +112,27 @@
 .label {
   width: 180rpx;
   font-size: 28rpx;
-  color: #94a3b8;
+  color: var(--text-secondary-color, #94a3b8);
 }
 
 .content-wrap {
   flex: 1;
 }
 
-.input {
-  background: #0f1419;
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
+.input, .picker-value {
+  background: var(--input-bg, #0f1419);
+  border: 1rpx solid var(--input-border, rgba(255, 255, 255, 0.1));
   border-radius: 8rpx;
   padding: 16rpx 24rpx;
   font-size: 28rpx;
-  color: #f1f5f9;
-  height: 80rpx;
+  color: var(--text-primary-color, #f1f5f9);
+  min-height: 80rpx;
   box-sizing: border-box;
 }
 
 .picker-value {
-  background: #0f1419;
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
-  border-radius: 8rpx;
-  padding: 16rpx 24rpx;
-  font-size: 28rpx;
-  color: #f1f5f9;
-  min-height: 80rpx;
   display: flex;
   align-items: center;
-  box-sizing: border-box;
-}
-
-.price-input-wrap {
-  position: relative;
-}
-
-.price-symbol {
-  position: absolute;
-  left: 24rpx;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #3b82f6;
-  font-size: 32rpx;
-  font-weight: bold;
-}
-
-.price-input {
-  padding-left: 60rpx;
 }
 
 .time-picker {
@@ -160,15 +146,14 @@
 }
 
 .time-separator {
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
   font-size: 28rpx;
 }
 
-/* Calendar style rules */
 .select-calendar-view {
-  background: #0f1419;
+  background: var(--input-bg, #0f1419);
   border-radius: 12rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  border: 1rpx solid var(--input-border, rgba(255, 255, 255, 0.08));
   padding: 20rpx;
   box-sizing: border-box;
 }
@@ -192,7 +177,7 @@
 
 .calendar-title {
   font-size: 30rpx;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
   font-weight: 600;
 }
 
@@ -200,7 +185,7 @@
   display: flex;
   width: 100%;
   margin-bottom: 12rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1rpx solid var(--item-border, rgba(255, 255, 255, 0.06));
   padding-bottom: 12rpx;
 }
 
@@ -211,7 +196,7 @@
 
 .weekday {
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
 }
 
 .calendar-grid {
@@ -223,7 +208,7 @@
 .calendar-row {
   display: flex;
   width: 100%;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1rpx solid var(--item-border, rgba(255, 255, 255, 0.04));
 }
 
 .calendar-row:last-child {
@@ -239,7 +224,7 @@
   align-items: center;
   position: relative;
   box-sizing: border-box;
-  border-right: 1rpx solid rgba(255, 255, 255, 0.04);
+  border-right: 1rpx solid var(--item-border, rgba(255, 255, 255, 0.04));
 }
 
 .select-calendar-day-cell:last-child {
@@ -248,11 +233,12 @@
 
 .day-number {
   font-size: 28rpx;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
 }
 
 .select-calendar-day-cell.other-month .day-number {
-  color: #334155;
+  color: var(--text-hint-color, #475569);
+  opacity: 0.5;
 }
 
 .select-calendar-day-cell.today .day-number {
@@ -260,7 +246,6 @@
   font-weight: bold;
 }
 
-/* Highlights for schedules */
 .select-calendar-day-cell.selected {
   background: rgba(59, 130, 246, 0.2);
   border: 2rpx solid #3b82f6;
@@ -272,7 +257,6 @@
   font-weight: bold;
 }
 
-/* Read-only highlights */
 .select-calendar-day-cell.has-schedule {
   background: rgba(59, 130, 246, 0.08);
   border-radius: 8rpx;
@@ -292,18 +276,19 @@
   bottom: 8rpx;
 }
 
-/* Action Buttons */
 .actions-section {
   display: flex;
   flex-direction: column;
   gap: 20rpx;
   margin-top: 40rpx;
+  width: 100%;
 }
 
 .action-btn {
   font-size: 30rpx !important;
   font-weight: bold !important;
   height: 90rpx;
+  width: 100% !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -317,9 +302,9 @@
 }
 
 .delete-btn {
-  background: rgba(239, 68, 68, 0.15) !important;
-  color: #ef4444 !important;
-  border: 1rpx solid rgba(239, 68, 68, 0.3) !important;
+  background: var(--logout-bg, rgba(239, 68, 68, 0.15)) !important;
+  color: var(--logout-color, #ef4444) !important;
+  border: 1rpx solid var(--logout-border, rgba(239, 68, 68, 0.3)) !important;
 }
 
 .save-btn {
@@ -329,7 +314,7 @@
 }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #94a3b8 !important;
-  border: 1rpx solid rgba(255, 255, 255, 0.1) !important;
+  background: var(--modal-btn-cancel-bg, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--modal-btn-cancel-text, #94a3b8) !important;
+  border: 1rpx solid var(--input-border, rgba(255, 255, 255, 0.1)) !important;
 }

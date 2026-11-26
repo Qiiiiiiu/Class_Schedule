@@ -22,11 +22,10 @@ Page({
     showAmount: true,
     currentYear: 0,
     currentMonth: 0,
-    coursesData: [],
+    coursePriceMap: {},
     scheduleData: [],
-    studentsData: null,
-    bindingsData: null,
-    applicationsData: null
+    greeting: '',
+    greetingEmoji: ''
   },
 
   onLoad() {
@@ -42,68 +41,103 @@ Page({
     if (!checkRole.checkTeacher()) {
       return
     }
+    const theme = app.globalData.theme || 'dark'
+    const now = new Date()
+    const targetYear = this.data.currentYear || now.getFullYear()
+    const targetMonth = this.data.currentYear ? this.data.currentMonth : now.getMonth()
     this.setData({
+      theme: theme,
       userInfo: app.globalData.userInfo,
-      currentYear: new Date().getFullYear(),
-      currentMonth: new Date().getMonth()
+      currentYear: targetYear,
+      currentMonth: targetMonth
     })
+    this.updateGreeting()
+    app.applyThemeToSystem(theme)
     if (app.globalData.refreshSchedule) {
       app.globalData.refreshSchedule = false
-      this.setData({
-        coursesData: [],
-        scheduleData: [],
-        studentsData: null,
-        bindingsData: null,
-        applicationsData: null
-      })
+      app.globalData.dashboardCache = null
     }
     this.loadStats()
   },
 
+  updateGreeting() {
+    const hour = new Date().getHours()
+    let greeting = ''
+    let greetingEmoji = ''
+    
+    if (hour >= 5 && hour < 9) {
+      greeting = '早上好'
+      greetingEmoji = '🌅'
+    } else if (hour >= 9 && hour < 12) {
+      greeting = '上午好'
+      greetingEmoji = '☀️'
+    } else if (hour >= 12 && hour < 18) {
+      greeting = '下午好'
+      greetingEmoji = '☕'
+    } else if (hour >= 18 && hour < 22) {
+      greeting = '晚上好'
+      greetingEmoji = '🌆'
+    } else {
+      greeting = '夜深了'
+      greetingEmoji = '🌙'
+    }
+    
+    this.setData({
+      greeting,
+      greetingEmoji
+    })
+  },
+
   async loadStats() {
     const teacherId = app.globalData.openid
+    if (!teacherId) return
 
     const year = this.data.currentYear || new Date().getFullYear()
     const month = this.data.currentMonth !== undefined ? this.data.currentMonth : new Date().getMonth()
-    const startDate = this.formatDateStr(new Date(year, month , 1))
+    const startDate = this.formatDateStr(new Date(year, month, 1))
     const endDate = this.formatDateStr(new Date(year, month + 1, 0))
+    const cacheKey = `${teacherId}_${startDate}_${endDate}`
 
-    const coursesRes = this.data.coursesData && this.data.coursesData.length > 0
-      ? this.data.coursesData
-      : await this.fetchCourses(teacherId)
+    const cached = app.globalData.dashboardCache
+    let dashboard = null
+    if (cached && cached.key === cacheKey && Date.now() - cached.timestamp < 30000) {
+      dashboard = cached.data
+    } else {
+      dashboard = await api.getTeacherDashboard(teacherId, { startDate, endDate })
+      if (dashboard) {
+        app.globalData.dashboardCache = {
+          key: cacheKey,
+          data: dashboard,
+          timestamp: Date.now()
+        }
+      }
+    }
 
-    const studentsRes = this.data.studentsData && this.data.studentsData.length > 0
-      ? this.data.studentsData
-      : await this.fetchStudents(teacherId)
+    if (!dashboard) return
 
-    const bindingsRes = this.data.bindingsData
-      ? this.data.bindingsData
-      : await this.fetchBindings(teacherId)
-
-    const applicationsRes = this.data.applicationsData
-      ? this.data.applicationsData
-      : await this.fetchApplications(teacherId)
-
-    const scheduleRes = await this.fetchSchedule(teacherId, startDate, endDate)
+    const scheduleRes = dashboard.schedules || []
+    const coursePriceMap = dashboard.coursePriceMap || {}
+    const pendingBindings = dashboard.pendingBindings || []
+    const pendingApplications = dashboard.pendingApplications || []
 
     const calendarData = this.generateCalendar(scheduleRes)
-    const { income, hours, rate } = this.calculateIncome(coursesRes, scheduleRes)
+    const { income, hours, rate } = this.calculateIncome(coursePriceMap, scheduleRes)
 
     this.setData({
       stats: {
-        studentCount: studentsRes.length,
-        courseCount: coursesRes.length,
-        pendingBindings: bindingsRes.length,
-        pendingApplications: applicationsRes.length
+        studentCount: dashboard.studentCount || 0,
+        courseCount: dashboard.courseCount || 0,
+        pendingBindings: dashboard.pendingBindingsCount || 0,
+        pendingApplications: dashboard.pendingApplicationsCount || 0
       },
-      scheduleCount: scheduleRes.length,
+      scheduleCount: dashboard.scheduleCount || scheduleRes.length,
       recentPending: [
-        ...bindingsRes.slice(0, 2).map(item => ({
+        ...pendingBindings.slice(0, 2).map(item => ({
           type: 'binding',
           id: item._id,
           name: item.studentName
         })),
-        ...applicationsRes.slice(0, 2).map(item => ({
+        ...pendingApplications.slice(0, 2).map(item => ({
           type: 'application',
           id: item._id,
           name: item.studentName + ' - ' + item.courseName
@@ -116,62 +150,14 @@ Page({
       monthlyIncome: income,
       totalHours: hours,
       hourlyRate: rate,
-      coursesData: coursesRes,
-      studentsData: studentsRes,
-      bindingsData: bindingsRes,
-      applicationsData: applicationsRes,
+      coursePriceMap,
       scheduleData: scheduleRes
     })
   },
 
-  async fetchStudents(teacherId) {
-    try {
-      return await api.callFunction('getStudents', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getStudents failed:', err)
-      return []
-    }
-  },
-
-  async fetchCourses(teacherId) {
-    try {
-      return await api.callFunction('getCourses', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getCourses failed:', err)
-      return []
-    }
-  },
-
-  async fetchBindings(teacherId) {
-    try {
-      return await api.callFunction('getPendingBindings', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getPendingBindings failed:', err)
-      return []
-    }
-  },
-
-  async fetchApplications(teacherId) {
-    try {
-      return await api.callFunction('getPendingApplications', { teacherId }, { silent: true }) || []
-    } catch (err) {
-      console.error('getPendingApplications failed:', err)
-      return []
-    }
-  },
-
-  async fetchSchedule(teacherId, startDate, endDate) {
-    try {
-      return await api.callFunction('getSchedule', { teacherId, startDate, endDate }, { silent: true }) || []
-    } catch (err) {
-      console.error('getSchedule failed:', err)
-      return []
-    }
-  },
-
   refreshCalendar() {
     const calendarData = this.generateCalendar(this.data.scheduleData)
-    const { income, hours, rate } = this.calculateIncome(this.data.coursesData, this.data.scheduleData)
+    const { income, hours, rate } = this.calculateIncome(this.data.coursePriceMap, this.data.scheduleData)
 
     this.setData({
       calendar: calendarData.calendar,
@@ -239,7 +225,7 @@ Page({
       const count = dayCourseCount[i] || 0
       const isToday = i === now.getDate() && year === now.getFullYear() && month === now.getMonth()
       const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`
-      const { bgColor, textColor } = this.getDayColors(count)
+      const { bgColor, textColor } = this.getDayColors(count, this.data.theme || 'dark')
       
       calendar.push({
         date: i,
@@ -259,23 +245,27 @@ Page({
     }
   },
 
-  getDayColors(count) {
+  getDayColors(count, theme) {
+    const isLight = theme === 'light'
     if (count === 0) {
-      return { bgColor: 'rgba(47, 59, 80, 1)', textColor: 'rgba(255, 255, 255, 1)' }
+      return { 
+        bgColor: isLight ? '#f1f5f9' : 'rgba(47, 59, 80, 1)', 
+        textColor: isLight ? '#64748b' : 'rgba(255, 255, 255, 1)' 
+      }
     } else if (count === 1) {
-      return { bgColor: 'rgba(200, 240, 200, 0.9)', textColor: 'rgba(0, 100, 0, 0.85)' }
+      return { bgColor: isLight ? 'rgba(187, 247, 208, 0.8)' : 'rgba(200, 240, 200, 0.9)', textColor: 'rgba(0, 100, 0, 0.85)' }
     } else if (count === 2) {
-      return { bgColor: 'rgba(150, 220, 150, 0.9)', textColor: 'rgba(0, 100, 0, 0.85)' }
+      return { bgColor: isLight ? 'rgba(134, 239, 172, 0.8)' : 'rgba(150, 220, 150, 0.9)', textColor: 'rgba(0, 100, 0, 0.85)' }
     } else if (count === 3) {
-      return { bgColor: 'rgba(100, 190, 100, 0.9)', textColor: 'rgba(255, 255, 255, 0.9)' }
+      return { bgColor: isLight ? 'rgba(74, 222, 128, 0.85)' : 'rgba(100, 190, 100, 0.9)', textColor: 'rgba(255, 255, 255, 0.9)' }
     } else if (count === 4) {
-      return { bgColor: 'rgba(50, 150, 50, 0.9)', textColor: 'rgba(255, 255, 255, 0.95)' }
+      return { bgColor: isLight ? 'rgba(34, 197, 94, 0.9)' : 'rgba(50, 150, 50, 0.9)', textColor: 'rgba(255, 255, 255, 0.95)' }
     } else {
-      return { bgColor: 'rgba(20, 120, 20, 0.95)', textColor: 'rgba(255, 255, 255, 0.98)' }
+      return { bgColor: isLight ? 'rgba(22, 163, 74, 0.95)' : 'rgba(20, 120, 20, 0.95)', textColor: 'rgba(255, 255, 255, 0.98)' }
     }
   },
 
-  calculateIncome(courses, scheduleList) {
+  calculateIncome(coursePriceSource, scheduleList) {
     const now = new Date()
     const year = this.data.currentYear || now.getFullYear()
     const month = this.data.currentMonth !== undefined ? this.data.currentMonth : now.getMonth()
@@ -284,9 +274,13 @@ Page({
     let totalHours = 0
     
     const coursePriceMap = {}
-    courses.forEach(course => {
-      coursePriceMap[course._id] = course.price || course.pricePerHour || 0
-    })
+    if (Array.isArray(coursePriceSource)) {
+      coursePriceSource.forEach(course => {
+        coursePriceMap[course._id] = course.price || course.pricePerHour || 0
+      })
+    } else if (coursePriceSource && typeof coursePriceSource === 'object') {
+      Object.assign(coursePriceMap, coursePriceSource)
+    }
     
     scheduleList.forEach(item => {
       let price = item.price || item.coursePrice || 0
@@ -365,7 +359,9 @@ Page({
       return
     }
 
-    const date = new Date(fullDate)
+    const parts = String(fullDate).split('-').map(Number)
+    if (parts.length !== 3 || parts.some(isNaN)) return
+    const date = new Date(parts[0], parts[1] - 1, parts[2])
     const dayOfWeek = date.getDay()
     const monday = new Date(date)
     monday.setDate(date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1))
@@ -375,7 +371,7 @@ Page({
     app.globalData.navigateDate = fullDate
     app.globalData.navigateWeekStart = mondayDate
     
-    wx.switchTab({
+    wx.navigateTo({
       url: '/pages/teacher/schedule/index'
     })
   },

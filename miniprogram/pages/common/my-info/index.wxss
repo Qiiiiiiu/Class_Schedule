@@ -1,22 +1,24 @@
 .container {
   min-height: 100vh;
-  background: #0f1419;
+  background: var(--bg-color, #0f1419);
   padding: 30rpx;
   padding-bottom: 180rpx;
+  transition: background-color 0.3s ease;
 }
 
 .user-card {
   width: calc(100% - 60rpx);
   margin: 0 auto 30rpx;
-  background: linear-gradient(145deg, #23293a, #1a1f2e);
+  background: var(--card-bg-gradient, linear-gradient(145deg, #23293a, #1a1f2e));
   border-radius: 24rpx;
   padding: 50rpx 40rpx;
   display: flex;
   align-items: center;
   gap: 30rpx;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8rpx 32rpx var(--shadow-color, rgba(0, 0, 0, 0.3)), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
   box-sizing: border-box;
+  transition: all 0.3s ease;
 }
 
 .avatar {
@@ -45,7 +47,8 @@
 .name {
   font-size: 36rpx;
   font-weight: bold;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
+  transition: color 0.3s ease;
 }
 
 .role-badge {
@@ -69,12 +72,13 @@
 .info-list {
   width: calc(100% - 60rpx);
   margin: 0 auto 40rpx;
-  background: linear-gradient(145deg, #23293a, #1a1f2e);
+  background: var(--card-bg-gradient, linear-gradient(145deg, #23293a, #1a1f2e));
   border-radius: 20rpx;
   padding: 20rpx 0;
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.3), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8rpx 32rpx var(--shadow-color, rgba(0, 0, 0, 0.3)), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
   box-sizing: border-box;
+  transition: all 0.3s ease;
 }
 
 .info-item {
@@ -82,38 +86,150 @@
   justify-content: space-between;
   align-items: center;
   padding: 30rpx 40rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1rpx solid var(--item-border, rgba(255, 255, 255, 0.06));
 }
 
 .info-item:last-child {
   border-bottom: none;
 }
 
+.info-item.clickable:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.container.light .info-item.clickable:active {
+  background: rgba(0, 0, 0, 0.02);
+}
+
 .info-label {
   font-size: 28rpx;
-  color: #64748b;
+  color: var(--text-hint-color, #64748b);
+  transition: color 0.3s ease;
 }
 
 .info-value {
   font-size: 28rpx;
-  color: #f1f5f9;
+  color: var(--text-primary-color, #f1f5f9);
   font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.info-value-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.arrow {
+  font-size: 32rpx;
+  color: var(--text-hint-color, #64748b);
+  margin-top: -4rpx;
 }
 
 .logout-btn {
   width: 100%;
   height: 96rpx;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1rpx solid rgba(239, 68, 68, 0.2);
+  background: var(--logout-bg, rgba(239, 68, 68, 0.15));
+  border: 1rpx solid var(--logout-border, rgba(239, 68, 68, 0.2));
   border-radius: 48rpx;
   font-size: 32rpx;
-  color: #ef4444;
+  color: var(--logout-color, #ef4444);
+  transition: all 0.3s ease;
 }
 
 .logout-btn:active {
-  background: rgba(239, 68, 68, 0.2);
+  opacity: 0.8;
 }
 
 .logout-btn::after {
   border: none;
+}
+
+/* ========== 修改姓名弹窗样式 ========== */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.modal-dialog {
+  position: fixed;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 600rpx;
+  background: var(--modal-bg, #1a1f2e);
+  border: 1rpx solid var(--modal-border, rgba(255, 255, 255, 0.1));
+  border-radius: 28rpx;
+  z-index: 1001;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.modal-title {
+  padding: 40rpx 40rpx 20rpx;
+  font-size: 34rpx;
+  font-weight: bold;
+  color: var(--modal-title-color, #f1f5f9);
+  text-align: center;
+}
+
+.modal-content {
+  padding: 20rpx 40rpx 40rpx;
+}
+
+.modal-input {
+  width: 100%;
+  height: 88rpx;
+  background: var(--input-bg, rgba(255, 255, 255, 0.05));
+  border: 1rpx solid var(--input-border, rgba(255, 255, 255, 0.1));
+  border-radius: 16rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  color: var(--text-primary-color, #f1f5f9);
+  box-sizing: border-box;
+}
+
+.modal-footer {
+  display: flex;
+  border-top: 1rpx solid var(--card-border, rgba(255, 255, 255, 0.06));
+}
+
+.modal-btn {
+  flex: 1;
+  height: 100rpx;
+  line-height: 100rpx;
+  font-size: 32rpx;
+  background: transparent;
+  border-radius: 0;
+  font-weight: 500;
+  text-align: center;
+}
+
+.modal-btn::after {
+  border: none;
+}
+
+.modal-btn.cancel {
+  color: var(--modal-btn-cancel-text, #94a3b8);
+  background: var(--modal-btn-cancel-bg, rgba(255, 255, 255, 0.05));
+}
+
+.modal-btn.confirm {
+  color: #ffffff;
+  background: linear-gradient(145deg, #3b82f6, #2563eb);
+}
+
+.modal-btn:active {
+  opacity: 0.9;
 }

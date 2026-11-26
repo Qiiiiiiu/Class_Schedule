@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container {{theme}}">
   <view class="week-nav">
     <view class="week-nav-center">
       <view class="nav-arrow" bindtap="prevWeek">‹</view>
@@ -10,6 +10,13 @@
     </view>
   </view>
 
+  <!-- 班级类型快捷筛选：全部 / 一对一 / 大班课 -->
+  <view class="class-type-bar">
+    <view class="ct-pill {{selectedClassType === 'all' ? 'active' : ''}}" bindtap="onSelectClassType" data-type="all">全部班级</view>
+    <view class="ct-pill {{selectedClassType === 'one_on_one' ? 'active' : ''}}" bindtap="onSelectClassType" data-type="one_on_one">一对一</view>
+    <view class="ct-pill {{selectedClassType === 'group' ? 'active' : ''}}" bindtap="onSelectClassType" data-type="group">大班课</view>
+  </view>
+
   <view class="schedule-grid">
     <view class="time-column">
       <view class="time-header"></view>
@@ -19,7 +26,7 @@
     </view>
 
     <view class="day-column" wx:for="{{weekDays}}" wx:key="index">
-      <view class="day-header {{item.isToday ? 'today' : ''}}">
+      <view class="day-header {{item.isToday ? 'today' : ''}} {{item.isSelected ? 'selected' : ''}}">
         <text class="day-name">{{item.name}}</text>
         <text class="day-date">{{item.date}}</text>
       </view>
@@ -32,7 +39,7 @@
               bindtap="onCourseTap" data-course="{{course}}">
           <text class="course-name" style="color: {{course.textColor}}">{{course.name}}</text>
           <text class="course-time" style="color: {{course.textColor}}">{{course.schedule.startTime}}-{{course.schedule.endTime}}</text>
-          <text class="course-room" style="color: {{course.textColor}}">{{course.classroom}}</text>
+          <text class="course-room" style="color: {{course.textColor}}">{{course.schedule.classroom || ''}}</text>
         </view>
       </view>
     </view>
@@ -95,6 +102,10 @@
           <text class="detail-value">{{selectedCourse.schedule.classroom || '未设置'}}</text>
         </view>
         <view class="detail-row">
+          <text class="detail-label">班级类型</text>
+          <text class="detail-value">{{selectedCourse.classType === 'group' ? '大班课' : '一对一班'}}</text>
+        </view>
+        <view class="detail-row">
           <text class="detail-label">选课人数</text>
           <text class="detail-value">{{selectedCourse.studentCount || 0}}人</text>
         </view>
@@ -108,9 +119,10 @@
 
       <!-- 查看模式下的按钮 -->
       <view wx:if="{{!isEditing}}" class="detail-actions">
-        <button class="detail-btn" bindtap="onSendReminder">发送提醒</button>
-        <button class="detail-btn" bindtap="onEditCourse">编辑课程</button>
-        <button class="detail-btn delete" bindtap="onDeleteCourse">删除课程</button>
+        <button class="detail-btn" bindtap="onViewClassDetail">所属班级</button>
+        <button class="detail-btn" bindtap="onSendReminder">发提醒</button>
+        <button class="detail-btn" bindtap="onEditCourse">改期</button>
+        <button class="detail-btn delete" bindtap="onDeleteCourse">删除</button>
       </view>
     </view>
   </view>

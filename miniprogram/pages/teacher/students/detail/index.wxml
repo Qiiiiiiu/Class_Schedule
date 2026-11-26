@@ -1,0 +1,160 @@
+<view class="container {{theme}}">
+  <!-- 头部信息 -->
+  <view class="student-header-card">
+    <image class="avatar" src="{{student.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
+    <view class="header-info">
+      <text class="name">{{student.studentName || '学生姓名'}}</text>
+      <text class="status-tag status-{{student.status}}">{{student.statusStr || '已绑定'}}</text>
+    </view>
+  </view>
+
+  <!-- 所在班级模块（展示一对一与大班课多班并行关系） -->
+  <view class="card-section classes-section">
+    <view class="section-title-row">
+      <text class="section-title">所在班级 ({{enrolledClasses.length}})</text>
+      <text class="class-summary-sub">一对一 {{oneOnOneClasses.length}} · 大班 {{groupClasses.length}}</text>
+    </view>
+    <view class="enrolled-class-list" wx:if="{{enrolledClasses.length > 0}}">
+      <view class="enrolled-class-item" wx:for="{{enrolledClasses}}" wx:key="_id" bindtap="onOpenClassDetail" data-id="{{item._id}}">
+        <view class="enrolled-class-left">
+          <text class="class-pill type-{{item.classType}}">{{item.classTypeLabel}}</text>
+          <text class="enrolled-class-name">{{item.name}}</text>
+        </view>
+        <view class="enrolled-class-right">
+          <text class="enrolled-class-meta">{{item.status === 'available' ? '进行中' : '已停课'}}</text>
+          <text class="enrolled-class-arrow">›</text>
+        </view>
+      </view>
+    </view>
+    <view class="empty-logs" wx:else>
+      <text class="empty-logs-text">暂未加入任何一对一或大班课</text>
+    </view>
+  </view>
+
+  <!-- 课时管理模块 -->
+  <view class="card-section hours-section">
+    <view class="section-title-row">
+      <text class="section-title">课时管理</text>
+    </view>
+    <view class="hours-display-grid">
+      <view class="hours-card">
+        <text class="hours-val">{{student.remainingHours || 0}}</text>
+        <text class="hours-lbl">未上课时</text>
+      </view>
+      <view class="hours-card">
+        <text class="hours-val">{{student.purchasedHours || 0}}</text>
+        <text class="hours-lbl">总购买课时</text>
+      </view>
+      <view class="hours-card">
+        <text class="hours-val">{{(student.purchasedHours || 0) - (student.remainingHours || 0) < 0 ? 0 : (student.purchasedHours || 0) - (student.remainingHours || 0)}}</text>
+        <text class="hours-lbl">已上课时</text>
+      </view>
+    </view>
+    
+    <!-- 课时操作按钮 -->
+    <view class="hours-actions">
+      <button class="action-btn buy" bindtap="onShowBuyDialog" hover-class="btn-hover">
+        <text class="action-icon">💳</text>
+        <text>购买课时</text>
+      </button>
+      <button class="action-btn adjust" bindtap="onShowAdjustDialog" hover-class="btn-hover">
+        <text class="action-icon">⚙️</text>
+        <text>调整课时</text>
+      </button>
+      <button class="action-btn refund" bindtap="onShowRefundDialog" hover-class="btn-hover">
+        <text class="action-icon">💵</text>
+        <text>退费</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 课时明细模块 -->
+  <view class="card-section logs-section">
+    <view class="section-title-row">
+      <text class="section-title">课时变动明细</text>
+    </view>
+    <scroll-view class="logs-scroll" scroll-y wx:if="{{logs.length > 0}}">
+      <view class="log-item" wx:for="{{logs}}" wx:key="index">
+        <view class="log-left">
+          <text class="log-type-tag tag-{{item.classStr}}">{{item.typeStr}}</text>
+          <text class="log-time">{{item.timeStr}}</text>
+        </view>
+        <view class="log-right">
+          <text class="log-amount amount-{{item.classStr}}">{{item.amountStr}} 节</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="empty-logs" wx:else>
+      <text class="empty-logs-text">暂无课时变动明细</text>
+    </view>
+  </view>
+
+  <!-- 基本信息模块 -->
+  <view class="card-section info-section">
+    <view class="section-title-row">
+      <text class="section-title">基本信息</text>
+      <text class="edit-toggle-btn" bindtap="toggleEditMode" hover-class="text-hover">{{editing ? '取消' : '编辑'}}</text>
+    </view>
+
+    <view class="info-list" wx:if="{{!editing}}">
+      <view class="info-item">
+        <text class="lbl">手机号码</text>
+        <text class="val">{{student.studentPhone || '未填写'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="lbl">籍贯</text>
+        <text class="val">{{studentDetail.nativePlace || '未填写'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="lbl">年级</text>
+        <text class="val">{{studentDetail.grade || '未填写'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="lbl">科目</text>
+        <text class="val">{{studentDetail.subject || '未填写'}}</text>
+      </view>
+      <view class="info-item vertical">
+        <text class="lbl">备注信息</text>
+        <text class="val remark-val">{{studentDetail.remark || '无备注'}}</text>
+      </view>
+    </view>
+
+    <view class="edit-form" wx:else>
+      <view class="form-group">
+        <text class="lbl">籍贯</text>
+        <input class="form-input" value="{{studentDetail.nativePlace}}" bindinput="onNativePlaceInput" placeholder="请输入籍贯" />
+      </view>
+      <view class="form-group">
+        <text class="lbl">年级</text>
+        <input class="form-input" value="{{studentDetail.grade}}" bindinput="onGradeInput" placeholder="请输入年级" />
+      </view>
+      <view class="form-group">
+        <text class="lbl">科目</text>
+        <input class="form-input" value="{{studentDetail.subject}}" bindinput="onSubjectInput" placeholder="请输入科目" />
+      </view>
+      <view class="form-group">
+        <text class="lbl">备注信息</text>
+        <textarea class="form-textarea" value="{{studentDetail.remark}}" bindinput="onRemarkInput" placeholder="请输入备注信息"></textarea>
+      </view>
+      <button class="save-btn" bindtap="onSaveDetail" hover-class="btn-hover">保存修改</button>
+    </view>
+  </view>
+
+  <!-- 弹出的课时变动输入框对话框 -->
+  <view class="dialog-mask" wx:if="{{dialog.show}}" bindtap="onCloseDialog">
+    <view class="dialog-content" catchtap="stopPropagation">
+      <view class="dialog-header">
+        <text class="dialog-title">{{dialog.title}}</text>
+        <text class="dialog-close" bindtap="onCloseDialog">✕</text>
+      </view>
+      <view class="dialog-body">
+        <text class="dialog-desc">{{dialog.desc}}</text>
+        <input class="dialog-input" type="digit" value="{{dialog.value}}" bindinput="onDialogInput" placeholder="{{dialog.placeholder}}" focus="{{dialog.show}}" />
+      </view>
+      <view class="dialog-footer">
+        <button class="dialog-btn cancel" bindtap="onCloseDialog">取消</button>
+        <button class="dialog-btn confirm" bindtap="onConfirmDialog">确认</button>
+      </view>
+    </view>
+  </view>
+</view>

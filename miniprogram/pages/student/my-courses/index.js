@@ -4,6 +4,7 @@ const api = require('../../../utils/api.js')
 
 Page({
   data: {
+    theme: 'dark',
     currentTab: 'schedule', // 'schedule' or 'list'
     courses: [], // 扁平课程列表
     emptyText: '暂无已选课程',
@@ -36,9 +37,15 @@ Page({
     if (!checkRole.checkStudent()) {
       return
     }
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
 
     if (app.globalData.navigateWeekStart) {
-      const weekStartDate = new Date(app.globalData.navigateWeekStart)
+      const parts = String(app.globalData.navigateWeekStart).split('-').map(Number)
+      const weekStartDate = (parts.length === 3 && !parts.some(isNaN))
+        ? new Date(parts[0], parts[1] - 1, parts[2])
+        : new Date(app.globalData.navigateWeekStart)
       if (!isNaN(weekStartDate.getTime())) {
         this.setData({ 
           currentWeekStart: weekStartDate,
@@ -127,7 +134,7 @@ Page({
 
     if (coursesRes) {
       const courses = coursesRes.map(course => {
-        const isCreatedByStudent = course.creatorRole === 'student' || course.createdBy === studentId
+        const isCreatedByStudent = course.creatorRole === 'student' || course.createdBy === studentId || course.teacherId === 'custom_teacher'
         return {
           ...course,
           name: course.name || course.courseName || '未命名课程',
@@ -168,7 +175,7 @@ Page({
         return colors[0]
       }
 
-      scheduleRes.forEach(course => {
+      scheduleRes.forEach((course, idx) => {
         if (course.schedule && course.schedule.date) {
           const dateStr = course.schedule.date
           const dateParts = dateStr.split('-')
@@ -185,8 +192,8 @@ Page({
             const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1 // 0为周日，对应索引6
 
             if (dayIndex >= 0 && dayIndex < 7) {
-              const [startHour, startMin] = course.schedule.startTime.split(':').map(Number)
-              const [endHour, endMin] = course.schedule.endTime.split(':').map(Number)
+              const [startHour, startMin] = (course.schedule.startTime || '09:00').split(':').map(Number)
+              const [endHour, endMin] = (course.schedule.endTime || '10:00').split(':').map(Number)
               const startMinutes = startHour * 60 + startMin
               const endMinutes = endHour * 60 + endMin
               const durationMinutes = endMinutes - startMinutes
@@ -204,10 +211,10 @@ Page({
                 top,
                 height,
                 isCreatedByStudent,
-                subscribed: course.subscribers && course.subscribers.includes(studentId),
+                subscribed: Array.isArray(course.subscribers) && course.subscribers.includes(studentId),
                 bgColor: color.bg,
                 textColor: color.text,
-                courseKey: `${course._id || course.scheduleId}_${dayIndex}_${Math.random()}`
+                courseKey: `${course._id || course.scheduleId || 'c'}_${dayIndex}_${idx}`
               })
             }
           }
@@ -223,7 +230,11 @@ Page({
     if (!schedule) return '时间待定'
     const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
     if (schedule.date) {
-      return `${schedule.date} (${days[new Date(schedule.date).getDay()]}) ${schedule.startTime}-${schedule.endTime}`
+      const parts = String(schedule.date).split('-').map(Number)
+      const d = (parts.length === 3 && !parts.some(isNaN))
+        ? new Date(parts[0], parts[1] - 1, parts[2])
+        : new Date(schedule.date)
+      return `${schedule.date} (${days[d.getDay()] || ''}) ${schedule.startTime || ''}-${schedule.endTime || ''}`
     }
     return `${days[schedule.dayOfWeek] || ''} ${schedule.startTime || ''} - ${schedule.endTime || ''}`
   },

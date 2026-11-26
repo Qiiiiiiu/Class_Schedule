@@ -1,10 +1,13 @@
-<view class="container">
+<view class="container {{theme}}">
   <view class="header">
+    <image wx:if="{{userInfo.avatar}}" class="avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+    <view wx:else class="avatar">
+      <text class="avatar-emoji">{{greetingEmoji}}</text>
+    </view>
     <view class="welcome">
-      <text class="title">您好，{{userInfo.name}}</text>
+      <text class="title">{{greeting}}，{{userInfo.name}}</text>
       <text class="subtitle">欢迎使用课程管理系统</text>
     </view>
-    <image class="avatar" src="{{userInfo.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
   </view>
 
   <view class="calendar-section">
@@ -26,6 +29,53 @@
       <view class="calendar-day {{item.empty ? 'empty' : ''}}" wx:for="{{calendar}}" wx:key="index" style="background: {{item.empty ? 'transparent' : item.bgColor}}" bindtap="onCalendarDayTap" data-date="{{item.fullDate}}">
         <text wx:if="{{!item.empty}}" class="day-num {{item.isToday ? 'today' : ''}}" style="color: {{item.isToday ? '' : item.textColor}}">{{item.date}}</text>
         <text wx:if="{{!item.empty && item.count > 0}}" class="day-count" style="color: {{item.isToday ? 'rgba(0, 0, 0, 0.7)' : item.textColor}}">{{item.count}}节</text>
+      </view>
+    </view>
+    <view class="calendar-hint">
+      <text class="hint-icon">💡</text>
+      <text class="hint-text">提示：点击具体日期可跳转到周课程</text>
+    </view>
+  </view>
+
+  <!-- 核心指标栏 -->
+  <view class="stats-section">
+    <text class="section-title">核心数据</text>
+    <view class="stats-grid">
+      <view class="stat-card">
+        <view class="stat-icon-wrapper blue">
+          <text class="stat-icon-emoji">👥</text>
+        </view>
+        <view class="stat-info">
+          <text class="stat-value">{{stats.studentCount || 0}}</text>
+          <text class="stat-label">关联学生</text>
+        </view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-icon-wrapper green">
+          <text class="stat-icon-emoji">📚</text>
+        </view>
+        <view class="stat-info">
+          <text class="stat-value">{{stats.courseCount || 0}}</text>
+          <text class="stat-label">总课程数</text>
+        </view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-icon-wrapper orange">
+          <text class="stat-icon-emoji">🔔</text>
+        </view>
+        <view class="stat-info">
+          <text class="stat-value">{{(stats.pendingBindings || 0) + (stats.pendingApplications || 0)}}</text>
+          <text class="stat-label">待处理数</text>
+        </view>
+      </view>
+      <view class="stat-card placeholder">
+        <view class="stat-icon-wrapper gray">
+          <text class="stat-icon-emoji">➕</text>
+        </view>
+        <view class="stat-info">
+          <text class="stat-value placeholder-val">--</text>
+          <text class="stat-label">规划指标中</text>
+        </view>
       </view>
     </view>
   </view>

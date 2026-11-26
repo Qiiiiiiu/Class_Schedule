@@ -5,42 +5,58 @@ cloud.init({
 
 const db = cloud.database()
 const _ = db.command
+const {
+  DAY_MS,
+  formatBeijingDate,
+  parseBeijingDateTimeToUTC,
+  resolveReminderMinutes,
+  shouldTriggerReminder,
+  maskId
+} = require('./timeUtils')
 
-// 订阅消息模板ID
-const TEMPLATE_ID = 'w223WKtyfXebjCpkNc2TbtczBuGuR4SUk2IRbMcRreU'
+const TEMPLATE_ID = process.env.REMINDER_TEMPLATE_ID || 'w223WKtyfXebjCpkNc2TbtczBuGuR4SUk2IRbMcRreU'
+const MAX_BATCH_SIZE = 100
+const LOOK_AHEAD_DAYS = 1
+const ARCHIVE_RETENTION_DAYS = 90
+const CRON_TIME_BUDGET_MS = 15000
+const DEBUG = process.env.DEBUG_REMINDER === '1'
 
-// 单次处理的最大记录数
-const MAX_BATCH_SIZE = 20
-
-// 只处理未来几天内的课程（避免处理太遥远的课程）
-const LOOK_AHEAD_DAYS = 7
+function debugLog(...args) {
+  if (DEBUG) {
+    console.log(...args)
+  }
+}
 
 exports.main = async (event, context) => {
-  const { courseId, teacherId, triggerType, Type, triggerName, batchSize = MAX_BATCH_SIZE } = event
+  const { courseId, teacherId, triggerType, Type, triggerName, batchSize = MAX_BATCH_SIZE } = event || {}
+  const wxContext = cloud.getWXContext()
+  const callerOpenid = wxContext && wxContext.OPENID
 
-  console.log('Received event:', JSON.stringify(event))
-
-  // 定时触发模式
-  const isCronTrigger = triggerType === 'cron' || 
-                        Type === 'Timer' || 
-                        (triggerName && triggerName.includes('cron')) ||
-                        (!courseId && !teacherId)
+  // 定时触发模式：严格判断定时器标识或无调用方上下文
+  const isCronTrigger = triggerType === 'cron' ||
+    Type === 'Timer' ||
+    (typeof triggerName === 'string' && triggerName.includes('cron')) ||
+    (!callerOpenid && !courseId && !teacherId)
 
   if (isCronTrigger) {
-    return await handleCronTrigger(batchSize)
+    return await handleCronTrigger(Math.min(Number(batchSize) || MAX_BATCH_SIZE, MAX_BATCH_SIZE))
   }
 
-  // 手动触发模式
-  if (!courseId || !teacherId) {
-    return {
-      code: 1,
-      message: '参数不完整'
-    }
+  // 手动触发模式：必须校验调用者身份
+  if (!callerOpenid) {
+    return { code: 1, message: '未授权访问' }
+  }
+  if (!courseId) {
+    return { code: 1, message: '参数不完整' }
+  }
+  if (teacherId && teacherId !== callerOpenid) {
+    return { code: 1, message: '无权限操作他人课程' }
   }
 
   try {
-    return await sendReminderToTeacher(courseId, teacherId)
+    return await sendReminderToTeacher(courseId, callerOpenid)
   } catch (err) {
+    console.error('[sendReminder:manual] error:', err.message)
     return {
       code: 1,
       message: '发送提醒失败',
@@ -49,238 +65,292 @@ exports.main = async (event, context) => {
   }
 }
 
-// 处理定时触发
+// 处理定时触发（支持游标分页防饿死、软结束保留历史、额度校验、原子抢占）
 async function handleCronTrigger(batchSize) {
-  const now = new Date()
-  const nowUTC = Date.now()
-  const beijingTimeOffset = 8 * 60 * 60 * 1000
-  const nowBeijing = nowUTC + beijingTimeOffset
-  
-  console.log(`定时任务执行，服务器UTC时间: ${now.toISOString()}, 北京时间戳: ${nowBeijing}`)
+  const startTimeMs = Date.now()
+  const nowUTC = startTimeMs
+  const todayStr = formatBeijingDate(nowUTC)
+  const endDateStr = formatBeijingDate(nowUTC + LOOK_AHEAD_DAYS * DAY_MS)
+
+  debugLog(`[sendReminder:cron] window <= ${endDateStr} (today=${todayStr})`)
+
+  let successCount = 0
+  let failCount = 0
+  let finishedCount = 0
+  let orphanDeleteCount = 0
+  let processedTotal = 0
+  let hasMore = false
+  let lastId = null
+
+  const teacherQuotaCache = new Map()
 
   try {
-    // 计算日期范围：只查询未来几天内的课程
-    const today = new Date(nowBeijing)
-    const endDate = new Date(nowBeijing)
-    endDate.setDate(today.getDate() + LOOK_AHEAD_DAYS)
-    
-    const todayStr = formatDate(today)
-    const endDateStr = formatDate(endDate)
-    
-    console.log(`查询日期范围: ${todayStr} 至 ${endDateStr}`)
-
-    // 只查询未来几天内的课程，大大减少处理的数据量
-    const unfinishedRes = await db.collection('course_unfinished')
-      .where({
-        'schedule.date': _.gte(todayStr).and(_.lte(endDateStr))
-      })
-      .limit(batchSize)
-      .get()
-
-    const unfinishedList = unfinishedRes.data
-    console.log(`查询到 ${unfinishedList.length} 条需要处理的课程`)
-
-    if (unfinishedList.length === 0) {
-      return {
-        code: 0,
-        message: '没有需要处理的课程',
-        data: {
-          successCount: 0,
-          failCount: 0,
-          deleteCount: 0,
-          hasMore: false
-        }
-      }
-    }
-
-    // 批量获取所有相关的课程安排
-    const scheduleIds = unfinishedList.map(u => u.scheduleId)
-    const scheduleMap = await getScheduleMap(scheduleIds)
-    
-    // 批量获取所有相关的父课程
-    const parentIds = [...new Set(unfinishedList.map(u => u.parentId).filter(Boolean))]
-    const courseMap = await getCourseMap(parentIds)
-
-    let successCount = 0
-    let failCount = 0
-    let deleteCount = 0
-    const deletePromises = []
-    const sendPromises = []
-    const successStudents = new Map()
-
-    for (const unfinished of unfinishedList) {
-      console.log(`处理未完成课程: ${unfinished._id}, scheduleId: ${unfinished.scheduleId}`)
-      
-      // 手动解析日期时间
-      const dateStr = unfinished.schedule.date
-      const timeStr = unfinished.schedule.startTime
-      
-      if (!dateStr || !timeStr) {
-        console.log(`课程时间信息缺失，删除: ${unfinished._id}`)
-        deletePromises.push(db.collection('course_unfinished').doc(unfinished._id).remove())
-        deleteCount++
-        continue
+    while (true) {
+      if (Date.now() - startTimeMs > CRON_TIME_BUDGET_MS) {
+        hasMore = true
+        break
       }
 
-      const [year, month, day] = dateStr.split('-').map(Number)
-      const [hours, minutes] = timeStr.split(':').map(Number)
-      
-      const courseUTC = Date.UTC(year, month - 1, day, hours, minutes) - beijingTimeOffset
-      const [endHours, endMinutes] = unfinished.schedule.endTime.split(':').map(Number)
-      const courseEndUTC = Date.UTC(year, month - 1, day, endHours, endMinutes) - beijingTimeOffset
-      
-      console.log(`课程时间(北京): ${dateStr} ${timeStr}, 结束时间: ${unfinished.schedule.endTime}`)
-      
-      // 检查课程是否已结束
-      if (nowUTC >= courseEndUTC) {
-        console.log(`课程已结束，从course_unfinished中删除: ${unfinished._id}`)
-        deletePromises.push(db.collection('course_unfinished').doc(unfinished._id).remove())
-        deleteCount++
-        continue
+      const whereCond = {
+        'schedule.date': _.lte(endDateStr),
+        status: _.neq('finished')
       }
-      
-      // 获取课程安排详细信息
-      const schedule = scheduleMap.get(unfinished.scheduleId)
-      if (!schedule) {
-        console.log(`课程安排不存在，删除: ${unfinished._id}`)
-        deletePromises.push(db.collection('course_unfinished').doc(unfinished._id).remove())
-        deleteCount++
-        continue
+      if (lastId) {
+        whereCond._id = _.gt(lastId)
       }
-      
-      // 获取父课程信息
-      const course = courseMap.get(schedule.parentId)
-      if (!course) {
-        console.log(`父课程不存在，删除: ${unfinished._id}`)
-        deletePromises.push(db.collection('course_unfinished').doc(unfinished._id).remove())
-        deleteCount++
-        continue
+
+      const unfinishedRes = await db.collection('course_unfinished')
+        .where(whereCond)
+        .orderBy('_id', 'asc')
+        .limit(batchSize)
+        .get()
+
+      const unfinishedList = unfinishedRes.data || []
+      if (unfinishedList.length === 0) {
+        break
       }
-      
-      // 获取提醒时间设置
-      const reminderMinutes = schedule.reminderTime || course.reminderTime || 15
-      console.log(`父课程: ${course.name}, 使用提醒时间: ${reminderMinutes}分钟`)
 
-      // 计算提醒时间点
-      const reminderUTC = courseUTC - reminderMinutes * 60 * 1000
+      lastId = unfinishedList[unfinishedList.length - 1]._id
+      processedTotal += unfinishedList.length
 
-      // 检查是否在当前时间附近5分钟内需要提醒
-      const timeDiff = Math.abs(reminderUTC - nowUTC)
-      const within5Minutes = timeDiff <= 5 * 60 * 1000
+      const scheduleIds = [...new Set(unfinishedList.map(u => u.scheduleId).filter(Boolean))]
+      const parentIds = [...new Set(unfinishedList.map(u => u.parentId).filter(Boolean))]
+      const [scheduleMap, courseMap] = await Promise.all([
+        getDocMapByIds('course_schedule', scheduleIds),
+        getDocMapByIds('courses', parentIds)
+      ])
 
-      // 只在提醒时间之后且课程开始之前发送
-      if (within5Minutes && nowUTC < courseUTC) {
-        // 向教师发送提醒（只发送一次，使用 teacherReminderSent 标记）
-        if (!unfinished.teacherReminderSent) {
-          sendPromises.push({
-            promise: sendSubscribeMessage({
-              touser: course.teacherId,
-              courseName: course.name,
-              schedule: schedule.schedule,
-              isTeacher: true
-            }),
-            courseName: course.name,
-            type: 'teacher',
-            unfinishedId: unfinished._id,
-            isUpdate: true
-          })
-        } else {
-          console.log(`教师提醒已发送过，跳过: ${course.name}`)
+      // 预拉本批涉及教师的提醒额度
+      const batchTeacherIds = [...new Set(
+        [...courseMap.values()]
+          .map(c => c.teacherId)
+          .filter(id => id && id !== 'custom_teacher' && !teacherQuotaCache.has(id))
+      )]
+      if (batchTeacherIds.length > 0) {
+        await preloadTeacherQuotas(batchTeacherIds, teacherQuotaCache)
+      }
+
+      const softFinishOps = []
+      const orphanRemoveOps = []
+      const sendTasks = []
+
+      for (const unfinished of unfinishedList) {
+        const schObj = unfinished.schedule || {}
+        const courseUTC = parseBeijingDateTimeToUTC(schObj.date, schObj.startTime)
+        const courseEndUTC = parseBeijingDateTimeToUTC(schObj.date, schObj.endTime)
+
+        if (courseUTC === null || courseEndUTC === null) {
+          console.warn(`[sendReminder:cron] invalid schedule time, removing orphan id=${unfinished._id}`)
+          orphanRemoveOps.push(db.collection('course_unfinished').doc(unfinished._id).remove())
+          orphanDeleteCount++
+          continue
         }
 
-        const subscribers = unfinished.subscribers || []
-        console.log(`课程 ${course.name} 有 ${subscribers.length} 个订阅学生`)
+        // 课程已结束：改为软结束 status='finished'，保留学生历史周课表（BUG-07）
+        if (nowUTC >= courseEndUTC) {
+          softFinishOps.push(
+            db.collection('course_unfinished').doc(unfinished._id).update({
+              data: {
+                status: 'finished',
+                finishedTime: db.serverDate(),
+                updateTime: db.serverDate()
+              }
+            })
+          )
+          finishedCount++
+          continue
+        }
+
+        const schedule = scheduleMap.get(unfinished.scheduleId)
+        if (!schedule) {
+          orphanRemoveOps.push(db.collection('course_unfinished').doc(unfinished._id).remove())
+          orphanDeleteCount++
+          continue
+        }
+
+        const course = courseMap.get(schedule.parentId)
+        if (!course) {
+          orphanRemoveOps.push(db.collection('course_unfinished').doc(unfinished._id).remove())
+          orphanDeleteCount++
+          continue
+        }
+
+        if (course.status && course.status !== 'available') {
+          continue
+        }
+
+        // BUG-05：显式判空，0 表示“不提醒”直接跳过
+        const reminderMinutes = resolveReminderMinutes(schedule, course)
+        if (reminderMinutes <= 0) {
+          continue
+        }
+
+        if (!shouldTriggerReminder({ nowUTC, courseUTC, reminderMinutes })) {
+          continue
+        }
+
+        // 1. 教师提醒（跳过学生自建课、无有效 teacherId、已发送、额度不足）
+        const isStudentSelfCourse = course.creatorRole === 'student' || !course.teacherId || course.teacherId === 'custom_teacher'
+        if (!isStudentSelfCourse && !unfinished.teacherReminderSent) {
+          const currentQuota = teacherQuotaCache.get(course.teacherId) || 0
+          if (currentQuota > 0) {
+            // 原子抢占发送权，防止并发 cron 重复发送
+            const claimRes = await db.collection('course_unfinished')
+              .where({ _id: unfinished._id, teacherReminderSent: _.neq(true) })
+              .update({
+                data: {
+                  teacherReminderSent: true,
+                  updateTime: db.serverDate()
+                }
+              })
+            if (claimRes && claimRes.stats && claimRes.stats.updated === 1) {
+              teacherQuotaCache.set(course.teacherId, currentQuota - 1)
+              sendTasks.push({
+                type: 'teacher',
+                unfinishedId: unfinished._id,
+                teacherId: course.teacherId,
+                courseId: course._id,
+                promise: sendSubscribeMessage({
+                  touser: course.teacherId,
+                  courseName: course.name,
+                  schedule: schedule.schedule,
+                  isTeacher: true
+                })
+              })
+            }
+          } else {
+            debugLog(`[sendReminder:cron] skip teacher=${maskId(course.teacherId)} quota=0`)
+          }
+        }
+
+        // 2. 订阅学生提醒
+        const subscribers = Array.isArray(unfinished.subscribers) ? unfinished.subscribers : []
         for (const studentId of subscribers) {
-          sendPromises.push({
+          sendTasks.push({
+            type: 'student',
+            unfinishedId: unfinished._id,
+            studentId,
+            courseId: course._id,
             promise: sendSubscribeMessage({
               touser: studentId,
               courseName: course.name,
               schedule: schedule.schedule,
               isTeacher: false
-            }),
-            courseName: course.name,
-            type: 'student',
-            studentId,
-            unfinishedId: unfinished._id
+            })
           })
         }
-      } else {
-        console.log(`跳过: ${nowUTC < courseUTC ? '不在提醒时间窗口' : '课程已结束'}`)
       }
-    }
 
-    // 并行执行删除操作
-    if (deletePromises.length > 0) {
-      await Promise.all(deletePromises)
-    }
+      if (softFinishOps.length > 0) {
+        await Promise.allSettled(softFinishOps)
+      }
+      if (orphanRemoveOps.length > 0) {
+        await Promise.allSettled(orphanRemoveOps)
+      }
 
-    // 记录成功发送的教师提醒
-    const sentTeacherReminders = []
+      if (sendTasks.length > 0) {
+        const results = await Promise.allSettled(sendTasks.map(t => t.promise))
+        const successStudentsByUnfinished = new Map()
+        const postOps = []
 
-    // 并行执行发送提醒操作
-    if (sendPromises.length > 0) {
-      const results = await Promise.allSettled(sendPromises.map(item => item.promise))
-      results.forEach((result, index) => {
-        const item = sendPromises[index]
-        if (result.status === 'fulfilled') {
-          console.log(`提醒发送成功: ${item.courseName}`)
-          successCount++
-          if (item.type === 'teacher' && item.isUpdate && item.unfinishedId) {
-            sentTeacherReminders.push(item.unfinishedId)
-          } else if (item.type === 'student' && item.studentId && item.unfinishedId) {
-            if (!successStudents.has(item.unfinishedId)) {
-              successStudents.set(item.unfinishedId, [])
+        results.forEach((res, idx) => {
+          const task = sendTasks[idx]
+          if (res.status === 'fulfilled') {
+            successCount++
+            if (task.type === 'teacher') {
+              postOps.push(
+                db.collection('users')
+                  .where({ openid: task.teacherId, reminderQuota: _.gt(0) })
+                  .update({
+                    data: {
+                      reminderQuota: _.inc(-1),
+                      updateTime: db.serverDate()
+                    }
+                  })
+              )
+            } else if (task.type === 'student') {
+              if (!successStudentsByUnfinished.has(task.unfinishedId)) {
+                successStudentsByUnfinished.set(task.unfinishedId, [])
+              }
+              successStudentsByUnfinished.get(task.unfinishedId).push(task.studentId)
             }
-            successStudents.get(item.unfinishedId).push(item.studentId)
+          } else {
+            failCount++
+            const reasonMsg = String((res.reason && res.reason.message) || res.reason || 'unknown')
+            console.warn(`[sendReminder:cron] send failed type=${task.type} courseId=${task.courseId} reason=${reasonMsg}`)
+            // 教师发送遇非授权过期（43101）的瞬时错误时回滚抢占标记，允许下轮重试
+            if (task.type === 'teacher' && !reasonMsg.includes('43101')) {
+              postOps.push(
+                db.collection('course_unfinished').doc(task.unfinishedId).update({
+                  data: {
+                    teacherReminderSent: false,
+                    updateTime: db.serverDate()
+                  }
+                })
+              )
+            }
           }
-        } else {
-          console.error(`发送提醒失败: ${result.reason?.message || 'unknown error'}`)
-          failCount++
-        }
-      })
-    }
+        })
 
-    // 清除已发送成功学生的订阅状态
-    if (successStudents.size > 0) {
-      console.log(`清除已发送成功学生的订阅状态...`)
-      for (const [unfinishedId, students] of successStudents) {
-        const unfinished = unfinishedList.find(u => u._id === unfinishedId)
-        if (unfinished) {
-          const remainingSubscribers = (unfinished.subscribers || []).filter(s => !students.includes(s))
-          await db.collection('course_unfinished').doc(unfinishedId).update({
-            data: {
-              subscribers: remainingSubscribers,
-              updateTime: db.serverDate()
-            }
-          })
-          console.log(`课程 ${unfinishedId} 已清除 ${students.length} 个学生的订阅状态`)
+        // 原子移除已发送学生的订阅（使用 _.pullAll 防止覆盖并发新订阅）
+        for (const [unfinishedId, students] of successStudentsByUnfinished) {
+          postOps.push(
+            db.collection('course_unfinished').doc(unfinishedId).update({
+              data: {
+                subscribers: _.pullAll(students),
+                updateTime: db.serverDate()
+              }
+            })
+          )
         }
+
+        if (postOps.length > 0) {
+          await Promise.allSettled(postOps)
+        }
+      }
+
+      if (unfinishedList.length < batchSize) {
+        break
       }
     }
 
-    // 标记教师提醒已发送
-    for (const unfinishedId of sentTeacherReminders) {
-      await db.collection('course_unfinished').doc(unfinishedId).update({
-        data: {
-          teacherReminderSent: true,
-          updateTime: db.serverDate()
-        }
-      })
-      console.log(`教师提醒已标记为已发送: ${unfinishedId}`)
+    // 低频归档清理：清理超过 90 天的已结束记录，控制集合规模
+    let archivedCount = 0
+    if (Date.now() - startTimeMs < CRON_TIME_BUDGET_MS) {
+      const archiveCutoffStr = formatBeijingDate(nowUTC - ARCHIVE_RETENTION_DAYS * DAY_MS)
+      const oldFinished = await db.collection('course_unfinished')
+        .where({
+          status: 'finished',
+          'schedule.date': _.lt(archiveCutoffStr)
+        })
+        .field({ _id: true })
+        .limit(50)
+        .get()
+      if (oldFinished.data && oldFinished.data.length > 0) {
+        await Promise.allSettled(
+          oldFinished.data.map(doc => db.collection('course_unfinished').doc(doc._id).remove())
+        )
+        archivedCount = oldFinished.data.length
+      }
     }
+
+    console.log(`[sendReminder:cron] done processed=${processedTotal} sent=${successCount} fail=${failCount} finished=${finishedCount} archived=${archivedCount} hasMore=${hasMore}`)
 
     return {
       code: 0,
-      message: `定时提醒发送完成`,
+      message: '定时提醒发送完成',
       data: {
+        processedTotal,
         successCount,
         failCount,
-        deleteCount,
-        hasMore: unfinishedList.length >= batchSize
+        finishedCount,
+        orphanDeleteCount,
+        archivedCount,
+        hasMore
       }
     }
   } catch (err) {
-    console.error('定时任务执行失败:', err)
+    console.error('[sendReminder:cron] fatal error:', err.message)
     return {
       code: 1,
       message: '定时任务执行失败',
@@ -289,173 +359,194 @@ async function handleCronTrigger(batchSize) {
   }
 }
 
-// 格式化日期为 YYYY-MM-DD（使用北京时间）
-function formatDate(date) {
-  const beijingTimeOffset = 8 * 60 * 60 * 1000
-  const beijingDate = new Date(date.getTime() + beijingTimeOffset)
-  const year = beijingDate.getUTCFullYear()
-  const month = String(beijingDate.getUTCMonth() + 1).padStart(2, '0')
-  const day = String(beijingDate.getUTCDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// 批量获取课程安排映射
-async function getScheduleMap(scheduleIds) {
+async function getDocMapByIds(collectionName, ids) {
   const map = new Map()
-  if (scheduleIds.length === 0) return map
-  
-  const res = await db.collection('course_schedule')
-    .where({
-      _id: _.in(scheduleIds)
+  if (!ids || ids.length === 0) return map
+
+  const CHUNK_SIZE = 100
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CHUNK_SIZE)
+    const res = await db.collection(collectionName)
+      .where({ _id: _.in(chunk) })
+      .limit(CHUNK_SIZE)
+      .get()
+    ;(res.data || []).forEach(item => {
+      map.set(item._id, item)
     })
-    .get()
-  
-  res.data.forEach(item => {
-    map.set(item._id, item)
-  })
-  
+  }
   return map
 }
 
-// 批量获取课程映射
-async function getCourseMap(courseIds) {
-  const map = new Map()
-  if (courseIds.length === 0) return map
-  
-  const res = await db.collection('courses')
-    .where({
-      _id: _.in(courseIds)
+async function preloadTeacherQuotas(teacherIds, cacheMap) {
+  const CHUNK_SIZE = 100
+  for (let i = 0; i < teacherIds.length; i += CHUNK_SIZE) {
+    const chunk = teacherIds.slice(i, i + CHUNK_SIZE)
+    const res = await db.collection('users')
+      .where({ openid: _.in(chunk) })
+      .field({ openid: true, reminderQuota: true })
+      .limit(CHUNK_SIZE)
+      .get()
+    ;(res.data || []).forEach(u => {
+      cacheMap.set(u.openid, Math.max(0, Number(u.reminderQuota) || 0))
     })
-    .get()
-  
-  res.data.forEach(item => {
-    map.set(item._id, item)
-  })
-  
-  return map
+    chunk.forEach(id => {
+      if (!cacheMap.has(id)) cacheMap.set(id, 0)
+    })
+  }
 }
 
-// 发送单个课程提醒
-async function sendReminderToTeacher(courseId, teacherId) {
-  const courseRes = await db.collection('courses').doc(courseId).get()
+// 手动发送单个课程提醒（兼容传入父课程 ID 或子课 schedule ID）
+async function sendReminderToTeacher(inputId, teacherId) {
+  let course = null
+  let resolvedCourseId = inputId
 
-  if (!courseRes.data || courseRes.data.teacherId !== teacherId) {
-    return {
-      code: 1,
-      message: '课程不存在'
+  try {
+    const courseRes = await db.collection('courses').doc(inputId).get()
+    if (courseRes && courseRes.data) {
+      course = courseRes.data
+    }
+  } catch (e) {
+    // 若按父课程查不到，尝试按子课 ID 反查 parentId（BUG-09 双保险）
+    try {
+      const schRes = await db.collection('course_schedule').doc(inputId).get()
+      if (schRes && schRes.data && schRes.data.parentId) {
+        resolvedCourseId = schRes.data.parentId
+        const parentRes = await db.collection('courses').doc(resolvedCourseId).get()
+        if (parentRes && parentRes.data) {
+          course = parentRes.data
+        }
+      }
+    } catch (innerErr) {
+      course = null
     }
   }
 
-  const course = courseRes.data
-
-  // 查询子课程，只查询未来几天内的
-  const today = new Date()
-  const endDate = new Date()
-  endDate.setDate(today.getDate() + LOOK_AHEAD_DAYS)
-  
-  const todayStr = formatDate(today)
-  const endDateStr = formatDate(endDate)
-  
-  console.log(`当前日期: ${todayStr}, 结束日期: ${endDateStr}`)
-
-  console.log(`查询课程安排: parentId=${courseId}, 日期范围: ${todayStr} 至 ${endDateStr}`)
-  
-  // 先查询所有属于该课程的课程安排，不限制日期
-  const allScheduleRes = await db.collection('course_schedule')
-    .where({ 
-      parentId: courseId
-    })
-    .get()
-  
-  console.log(`该课程所有课程安排数量: ${allScheduleRes.data.length}`)
-  if (allScheduleRes.data.length > 0) {
-    console.log(`所有课程安排日期: ${JSON.stringify(allScheduleRes.data.map(s => s.schedule?.date))}`)
-  }
-  
-  const scheduleRes = await db.collection('course_schedule')
-    .where({ 
-      parentId: courseId,
-      'schedule.date': _.gte(todayStr).and(_.lte(endDateStr))
-    })
-    .get()
-  
-  console.log(`日期范围内课程安排数量: ${scheduleRes.data.length}`)
-  if (scheduleRes.data.length > 0) {
-    console.log(`课程安排详情: ${JSON.stringify(scheduleRes.data)}`)
+  if (!course || course.teacherId !== teacherId) {
+    return {
+      code: 1,
+      message: '课程不存在或无权限'
+    }
   }
 
-  // 获取未完成课程的订阅者信息
-  console.log(`查询未完成课程: parentId=${courseId}, 日期范围: ${todayStr} 至 ${endDateStr}`)
-  
-  const unfinishedRes = await db.collection('course_unfinished')
-    .where({
-      parentId: courseId,
-      'schedule.date': _.gte(todayStr).and(_.lte(endDateStr))
-    })
+  // 校验教师剩余提醒额度（BUG-22）
+  const userRes = await db.collection('users')
+    .where({ openid: teacherId })
+    .field({ reminderQuota: true })
+    .limit(1)
     .get()
-  
-  console.log(`查询到未完成课程数量: ${unfinishedRes.data.length}`)
-  if (unfinishedRes.data.length > 0) {
-    console.log(`未完成课程详情: ${JSON.stringify(unfinishedRes.data)}`)
+  const currentQuota = (userRes.data && userRes.data[0])
+    ? Math.max(0, Number(userRes.data[0].reminderQuota) || 0)
+    : 0
+
+  if (currentQuota <= 0) {
+    return {
+      code: 0,
+      data: {
+        success: false,
+        reminderCount: 0,
+        courseName: course.name,
+        teacherSuccess: false,
+        teacherFailReason: 'QUOTA_EXHAUSTED',
+        hasStudentSubscribers: false,
+        message: '提醒额度不足，请先点击「重新开启上课提醒」获取额度'
+      }
+    }
+  }
+
+  const nowUTC = Date.now()
+  const todayStr = formatBeijingDate(nowUTC)
+  const endDateStr = formatBeijingDate(nowUTC + LOOK_AHEAD_DAYS * DAY_MS)
+
+  const [scheduleRes, unfinishedRes] = await Promise.all([
+    db.collection('course_schedule')
+      .where({
+        parentId: resolvedCourseId,
+        'schedule.date': _.gte(todayStr).and(_.lte(endDateStr))
+      })
+      .limit(100)
+      .get(),
+    db.collection('course_unfinished')
+      .where({
+        parentId: resolvedCourseId,
+        status: _.neq('finished'),
+        'schedule.date': _.gte(todayStr).and(_.lte(endDateStr))
+      })
+      .limit(100)
+      .get()
+  ])
+
+  const upcomingSchedules = (scheduleRes.data || []).filter(s => {
+    const endUTC = parseBeijingDateTimeToUTC(s.schedule && s.schedule.date, s.schedule && s.schedule.endTime)
+    return endUTC === null || endUTC > nowUTC
+  })
+
+  if (upcomingSchedules.length === 0) {
+    return {
+      code: 0,
+      data: {
+        success: false,
+        reminderCount: 0,
+        courseName: course.name,
+        teacherSuccess: false,
+        teacherFailReason: 'NO_UPCOMING_SCHEDULE',
+        hasStudentSubscribers: false,
+        message: '未来 1 天内暂无待上课节次'
+      }
+    }
   }
 
   const unfinishedMap = new Map()
-  unfinishedRes.data.forEach(u => {
-    if (u.scheduleId) {
-      unfinishedMap.set(u.scheduleId, u)
-    }
+  ;(unfinishedRes.data || []).forEach(u => {
+    if (u.scheduleId) unfinishedMap.set(u.scheduleId, u)
   })
 
   let successCount = 0
-  let teacherSuccess = false
+  let teacherSuccessCount = 0
   let teacherFailReason = ''
-  const sendPromises = []
+  let quotaRemaining = currentQuota
+  const sendTasks = []
   const successStudents = new Map()
 
-  for (const schedule of scheduleRes.data) {
-    // 向教师发送提醒
-    sendPromises.push({
-      promise: sendSubscribeMessage({
-        touser: course.teacherId,
-        courseName: course.name,
-        schedule: schedule.schedule,
-        isTeacher: true
-      }),
-      type: 'teacher',
-      scheduleId: schedule._id
-    })
+  for (const schedule of upcomingSchedules) {
+    if (quotaRemaining > 0) {
+      quotaRemaining--
+      sendTasks.push({
+        type: 'teacher',
+        scheduleId: schedule._id,
+        promise: sendSubscribeMessage({
+          touser: course.teacherId,
+          courseName: course.name,
+          schedule: schedule.schedule,
+          isTeacher: true
+        })
+      })
+    }
 
-    // 向订阅的学生发送提醒
     const unfinished = unfinishedMap.get(schedule._id)
-    const subscribers = unfinished ? (unfinished.subscribers || []) : []
-    console.log(`课程 ${course.name} 有 ${subscribers.length} 个订阅学生`)
-
+    const subscribers = unfinished && Array.isArray(unfinished.subscribers) ? unfinished.subscribers : []
     for (const studentId of subscribers) {
-      sendPromises.push({
+      sendTasks.push({
+        type: 'student',
+        studentId,
+        scheduleId: schedule._id,
         promise: sendSubscribeMessage({
           touser: studentId,
           courseName: course.name,
           schedule: schedule.schedule,
           isTeacher: false
-        }),
-        type: 'student',
-        studentId,
-        scheduleId: schedule._id
+        })
       })
     }
   }
 
-  console.log(`待发送消息数量: ${sendPromises.length}`)
-
-  if (sendPromises.length > 0) {
-    const results = await Promise.allSettled(sendPromises.map(item => item.promise))
+  if (sendTasks.length > 0) {
+    const results = await Promise.allSettled(sendTasks.map(t => t.promise))
     results.forEach((result, index) => {
-      const item = sendPromises[index]
+      const item = sendTasks[index]
       if (result.status === 'fulfilled') {
-        console.log(`消息发送成功: ${item.type} - ${item.studentId || 'teacher'}`)
         successCount++
         if (item.type === 'teacher') {
-          teacherSuccess = true
+          teacherSuccessCount++
         } else if (item.type === 'student' && item.studentId && item.scheduleId) {
           if (!successStudents.has(item.scheduleId)) {
             successStudents.set(item.scheduleId, [])
@@ -463,47 +554,63 @@ async function sendReminderToTeacher(courseId, teacherId) {
           successStudents.get(item.scheduleId).push(item.studentId)
         }
       } else {
-        console.error(`消息发送失败: ${item.type} - ${item.studentId || 'teacher'}, 原因: ${result.reason?.message || result.reason || 'unknown'}`)
+        const reason = String((result.reason && result.reason.message) || result.reason || 'unknown')
+        console.warn(`[sendReminder:manual] send failed type=${item.type} courseId=${resolvedCourseId} reason=${reason}`)
         if (item.type === 'teacher') {
-          teacherFailReason = result.reason?.message || result.reason || 'unknown'
+          teacherFailReason = reason
         }
       }
     })
   }
 
-  console.log(`发送完成: 成功 ${successCount} 条, 失败 ${sendPromises.length - successCount} 条`)
+  const teacherSuccess = teacherSuccessCount > 0
+  if (teacherSuccess) {
+    // 按成功条数扣减额度，但不扣为负数
+    const deduct = Math.min(teacherSuccessCount, currentQuota)
+    await db.collection('users')
+      .where({ openid: teacherId, reminderQuota: _.gte(deduct) })
+      .update({
+        data: {
+          reminderQuota: _.inc(-deduct),
+          updateTime: db.serverDate()
+        }
+      })
+  }
 
   if (successStudents.size > 0) {
-    console.log(`清除已发送成功学生的订阅状态...`)
+    const pullOps = []
     for (const [scheduleId, students] of successStudents) {
       const unfinished = unfinishedMap.get(scheduleId)
       if (unfinished) {
-        const remainingSubscribers = (unfinished.subscribers || []).filter(s => !students.includes(s))
-        await db.collection('course_unfinished').doc(unfinished._id).update({
-          data: {
-            subscribers: remainingSubscribers,
-            updateTime: db.serverDate()
-          }
-        })
-        console.log(`课程安排 ${scheduleId} 已清除 ${students.length} 个学生的订阅状态`)
+        pullOps.push(
+          db.collection('course_unfinished').doc(unfinished._id).update({
+            data: {
+              subscribers: _.pullAll(students),
+              updateTime: db.serverDate()
+            }
+          })
+        )
       }
     }
+    await Promise.allSettled(pullOps)
   }
 
-  const hasStudentSubscribers = scheduleRes.data.some(schedule => {
+  const hasStudentSubscribers = upcomingSchedules.some(schedule => {
     const unfinished = unfinishedMap.get(schedule._id)
-    return unfinished && (unfinished.subscribers || []).length > 0
+    return unfinished && Array.isArray(unfinished.subscribers) && unfinished.subscribers.length > 0
   })
 
-  let message = '发送完成'
+  let message = teacherSuccess ? '提醒已发送' : '提醒发送失败，请稍后重试'
   if (!teacherSuccess && teacherFailReason.includes('43101')) {
-    message = '教师端订阅消息授权已过期，请重新授权'
+    message = '教师端订阅消息授权已过期，请重新开启上课提醒'
   }
+
+  console.log(`[sendReminder:manual] courseId=${resolvedCourseId} teacher=${maskId(teacherId)} sent=${successCount} teacherOk=${teacherSuccess}`)
 
   return {
     code: 0,
     data: {
-      success: true,
+      success: teacherSuccess,
       reminderCount: successCount,
       courseName: course.name,
       teacherSuccess,
@@ -514,11 +621,8 @@ async function sendReminderToTeacher(courseId, teacherId) {
   }
 }
 
-// 发送订阅消息
 async function sendSubscribeMessage({ touser, courseName, schedule, isTeacher }) {
   const page = isTeacher ? '/pages/teacher/schedule/index' : '/pages/student/my-courses/index'
-  const noticeType = isTeacher ? '上课提醒' : '课程提醒'
-
   return await cloud.openapi.subscribeMessage.send({
     touser: touser,
     templateId: TEMPLATE_ID,

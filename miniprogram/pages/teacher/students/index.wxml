@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container {{theme}}">
   <view class="stats-header">
     <view class="stat-item">
       <text class="stat-num">{{totalStudents}}</text>
@@ -30,24 +30,38 @@
   </view>
 
   <view class="student-list" wx:if="{{students.length > 0}}">
-    <view class="student-item" wx:for="{{students}}" wx:key="_id">
-      <view class="student-info" bindtap="onViewDetail" data-student="{{item}}">
-        <image class="student-avatar" src="{{item.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
-        <view class="info-text">
-          <view class="name-row">
-            <text class="student-name">{{item.studentName}}</text>
-            <text class="student-status status-{{item.status}}">{{item.statusStr}}</text>
+    <view class="student-item-card" wx:for="{{students}}" wx:key="_id">
+      <!-- 上半部分：学生基本信息 -->
+      <view class="student-main-row">
+        <view class="student-info" bindtap="onViewDetail" data-student="{{item}}">
+          <image class="student-avatar" src="{{item.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
+          <view class="info-text">
+            <view class="name-row">
+              <text class="student-name">{{item.studentName}}</text>
+              <text class="student-status status-{{item.status}}">{{item.statusStr}}</text>
+            </view>
+            <text class="student-meta">申请时间: {{item.applyTimeStr}}</text>
           </view>
-          <text class="student-meta">申请时间: {{item.applyTimeStr}}</text>
+        </view>
+        <view class="student-actions">
+          <button class="merge-btn" wx:if="{{item.status === 'unbound'}}" bindtap="onShowMergeModal" data-student="{{item}}" hover-class="btn-hover">
+            合并
+          </button>
+          <button class="delete-btn" bindtap="onDeleteStudent" data-student="{{item}}" hover-class="btn-hover">
+            删除
+          </button>
         </view>
       </view>
-      <view class="student-actions">
-        <button class="merge-btn" wx:if="{{item.status === 'unbound'}}" bindtap="onShowMergeModal" data-student="{{item}}" hover-class="btn-hover">
-          合并
-        </button>
-        <button class="delete-btn" bindtap="onDeleteStudent" data-student="{{item}}" hover-class="btn-hover">
-          删除
-        </button>
+
+      <!-- 下半部分：课时进度条统计 -->
+      <view class="student-progress-row" bindtap="onViewDetail" data-student="{{item}}">
+        <view class="progress-labels">
+          <text class="progress-title">未上课时 / 总购买课时</text>
+          <text class="progress-value">{{item.remainingHours || 0}} / {{item.purchasedHours || 0}} 节</text>
+        </view>
+        <view class="progress-track">
+          <view class="progress-bar" style="width: {{(item.purchasedHours > 0 ? (item.remainingHours / item.purchasedHours > 1 ? 1 : item.remainingHours / item.purchasedHours) : 0) * 100}}%"></view>
+        </view>
       </view>
     </view>
   </view>
@@ -55,43 +69,6 @@
   <view class="empty-state" wx:else>
     <text class="empty-icon">👨‍🎓</text>
     <text class="empty-text">{{searchKey ? '未找到匹配的学生' : '暂无绑定学生'}}</text>
-  </view>
-
-  <view class="modal-overlay" wx:if="{{showDetailModal}}" bindtap="onCloseDetailModal">
-    <view class="modal-content detail-content" catchtap="stopPropagation">
-      <view class="modal-header">
-        <text class="modal-title">{{currentStudent.studentName}} - 学生详情</text>
-        <text class="modal-close" bindtap="onCloseDetailModal" hover-class="text-hover">✕</text>
-      </view>
-      <view class="modal-body">
-        <view class="form-item">
-          <text class="form-label">籍贯</text>
-          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.nativePlace || '未填写'}}</text>
-          <input wx:else class="form-input" placeholder="请输入籍贯" value="{{studentDetail.nativePlace}}" bindinput="onNativePlaceInput" />
-        </view>
-        <view class="form-item">
-          <text class="form-label">年级</text>
-          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.grade || '未填写'}}</text>
-          <input wx:else class="form-input" placeholder="请输入年级" value="{{studentDetail.grade}}" bindinput="onGradeInput" />
-        </view>
-        <view class="form-item">
-          <text class="form-label">科目</text>
-          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.subject || '未填写'}}</text>
-          <input wx:else class="form-input" placeholder="请输入科目" value="{{studentDetail.subject}}" bindinput="onSubjectInput" />
-        </view>
-        <view class="form-item">
-          <text class="form-label">备注</text>
-          <text wx:if="{{!editingDetail}}" class="form-value">{{studentDetail.remark || '未填写'}}</text>
-          <textarea wx:else class="form-textarea" placeholder="请输入备注信息" value="{{studentDetail.remark}}" bindinput="onRemarkInput"></textarea>
-        </view>
-      </view>
-      <view class="modal-footer">
-        <button wx:if="{{!editingDetail}}" class="modal-btn cancel-btn" bindtap="onCloseDetailModal" hover-class="btn-hover">关闭</button>
-        <button wx:if="{{!editingDetail}}" class="modal-btn confirm-btn" bindtap="onStartEditDetail" hover-class="btn-hover">编辑</button>
-        <button wx:if="{{editingDetail}}" class="modal-btn cancel-btn" bindtap="onCloseDetailModal" hover-class="btn-hover">取消</button>
-        <button wx:if="{{editingDetail}}" class="modal-btn confirm-btn" bindtap="onSaveDetail" hover-class="btn-hover">保存</button>
-      </view>
-    </view>
   </view>
 
   <view class="modal-overlay" wx:if="{{showAddModal}}" bindtap="onCloseAddModal">

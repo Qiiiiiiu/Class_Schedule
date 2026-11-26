@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+cloudfunctions/*/node_modules/
+
+# WeChat DevTools local private config
+project.private.config.json
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*

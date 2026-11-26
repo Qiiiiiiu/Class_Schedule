@@ -6,35 +6,40 @@ cloud.init({
 const db = cloud.database()
 
 exports.main = async (event, context) => {
-  const { id } = event
+  const { id } = event || {}
+  const wxContext = cloud.getWXContext()
+  const callerOpenid = wxContext && wxContext.OPENID
 
+  if (!callerOpenid) {
+    return { code: 1, message: '未授权访问' }
+  }
   if (!id) {
-    return {
-      code: 1,
-      message: 'id不能为空'
-    }
+    return { code: 1, message: 'id不能为空' }
   }
 
   try {
-    // 删除 course_schedule 中的记录
-    const res = await db.collection('course_schedule').doc(id).remove()
-
-    // 删除 course_unfinished 中对应的记录
-    const unfinishedRes = await db.collection('course_unfinished')
-      .where({
-        scheduleId: id
-      })
-      .get()
-
-    for (const item of unfinishedRes.data) {
-      await db.collection('course_unfinished').doc(item._id).remove()
+    const schRes = await db.collection('course_schedule').doc(id).get()
+    const schedule = schRes && schRes.data
+    if (!schedule) {
+      return { code: 1, message: '课程日程不存在' }
     }
+
+    const isOwnerTeacher = schedule.teacherId && schedule.teacherId === callerOpenid
+    const isOwnerStudent = (schedule.creatorRole === 'student' || schedule.teacherId === 'custom_teacher') &&
+      schedule.createdBy === callerOpenid
+    if (!isOwnerTeacher && !isOwnerStudent) {
+      return { code: 1, message: '无权限删除他人课程日程' }
+    }
+
+    const res = await db.collection('course_schedule').doc(id).remove()
+    await db.collection('course_unfinished').where({ scheduleId: id }).remove()
 
     return {
       code: 0,
       data: res
     }
   } catch (err) {
+    console.error('[deleteCourseSchedule] error:', err.message)
     return {
       code: 1,
       message: '删除失败',

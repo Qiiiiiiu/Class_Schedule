@@ -7,29 +7,34 @@ const db = cloud.database()
 const _ = db.command
 
 exports.main = async (event, context) => {
-  const { action, scheduleId, studentId } = event
+  const { action, scheduleId, studentId } = event || {}
+  const wxContext = cloud.getWXContext()
+  const callerOpenid = wxContext && wxContext.OPENID
 
-  if (!action || !scheduleId || !studentId) {
-    return {
-      code: 1,
-      message: '参数不完整'
-    }
+  if (!callerOpenid) {
+    return { code: 1, message: '未授权访问' }
   }
+  if (!action || !scheduleId) {
+    return { code: 1, message: '参数不完整' }
+  }
+  if (studentId && studentId !== callerOpenid) {
+    return { code: 1, message: '无权限操作他人订阅' }
+  }
+
+  const effectiveStudentId = callerOpenid
 
   try {
     if (action === 'subscribe') {
-      return await subscribeToCourse(scheduleId, studentId)
+      return await subscribeToCourse(scheduleId, effectiveStudentId)
     } else if (action === 'unsubscribe') {
-      return await unsubscribeFromCourse(scheduleId, studentId)
+      return await unsubscribeFromCourse(scheduleId, effectiveStudentId)
     } else if (action === 'getSubscriptionStatus') {
-      return await getSubscriptionStatus(scheduleId, studentId)
+      return await getSubscriptionStatus(scheduleId, effectiveStudentId)
     } else {
-      return {
-        code: 1,
-        message: '无效的操作类型'
-      }
+      return { code: 1, message: '无效的操作类型' }
     }
   } catch (err) {
+    console.error('[subscribeCourse] error:', err.message)
     return {
       code: 1,
       message: '操作失败',
@@ -40,35 +45,23 @@ exports.main = async (event, context) => {
 
 async function subscribeToCourse(scheduleId, studentId) {
   const unfinishedRes = await db.collection('course_unfinished')
-    .where({
-      scheduleId: scheduleId
-    })
+    .where({ scheduleId })
+    .limit(1)
     .get()
 
-  if (unfinishedRes.data.length === 0) {
-    return {
-      code: 1,
-      message: '课程不存在或已结束'
-    }
+  if (!unfinishedRes.data || unfinishedRes.data.length === 0) {
+    return { code: 1, message: '课程不存在或已结束' }
   }
 
   const course = unfinishedRes.data[0]
-
-  const subscribers = course.subscribers || []
-
-  if (subscribers.includes(studentId)) {
-    return {
-      code: 0,
-      message: '已经订阅过了',
-      data: { subscribed: true }
-    }
+  if (course.status === 'finished') {
+    return { code: 1, message: '课程已结束，无法订阅' }
   }
 
-  subscribers.push(studentId)
-
+  // BUG-12：原子 _.addToSet，防止并发覆盖丢订阅
   await db.collection('course_unfinished').doc(course._id).update({
     data: {
-      subscribers: subscribers,
+      subscribers: _.addToSet(studentId),
       updateTime: db.serverDate()
     }
   })
@@ -82,36 +75,20 @@ async function subscribeToCourse(scheduleId, studentId) {
 
 async function unsubscribeFromCourse(scheduleId, studentId) {
   const unfinishedRes = await db.collection('course_unfinished')
-    .where({
-      scheduleId: scheduleId
-    })
+    .where({ scheduleId })
+    .limit(1)
     .get()
 
-  if (unfinishedRes.data.length === 0) {
-    return {
-      code: 1,
-      message: '课程不存在或已结束'
-    }
+  if (!unfinishedRes.data || unfinishedRes.data.length === 0) {
+    return { code: 1, message: '课程不存在或已结束' }
   }
 
   const course = unfinishedRes.data[0]
 
-  const subscribers = course.subscribers || []
-
-  const index = subscribers.indexOf(studentId)
-  if (index === -1) {
-    return {
-      code: 0,
-      message: '未订阅',
-      data: { subscribed: false }
-    }
-  }
-
-  subscribers.splice(index, 1)
-
+  // BUG-12：原子 _.pull，防止并发覆盖
   await db.collection('course_unfinished').doc(course._id).update({
     data: {
-      subscribers: subscribers,
+      subscribers: _.pull(studentId),
       updateTime: db.serverDate()
     }
   })
@@ -125,26 +102,27 @@ async function unsubscribeFromCourse(scheduleId, studentId) {
 
 async function getSubscriptionStatus(scheduleId, studentId) {
   const unfinishedRes = await db.collection('course_unfinished')
-    .where({
-      scheduleId: scheduleId
-    })
+    .where({ scheduleId })
+    .limit(1)
     .get()
 
-  if (unfinishedRes.data.length === 0) {
+  if (!unfinishedRes.data || unfinishedRes.data.length === 0) {
     return {
       code: 0,
-      data: { subscribed: false, exists: false }
+      data: { subscribed: false, exists: false, finished: true }
     }
   }
 
   const course = unfinishedRes.data[0]
-  const subscribers = course.subscribers || []
+  const subscribers = Array.isArray(course.subscribers) ? course.subscribers : []
+  const finished = course.status === 'finished'
 
   return {
     code: 0,
     data: {
-      subscribed: subscribers.includes(studentId),
-      exists: true
+      subscribed: !finished && subscribers.includes(studentId),
+      exists: !finished,
+      finished
     }
   }
 }

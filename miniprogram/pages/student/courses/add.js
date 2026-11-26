@@ -4,6 +4,7 @@ const api = require('../../../utils/api.js')
 
 Page({
   data: {
+    theme: 'dark',
     loading: false,
     courseName: '',
     teacherName: '',
@@ -42,11 +43,21 @@ Page({
     const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
     this.setData({
+      theme: app.globalData.theme || 'dark',
       repeatStartDate: defaultDate,
       selectedDates: [defaultDate]
     })
 
     this.buildSelectCalendarMonth(now.getFullYear(), now.getMonth())
+  },
+
+  onShow() {
+    if (!checkRole.checkStudent()) {
+      return
+    }
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
   },
 
   onCourseNameInput(e) {
@@ -236,7 +247,8 @@ Page({
       return
     }
 
-    const teacherId = 'custom_teacher'
+    // 学生自建课程 teacherId 置空，由 createdBy/creatorRole 表达归属
+    const teacherId = ''
 
     if (startTime >= endTime) {
       wx.showToast({ title: '开始时间必须早于结束时间', icon: 'none' })

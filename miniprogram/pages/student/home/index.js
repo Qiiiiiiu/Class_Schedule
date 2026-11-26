@@ -4,6 +4,7 @@ const api = require('../../../utils/api.js')
 
 Page({
   data: {
+    theme: 'dark',
     userInfo: null,
     
     // 今日焦点与列表
@@ -28,6 +29,7 @@ Page({
       return
     }
     this.setData({
+      theme: app.globalData.theme || 'dark',
       userInfo: app.globalData.userInfo,
       currentYear: new Date().getFullYear(),
       currentMonth: new Date().getMonth()
@@ -38,11 +40,37 @@ Page({
     if (!checkRole.checkStudent()) {
       return
     }
+    const theme = app.globalData.theme || 'dark'
     this.setData({
+      theme,
       userInfo: app.globalData.userInfo
     })
+    app.applyThemeToSystem(theme)
     this.updateCurrentTime()
+    this.startStatusTimer()
     this.loadStats()
+  },
+
+  onHide() {
+    this.stopStatusTimer()
+  },
+
+  onUnload() {
+    this.stopStatusTimer()
+  },
+
+  startStatusTimer() {
+    this.stopStatusTimer()
+    this._statusTimer = setInterval(() => {
+      this.refreshTodayStatus()
+    }, 30000)
+  },
+
+  stopStatusTimer() {
+    if (this._statusTimer) {
+      clearInterval(this._statusTimer)
+      this._statusTimer = null
+    }
   },
 
   // 获取当前时间 HH:mm
@@ -50,9 +78,27 @@ Page({
     const now = new Date()
     const hh = String(now.getHours()).padStart(2, '0')
     const mm = String(now.getMinutes()).padStart(2, '0')
-    this.setData({
-      currentTime: `${hh}:${mm}`
-    })
+    const currentTime = `${hh}:${mm}`
+    this.setData({ currentTime })
+    return currentTime
+  },
+
+  // 仅按最新时间重算今日状态（不额外发网络请求）
+  refreshTodayStatus() {
+    const currentTime = this.updateCurrentTime()
+    const rawSchedules = this.data.scheduleData || []
+    if (rawSchedules.length === 0) return
+    const todayStr = this.formatDateStr(new Date())
+    const todayCourses = this.processTodayCourses(rawSchedules, todayStr, currentTime)
+    const focusCourse = this.calculateFocusCourse(todayCourses)
+    this.setData({ todayCourses, focusCourse })
+  },
+
+  toMinutes(hhmm) {
+    if (!hhmm || typeof hhmm !== 'string') return -1
+    const parts = hhmm.split(':').map(Number)
+    if (parts.length < 2 || parts.some(isNaN)) return -1
+    return parts[0] * 60 + parts[1]
   },
 
   // 加载主数据
@@ -97,25 +143,28 @@ Page({
   },
 
   // 处理今日课程数据，计算状态
-  processTodayCourses(schedules, todayStr) {
+  processTodayCourses(schedules, todayStr, currentTimeOverride) {
     const currentOpenid = app.globalData.openid
-    const currentTime = this.data.currentTime
+    const currentTime = currentTimeOverride || this.data.currentTime || this.updateCurrentTime()
+    const nowMins = this.toMinutes(currentTime)
 
     return schedules.filter(item => {
       return item.schedule && item.schedule.date === todayStr
     }).map(item => {
       const isCreatedByStudent = item.creatorRole === 'student' || item.createdBy === currentOpenid || item.teacherId === 'custom_teacher'
-      const startTime = item.schedule.startTime
-      const endTime = item.schedule.endTime
+      const startMins = this.toMinutes(item.schedule.startTime)
+      const endMins = this.toMinutes(item.schedule.endTime)
       
       let status = 'upcoming' // 待上课
       let statusText = '待上课'
-      if (currentTime >= startTime && currentTime <= endTime) {
-        status = 'in-progress' // 进行中
-        statusText = '上课中'
-      } else if (currentTime > endTime) {
-        status = 'finished' // 已结束
-        statusText = '已结束'
+      if (nowMins >= 0 && startMins >= 0 && endMins >= 0) {
+        if (nowMins >= startMins && nowMins <= endMins) {
+          status = 'in-progress' // 进行中
+          statusText = '上课中'
+        } else if (nowMins > endMins) {
+          status = 'finished' // 已结束
+          statusText = '已结束'
+        }
       }
 
       return {
@@ -125,7 +174,7 @@ Page({
         status,
         statusText
       }
-    }).sort((a, b) => a.schedule.startTime.localeCompare(b.schedule.startTime))
+    }).sort((a, b) => this.toMinutes(a.schedule.startTime) - this.toMinutes(b.schedule.startTime))
   },
 
   // 计算焦点课程 (即下一门要上的课，或正在上的课)
@@ -218,11 +267,12 @@ Page({
     }
     
     // 填充当月日期
+    const theme = this.data.theme || app.globalData.theme || 'dark'
     for (let i = 1; i <= daysInMonth; i++) {
       const count = dayCourseCount[i] || 0
       const isToday = i === now.getDate() && year === now.getFullYear() && month === now.getMonth()
       const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`
-      const { bgColor, textColor } = this.getDayColors(count, isToday)
+      const { bgColor, textColor } = this.getDayColors(count, isToday, theme)
       
       calendar.push({
         date: i,
@@ -242,19 +292,31 @@ Page({
     }
   },
 
-  // 月历日期色彩阶梯
-  getDayColors(count, isToday) {
+  // 月历日期色彩阶梯（适配深色/浅色主题）
+  getDayColors(count, isToday, theme = 'dark') {
+    const isLight = theme === 'light'
     if (isToday) {
-      return { bgColor: 'rgba(59, 130, 246, 0.25)', textColor: '#3b82f6' }
+      return {
+        bgColor: isLight ? 'rgba(59, 130, 246, 0.16)' : 'rgba(59, 130, 246, 0.25)',
+        textColor: '#2563eb'
+      }
     }
     if (count === 0) {
-      return { bgColor: 'rgba(255, 255, 255, 0.03)', textColor: '#94a3b8' }
+      return isLight
+        ? { bgColor: 'rgba(0, 0, 0, 0.02)', textColor: '#64748b' }
+        : { bgColor: 'rgba(255, 255, 255, 0.03)', textColor: '#94a3b8' }
     } else if (count === 1) {
-      return { bgColor: 'rgba(59, 130, 246, 0.15)', textColor: '#60a5fa' }
+      return isLight
+        ? { bgColor: 'rgba(59, 130, 246, 0.12)', textColor: '#2563eb' }
+        : { bgColor: 'rgba(59, 130, 246, 0.15)', textColor: '#60a5fa' }
     } else if (count === 2) {
-      return { bgColor: 'rgba(59, 130, 246, 0.3)', textColor: '#93c5fd' }
+      return isLight
+        ? { bgColor: 'rgba(59, 130, 246, 0.24)', textColor: '#1d4ed8' }
+        : { bgColor: 'rgba(59, 130, 246, 0.3)', textColor: '#93c5fd' }
     } else {
-      return { bgColor: 'rgba(59, 130, 246, 0.5)', textColor: '#ffffff' }
+      return isLight
+        ? { bgColor: 'rgba(59, 130, 246, 0.42)', textColor: '#ffffff' }
+        : { bgColor: 'rgba(59, 130, 246, 0.5)', textColor: '#ffffff' }
     }
   },
 
@@ -266,7 +328,7 @@ Page({
     return `${y}-${m}-${d}`
   },
 
-  // 月历前后切换
+  // 月历前后切换（优先使用内存缓存重绘）
   prevMonth() {
     let year = this.data.currentYear
     let month = this.data.currentMonth
@@ -275,8 +337,13 @@ Page({
       month = 11
       year -= 1
     }
-    this.setData({ currentYear: year, currentMonth: month })
-    this.loadStats()
+    const calendarData = this.generateCalendar(this.data.scheduleData || [], year, month)
+    this.setData({
+      currentYear: year,
+      currentMonth: month,
+      calendar: calendarData.calendar,
+      calendarTitle: calendarData.title
+    })
   },
 
   nextMonth() {
@@ -287,8 +354,13 @@ Page({
       month = 0
       year += 1
     }
-    this.setData({ currentYear: year, currentMonth: month })
-    this.loadStats()
+    const calendarData = this.generateCalendar(this.data.scheduleData || [], year, month)
+    this.setData({
+      currentYear: year,
+      currentMonth: month,
+      calendar: calendarData.calendar,
+      calendarTitle: calendarData.title
+    })
   },
 
   // 点击月历中的某一天，直接跳转至课程安排 Tab，并定位到对应的周
@@ -296,7 +368,9 @@ Page({
     const fullDate = e.currentTarget.dataset.date
     if (!fullDate) return
 
-    const date = new Date(fullDate)
+    const parts = String(fullDate).split('-').map(Number)
+    if (parts.length !== 3 || parts.some(isNaN)) return
+    const date = new Date(parts[0], parts[1] - 1, parts[2])
     const dayOfWeek = date.getDay()
     const monday = new Date(date)
     // 计算星期一
@@ -306,23 +380,25 @@ Page({
     
     app.globalData.navigateWeekStart = mondayDate
     
-    wx.switchTab({
-      url: '/pages/student/my-courses/index',
-      fail: () => {
-        wx.reLaunch({
-          url: '/pages/student/my-courses/index'
-        })
-      }
+    wx.reLaunch({
+      url: '/pages/student/my-courses/index'
     })
   },
 
   // 快捷跳转
   goToMyCourses() {
+    wx.reLaunch({
+      url: '/pages/student/my-courses/index'
+    })
+  },
+
+  // 跳转我的信息（支持学生端修改资料、切换主题、退出登录）
+  goToMyInfo() {
     wx.switchTab({
-      url: '/pages/student/my-courses/index',
+      url: '/pages/common/my-info/index',
       fail: () => {
         wx.reLaunch({
-          url: '/pages/student/my-courses/index'
+          url: '/pages/common/my-info/index'
         })
       }
     })

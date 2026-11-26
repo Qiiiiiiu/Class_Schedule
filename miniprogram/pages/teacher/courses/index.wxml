@@ -1,39 +1,86 @@
-<view class="page-container">
-  <view class="reminder-section">
-    <button class="reminder-btn" bindtap="onReopenReminder">重新开启上课提醒</button>
-    <image class="info-icon"  bindlongpress="onShowReminderInfo" src="/images/icons/information-line.svg"></image>
-
-  </view>
-  <view class="course-list" wx:if="{{courses.length > 0}}">
-    <view class="course-item" wx:for="{{courses}}" wx:key="_id">
-      <view class="course-status status-{{item.status}}" bindtap="onToggleCourseStatus" data-course="{{item}}">
-        {{item.status === 'available' ? '进行中' : '已停课'}}
-      </view>
-      <view class="course-header">
-        <text class="course-name">{{item.name}}</text>
-      </view>
-      <view class="course-info">
-        <text class="info-item">📅 {{item.childCourseCount || 0}}节课程</text>
-        <text class="info-item">👨‍🎓 {{item.studentCount || 0}}名学生</text>
-      </view>
-      <view class="course-amount">
-        <text class="amount-item">💰 已获金额：¥{{item.earnedAmount || 0}}</text>
-        <text class="amount-item">📊 总金额：¥{{item.totalAmount || 0}}</text>
-      </view>
-      <view class="course-actions">
-        <button class="action-btn" bindtap="onEditCourse" data-course="{{item}}">编辑</button>
-        <button class="action-btn" bindtap="onSendReminder" data-course-id="{{item._id}}">提醒</button>
-        <button class="action-btn delete" bindtap="onDeleteCourse" data-course-id="{{item._id}}">删除</button>
-      </view>
+<view class="page-container {{theme}}">
+  <!-- 顶部 4-Tab 栏：全部班级 / 一对一 / 大班课 / 入班申请 -->
+  <view class="course-tabs">
+    <view class="course-tab-item {{currentTab === 'all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">
+      <text>全部({{allCourses.length}})</text>
+    </view>
+    <view class="course-tab-item {{currentTab === 'one_on_one' ? 'active' : ''}}" bindtap="switchTab" data-tab="one_on_one">
+      <text>一对一({{oneOnOneCount}})</text>
+    </view>
+    <view class="course-tab-item {{currentTab === 'group' ? 'active' : ''}}" bindtap="switchTab" data-tab="group">
+      <text>大班课({{groupCount}})</text>
+    </view>
+    <view class="course-tab-item {{currentTab === 'applications' ? 'active' : ''}}" bindtap="switchTab" data-tab="applications">
+      <text>申请</text>
+      <view class="tab-badge" wx:if="{{pendingApplicationsCount > 0}}">{{pendingApplicationsCount}}</view>
     </view>
   </view>
-  <view class="empty-state" wx:else>
-    <text class="empty-icon">📚</text>
-    <text class="empty-text">暂无课程</text>
-    <button class="add-btn" bindtap="onAddCourse">添加课程</button>
-  </view>
 
-  <view class="add-floating-btn" bindtap="onAddCourse">
-    <text>+</text>
-  </view>
+  <!-- Tab 1~3：班级列表（一对一 & 大班课） -->
+  <block wx:if="{{currentTab !== 'applications'}}">
+    <view class="reminder-section">
+      <button class="reminder-btn" bindtap="onReopenReminder">重新开启上课提醒（额度：{{reminderQuota}}）</button>
+      <image class="info-icon" bindtap="onShowReminderInfo" src="/images/icons/information-line.svg"></image>
+    </view>
+
+    <view class="course-list" wx:if="{{filteredCourses.length > 0}}">
+      <view class="course-item" wx:for="{{filteredCourses}}" wx:key="_id" bindtap="onOpenClassDetail" data-course="{{item}}">
+        <view class="course-status status-{{item.status}}" catchtap="onToggleCourseStatus" data-course="{{item}}">
+          {{item.status === 'available' ? '进行中' : '已停课'}}
+        </view>
+        <view class="course-header">
+          <view class="class-type-badge type-{{item.classType}}">{{item.classTypeLabel}}</view>
+          <text class="course-name">{{item.name}}</text>
+          <view class="billing-badge" wx:if="{{item.classType === 'group'}}">{{item.billingLabel}}</view>
+        </view>
+        <view class="course-info">
+          <text class="info-item">📅 已上 {{item.finishedCourseCount || 0}} / 共 {{item.childCourseCount || 0}} 节</text>
+          <text class="info-item">👨‍🎓 学员 {{item.capacityLabel}}</text>
+        </view>
+        <view class="course-amount">
+          <text class="amount-item">💰 已获：¥{{item.earnedAmount || 0}}</text>
+          <text class="amount-item">📊 预计总额：¥{{item.totalAmount || 0}}</text>
+        </view>
+        <view class="course-actions">
+          <button class="action-btn" catchtap="onOpenClassDetail" data-course="{{item}}">排课/学员</button>
+          <button class="action-btn" catchtap="onSendReminder" data-course-id="{{item._id}}">提醒</button>
+          <button class="action-btn delete" catchtap="onDeleteCourse" data-course-id="{{item._id}}">删除</button>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-state" wx:else>
+      <text class="empty-icon">🏫</text>
+      <text class="empty-text">{{currentTab === 'one_on_one' ? '暂无一对一班级' : (currentTab === 'group' ? '暂无大班课' : '暂无开设班级')}}</text>
+      <button class="add-btn" bindtap="onAddCourse">新建班级</button>
+    </view>
+
+    <view class="add-floating-btn" bindtap="onAddCourse">
+      <text>+</text>
+    </view>
+  </block>
+
+  <!-- Tab 4：待审批入班申请 -->
+  <block wx:if="{{currentTab === 'applications'}}">
+    <view class="application-list" wx:if="{{applications.length > 0}}">
+      <view class="application-card" wx:for="{{applications}}" wx:key="_id">
+        <view class="app-card-header">
+          <text class="app-course-name">{{item.courseName}}</text>
+          <text class="app-pending-tag">待审批</text>
+        </view>
+        <view class="app-card-meta">
+          <text class="app-meta-line">👨‍🎓 申请学生：{{item.studentName}}</text>
+          <text class="app-meta-line">🕐 申请时间：{{item.applyTimeStr}}</text>
+        </view>
+        <view class="app-card-actions">
+          <button class="app-btn approve" bindtap="onApproveApplication" data-item="{{item}}">通过</button>
+          <button class="app-btn reject" bindtap="onRejectApplication" data-item="{{item}}">拒绝</button>
+        </view>
+      </view>
+    </view>
+    <view class="empty-state" wx:else>
+      <text class="empty-icon">📋</text>
+      <text class="empty-text">暂无待处理的入班申请</text>
+    </view>
+  </block>
 </view>

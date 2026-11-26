@@ -1,20 +1,30 @@
+const config = require('../config.js')
+
 let cloudInstance = null
 let dbInstance = null
 
 function init() {
   if (cloudInstance) return cloudInstance
-  
+
   try {
     cloudInstance = wx.cloud
     if (!cloudInstance) {
       console.error('wx.cloud is not available')
       return null
     }
-    
-    cloudInstance.init({
-      env: 'cloudbase-3g9lbidb4b420308'
-    })
-    
+
+    const app = typeof getApp === 'function' ? getApp() : null
+    // 复用 app.js 的初始化结果，避免重复调用 wx.cloud.init
+    if (!app || !app.globalData || !app.globalData.cloudInitialized) {
+      cloudInstance.init({
+        env: config.ENV_ID,
+        traceUser: true
+      })
+      if (app && app.globalData) {
+        app.globalData.cloudInitialized = true
+      }
+    }
+
     dbInstance = cloudInstance.database()
     return cloudInstance
   } catch (err) {

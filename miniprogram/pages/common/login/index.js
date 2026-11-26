@@ -61,6 +61,7 @@ Page({
         const userRes = await this.withTimeout(api.getUserInfo(loginRes.openid))
         
         if (userRes && userRes._id) {
+          wx.removeStorageSync('loggedOut')
           app.globalData.userInfo = userRes
           wx.showToast({
             title: '登录成功',
@@ -80,6 +81,7 @@ Page({
           }))
 
           if (createRes && createRes._id) {
+            wx.removeStorageSync('loggedOut')
             app.globalData.userInfo = createRes
             wx.showToast({
               title: '注册成功',
@@ -109,13 +111,36 @@ Page({
     }
   },
 
-  async onLoad() {
-    // 先检查是否已有登录状态
-    if (app.globalData.openid && app.globalData.userInfo) {
-      this.redirectToHome()
+  onShow() {
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
+  },
+
+  async onLoad(options = {}) {
+    // 若用户主动退出登录（含杀进程重进），跳过自动登录并停留在登录表单
+    const isLoggedOut = options.from === 'logout' || wx.getStorageSync('loggedOut') === true
+    if (isLoggedOut) {
+      this.setData({
+        loading: false,
+        showLoginForm: true,
+        loginError: ''
+      })
       return
     }
 
+    // 先检查是否已有登录状态
+    if (app.globalData.openid && app.globalData.userInfo) {
+      wx.nextTick(() => {
+        this.redirectToHome()
+      })
+      return
+    }
+
+    await this.attemptAutoLogin()
+  },
+
+  async attemptAutoLogin() {
     this.setData({ loading: true, loginError: '' })
 
     try {
@@ -128,6 +153,7 @@ Page({
         const userRes = await this.withTimeout(api.getUserInfo(loginRes.openid))
         
         if (userRes && userRes._id) {
+          wx.removeStorageSync('loggedOut')
           app.globalData.userInfo = userRes
           wx.showToast({
             title: '登录成功',
@@ -171,20 +197,15 @@ Page({
         }
       })
     } else {
-      wx.switchTab({
-        url: '/pages/student/home/index',
-        fail: () => {
-          wx.reLaunch({
-            url: '/pages/student/home/index'
-          })
-        }
+      // 学生首页不是 tab 页，所以直接 reLaunch，不尝试 switchTab 以免抛出路由失败逻辑并引发竞态
+      wx.reLaunch({
+        url: '/pages/student/home/index'
       })
     }
   },
 
   // 重试登录
   retryLogin() {
-    this.setData({ loading: true, loginError: '' })
-    this.onLoad()
+    this.attemptAutoLogin()
   }
 })

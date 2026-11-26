@@ -1105,3 +1105,192 @@
   color: #ffffff !important;
   font-weight: bold;
 }
+
+/* ========== 浅色主题适配覆盖 ========== */
+.container.light {
+  background: var(--bg-color);
+}
+.container.light .form-section {
+  background: var(--card-bg-gradient);
+  border-color: var(--card-border);
+  box-shadow: 0 8rpx 24rpx var(--shadow-color);
+}
+.container.light .form-section.locked {
+  background: var(--input-bg);
+  box-shadow: inset 0 4rpx 12rpx var(--shadow-color);
+}
+.container.light .section-title {
+  color: var(--text-primary-color);
+  border-bottom-color: var(--divider-color);
+}
+.container.light .form-section.locked .section-title {
+  color: var(--text-secondary-color);
+}
+.container.light .label,
+.container.light .form-label,
+.container.light .section-desc,
+.container.light .empty-text,
+.container.light .hint-text {
+  color: var(--text-secondary-color);
+}
+.container.light .input,
+.container.light .picker-value,
+.container.light .textarea,
+.container.light .form-input,
+.container.light .form-textarea,
+.container.light .modal-input {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary-color);
+}
+.container.light .input-disabled {
+  background: var(--modal-btn-cancel-bg) !important;
+  color: var(--text-secondary-color);
+  border-color: var(--input-border);
+}
+.container.light .switch-item,
+.container.light .weekday-group {
+  color: var(--text-primary-color);
+}
+.container.light .checkbox-item,
+.container.light .student-item {
+  color: var(--text-primary-color);
+  border-bottom-color: var(--item-border);
+}
+.container.light .student-item.selected {
+  background: rgba(59, 130, 246, 0.08);
+}
+.container.light .calendar-header-title {
+  color: var(--text-primary-color);
+}
+.container.light .calendar-nav-btn {
+  background: var(--calendar-nav-bg);
+  color: var(--text-primary-color);
+}
+.container.light .calendar-day-header {
+  color: var(--text-secondary-color);
+  border-bottom-color: var(--item-border);
+}
+.container.light .calendar-day-item {
+  border-right-color: var(--item-border);
+  border-bottom-color: var(--item-border);
+}
+.container.light .calendar-day-item.other-month {
+  color: var(--text-hint-color);
+}
+.container.light .calendar-day-item.has-course {
+  background: var(--calendar-day-has-course-bg);
+}
+.container.light .calendar-day-item.today {
+  background: var(--modal-btn-cancel-bg);
+}
+.container.light .course-item-line {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+.container.light .modal-mask {
+  background: rgba(0, 0, 0, 0.4);
+}
+.container.light .modal-dialog {
+  background: var(--modal-bg);
+  border-color: var(--modal-border);
+}
+.container.light .modal-title,
+.container.light .detail-course-name {
+  color: var(--text-primary-color);
+}
+.container.light .cancel-btn {
+  background: var(--modal-btn-cancel-bg);
+  color: var(--modal-btn-cancel-text);
+  border-color: var(--input-border);
+}
+.container.light .detail-course-item {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .detail-course-room {
+  color: var(--text-secondary-color);
+}
+.container.light .select-calendar-view {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .select-calendar-day-cell {
+  border-right-color: var(--item-border);
+}
+.container.light .select-calendar-day-cell .day-number {
+  color: var(--text-primary-color);
+}
+.container.light .select-calendar-day-cell.selected .day-number {
+  color: #ffffff;
+}
+.container.light .student-search-box {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .student-search-input {
+  color: var(--text-primary-color);
+}
+
+/* ===== 班级类型与计费方式选择器 ===== */
+.class-type-selector {
+  display: flex;
+  gap: 20rpx;
+  width: 100%;
+}
+
+.type-option {
+  flex: 1;
+  padding: 20rpx 16rpx;
+  border-radius: 14rpx;
+  background: var(--input-bg, rgba(255, 255, 255, 0.05));
+  border: 2rpx solid var(--input-border, rgba(255, 255, 255, 0.1));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  box-sizing: border-box;
+}
+
+.type-option.active {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: #3b82f6;
+}
+
+.type-option-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: var(--text-primary-color, #f1f5f9);
+}
+
+.type-option.active .type-option-title {
+  color: #3b82f6;
+}
+
+.type-option-desc {
+  font-size: 20rpx;
+  color: var(--text-hint-color, #64748b);
+}
+
+.billing-selector {
+  display: flex;
+  gap: 16rpx;
+}
+
+.billing-pill {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  color: var(--text-secondary-color, #94a3b8);
+  background: var(--input-bg, rgba(255, 255, 255, 0.05));
+  border: 1rpx solid var(--input-border, rgba(255, 255, 255, 0.1));
+}
+
+.billing-pill.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border-color: #10b981;
+  font-weight: 600;
+}

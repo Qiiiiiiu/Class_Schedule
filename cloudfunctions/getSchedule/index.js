@@ -7,18 +7,18 @@ const db = cloud.database()
 const _ = db.command
 
 exports.main = async (event, context) => {
-  const { teacherId, startDate, endDate } = event
+  const { teacherId, startDate, endDate } = event || {}
+  const wxContext = cloud.getWXContext()
+  const callerOpenid = wxContext && wxContext.OPENID
 
-  if (!teacherId) {
-    return {
-      code: 1,
-      message: 'teacherId不能为空'
-    }
+  const effectiveTeacherId = callerOpenid || teacherId
+  if (!effectiveTeacherId) {
+    return { code: 1, message: 'teacherId不能为空' }
   }
 
   try {
     const query = {
-      teacherId,
+      teacherId: effectiveTeacherId,
       status: 'available'
     }
 
@@ -33,15 +33,16 @@ exports.main = async (event, context) => {
     const MAX_LIMIT = 100
     let allData = []
     let offset = 0
-    let hasMore = true
 
-    while (hasMore) {
+    while (true) {
       const res = await db.collection('course_schedule').where(query)
         .field({
           _id: true,
           name: true,
           parentId: true,
           price: true,
+          classType: true,
+          billingMode: true,
           status: true,
           students: true,
           studentCount: true,
@@ -51,17 +52,22 @@ exports.main = async (event, context) => {
         .limit(MAX_LIMIT)
         .get()
 
-      allData = allData.concat(res.data)
-      if (res.data.length < MAX_LIMIT) {
-        hasMore = false
-      } else {
-        offset += MAX_LIMIT
-      }
+      const batch = res.data || []
+      allData = allData.concat(batch)
+      if (batch.length < MAX_LIMIT) break
+      offset += MAX_LIMIT
     }
+
+    // 为历史未写 classType 的子课补齐类型推断
+    const normalized = allData.map(item => ({
+      ...item,
+      classType: item.classType || (Array.isArray(item.students) && item.students.length > 1 ? 'group' : 'one_on_one'),
+      studentCount: Array.isArray(item.students) ? item.students.length : (item.studentCount || 0)
+    }))
 
     return {
       code: 0,
-      data: allData
+      data: normalized
     }
   } catch (err) {
     return {

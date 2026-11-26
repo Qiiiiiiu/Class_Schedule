@@ -153,27 +153,36 @@
 
 /* ===== 学生列表 ===== */
 .student-list {
-  background: linear-gradient(145deg, #1e2536, #141724);
-  border-radius: 24rpx;
-  overflow: hidden;
-  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
 }
 
-.student-item {
+.student-item-card {
+  background: linear-gradient(145deg, #1e2536, #141724);
+  border-radius: 24rpx;
+  padding: 30rpx;
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.35), inset 0 1rpx 0 rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  transition: all 0.2s ease;
+}
+
+.student-item-card:active {
+  background: linear-gradient(145deg, #242c3f, #181c2b);
+}
+
+.student-main-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 32rpx 30rpx;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.04);
-}
-
-.student-item:active {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.student-item:last-child {
-  border-bottom: none;
 }
 
 .student-info {
@@ -196,6 +205,48 @@
   flex-direction: column;
   gap: 8rpx;
   flex: 1;
+}
+
+/* ===== 进度条 ===== */
+.student-progress-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.04);
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-title {
+  font-size: 22rpx;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.progress-value {
+  font-size: 22rpx;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.progress-track {
+  width: 100%;
+  height: 12rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 6rpx;
+  box-shadow: 0 0 8rpx rgba(59, 130, 246, 0.4);
 }
 
 .name-row {
@@ -549,4 +600,99 @@
 
 .text-hover {
   opacity: 0.6;
+}
+
+/* ========== 浅色主题适配覆盖 ========== */
+.container.light {
+  background: var(--bg-color);
+}
+.container.light .stats-header,
+.container.light .verify-code-section,
+.container.light .student-item-card,
+.container.light .modal-dialog {
+  background: var(--card-bg-gradient);
+  border-color: var(--card-border);
+  box-shadow: 0 8rpx 24rpx var(--shadow-color);
+}
+.container.light .stat-num,
+.container.light .code-title,
+.container.light .search-input,
+.container.light .student-name,
+.container.light .modal-title,
+.container.light .detail-value,
+.container.light .form-title,
+.container.light .info-row .val,
+.container.light .source-name,
+.container.light .target-name,
+.container.light .title,
+.container.light .tip-title {
+  color: var(--text-primary-color);
+}
+.container.light .stat-label,
+.container.light .code-expire,
+.container.light .code-hint,
+.container.light .student-phone,
+.container.light .empty-text,
+.container.light .detail-label,
+.container.light .form-label,
+.container.light .info-row .lbl,
+.container.light .source-role,
+.container.light .tip-desc {
+  color: var(--text-secondary-color);
+}
+.container.light .search-box {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .student-item-card:active {
+  background: rgba(0, 0, 0, 0.02);
+}
+.container.light .student-progress-row {
+  border-top-color: var(--item-border);
+}
+.container.light .progress-track {
+  background: var(--input-bg);
+}
+.container.light .add-btn.secondary {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary-color);
+}
+.container.light .modal-mask {
+  background: rgba(0, 0, 0, 0.4);
+}
+.container.light .form-input,
+.container.light .form-textarea,
+.container.light .modal-input,
+.container.light .modal-textarea {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary-color);
+}
+.container.light .cancel-btn {
+  background: var(--modal-btn-cancel-bg);
+  color: var(--modal-btn-cancel-text);
+  border-color: var(--input-border);
+}
+.container.light .modal-footer {
+  border-top-color: var(--card-border);
+}
+.container.light .detail-row {
+  border-bottom-color: var(--item-border);
+}
+.container.light .target-student-item {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .target-student-item.selected {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.container.light .source-card,
+.container.light .target-card {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+.container.light .relation-indicator {
+  color: var(--text-secondary-color);
 }

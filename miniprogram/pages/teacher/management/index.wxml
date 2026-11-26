@@ -1,0 +1,98 @@
+<view class="container {{theme}}">
+  <view class="header">
+    <view class="welcome">
+      <text class="title">教务与班级管理</text>
+      <text class="subtitle">统筹一对一、大班课、排课与学生档案</text>
+    </view>
+  </view>
+
+  <view class="modules-container">
+    <!-- 核心模块 1：班级管理（包含一对一 + 大班课 + 下属课程排程 + 入班申请） -->
+    <view class="module-card class-module" bindtap="navigateToClasses" data-tab="all">
+      <view class="card-header">
+        <view class="card-title-area">
+          <view class="icon-box purple">
+            <text class="icon-emoji">🏫</text>
+          </view>
+          <text class="card-title">班级与课程管理</text>
+        </view>
+        <view class="detail-btn" catchtap="navigateToClasses" data-tab="all">
+          <text class="detail-text">进入管理</text>
+          <text class="detail-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="indicators-row">
+        <view class="indicator-item" catchtap="navigateToClasses" data-tab="one_on_one">
+          <text class="indicator-value">{{oneOnOneCount}}</text>
+          <text class="indicator-label">一对一班</text>
+        </view>
+        <view class="indicator-divider"></view>
+        <view class="indicator-item" catchtap="navigateToClasses" data-tab="group">
+          <text class="indicator-value">{{groupClassCount}}</text>
+          <text class="indicator-label">大班课</text>
+        </view>
+        <view class="indicator-divider"></view>
+        <view class="indicator-item" catchtap="navigateToClasses" data-tab="applications">
+          <text class="indicator-value {{pendingApplicationsCount > 0 ? 'highlight-orange' : ''}}">{{pendingApplicationsCount}}</text>
+          <text class="indicator-label">待审入班</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 核心模块 2：学生管理（师生绑定 + 多班并行档案 + 课时账户） -->
+    <view class="module-card student-module" bindtap="navigateToStudents">
+      <view class="card-header">
+        <view class="card-title-area">
+          <view class="icon-box blue">
+            <text class="icon-emoji">👥</text>
+          </view>
+          <text class="card-title">学生管理</text>
+        </view>
+        <view class="detail-btn" catchtap="navigateToStudents">
+          <text class="detail-text">详情</text>
+          <text class="detail-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="indicators-row">
+        <view class="indicator-item">
+          <text class="indicator-value">{{studentCount}}</text>
+          <text class="indicator-label">已绑定学生数</text>
+        </view>
+        <view class="indicator-divider"></view>
+        <view class="indicator-item" catchtap="navigateToBindings">
+          <text class="indicator-value {{pendingBindingsCount > 0 ? 'highlight-orange' : ''}}">{{pendingBindingsCount}}</text>
+          <text class="indicator-label">待审核绑定</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快捷入口：周课表总览 -->
+    <view class="module-card course-module" bindtap="navigateToSchedule">
+      <view class="card-header">
+        <view class="card-title-area">
+          <view class="icon-box green">
+            <text class="icon-emoji">📅</text>
+          </view>
+          <text class="card-title">周课表总览</text>
+        </view>
+        <view class="detail-btn" catchtap="navigateToSchedule">
+          <text class="detail-text">查看课表</text>
+          <text class="detail-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="indicators-row">
+        <view class="indicator-item">
+          <text class="indicator-value">{{totalClassCount}}</text>
+          <text class="indicator-label">全部开设班级</text>
+        </view>
+        <view class="indicator-divider"></view>
+        <view class="indicator-item">
+          <text class="indicator-label">支持按一对一 / 大班 / 学生筛选排课</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,8 +1,11 @@
-<view class="container">
+<view class="container {{theme}}">
   <view class="bind-code-section">
     <view class="section-header">
-      <text class="section-title">绑定教师</text>
-      <text class="section-desc">请输入教师提供的绑定码</text>
+      <view>
+        <text class="section-title">绑定教师</text>
+        <text class="section-desc">请输入教师提供的绑定码，或点击已绑定教师申请课程</text>
+      </view>
+      <view class="my-apps-btn" bindtap="goToMyApplications">我的申请</view>
     </view>
     <view class="code-input-row">
       <input class="code-input" type="number" placeholder="请输入6位绑定码" maxlength="6" value="{{bindCode}}" bindinput="onBindCodeInput" />
@@ -11,16 +14,44 @@
   </view>
 
   <view class="teacher-list" wx:if="{{boundTeachers.length > 0}}">
-    <view class="teacher-item" wx:for="{{boundTeachers}}" wx:key="_id">
-      <view class="teacher-info">
-        <view class="teacher-avatar"></view>
-        <view class="teacher-text">
-          <text class="teacher-name">{{item.teacherName}}</text>
-          <text class="teacher-meta" wx:if="{{item.phone}}">{{item.phone}} | {{item.subject || '暂无科目'}}</text>
-          <text class="teacher-meta" wx:else>{{item.subject || '暂无科目'}}</text>
+    <view class="teacher-card" wx:for="{{boundTeachers}}" wx:key="_id">
+      <view class="teacher-item" bindtap="onToggleTeacher" data-teacher-id="{{item.teacherId}}">
+        <view class="teacher-info">
+          <view class="teacher-avatar"></view>
+          <view class="teacher-text">
+            <text class="teacher-name">{{item.teacherName}}</text>
+            <text class="teacher-meta" wx:if="{{item.phone}}">{{item.phone}} | {{item.subject || '暂无科目'}}</text>
+            <text class="teacher-meta" wx:else>{{item.subject || '暂无科目'}}</text>
+          </view>
+        </view>
+        <view class="teacher-right">
+          <view class="teacher-status status-approved">已绑定</view>
+          <text class="expand-arrow">{{expandedTeacherId === item.teacherId ? '▲' : '▼'}}</text>
         </view>
       </view>
-      <view class="teacher-status status-approved">已绑定</view>
+
+      <!-- 展开该教师可申请课程 -->
+      <view class="teacher-courses" wx:if="{{expandedTeacherId === item.teacherId}}">
+        <view class="teacher-courses-empty" wx:if="{{loadingCoursesFor === item.teacherId}}">正在加载可选课程...</view>
+        <block wx:elif="{{teacherCoursesMap[item.teacherId] && teacherCoursesMap[item.teacherId].length > 0}}">
+          <view class="course-apply-row" wx:for="{{teacherCoursesMap[item.teacherId]}}" wx:for-item="course" wx:key="_id">
+            <view class="course-apply-info">
+              <text class="course-apply-name">{{course.name}}</text>
+              <text class="course-apply-sub">{{course.scheduleSummary}}</text>
+            </view>
+            <view class="apply-tag enrolled" wx:if="{{course.applyState === 'enrolled'}}">已加入</view>
+            <view class="apply-tag pending" wx:elif="{{course.applyState === 'pending'}}">审核中</view>
+            <view class="apply-tag" wx:elif="{{course.applyState === 'full'}}">已满员</view>
+            <button class="apply-action-btn" wx:else
+              bindtap="onApplyCourse"
+              data-course-id="{{course._id}}"
+              data-course-name="{{course.name}}"
+              data-teacher-id="{{item.teacherId}}"
+              data-teacher-name="{{item.teacherName}}">申请上课</button>
+          </view>
+        </block>
+        <view class="teacher-courses-empty" wx:else>该教师暂无可申请的进行中课程</view>
+      </view>
     </view>
   </view>
 
@@ -29,5 +60,5 @@
     <text class="empty-text">暂无已绑定教师</text>
   </view>
 
-  <student-tab-bar active="teachers"></student-tab-bar>
+  <student-tab-bar active="teachers" theme="{{theme}}"></student-tab-bar>
 </view>

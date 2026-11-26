@@ -6,8 +6,8 @@ async function callFunction(name, data = {}, options = {}) {
     if (res.result.code === 0) {
       return res.result.data
     } else {
-      console.error(`Cloud function ${name} failed:`, res.result)
       if (!options.silent) {
+        console.error(`Cloud function ${name} failed:`, res.result)
         wx.showToast({
           title: (res.result.message && res.result.error) ? `${res.result.message}: ${res.result.error}` : (res.result.message || '操作失败'),
           icon: 'none'
@@ -16,8 +16,8 @@ async function callFunction(name, data = {}, options = {}) {
       return null
     }
   } catch (err) {
-    console.error(`Cloud function ${name} error:`, err)
     if (!options.silent) {
+      console.error(`Cloud function ${name} error:`, err)
       wx.showToast({
         title: '网络错误',
         icon: 'none'
@@ -33,6 +33,10 @@ async function login() {
 
 async function getUserInfo(openid) {
   return await callFunction('getUserInfo', { openid })
+}
+
+async function updateUserInfo(openid, name) {
+  return await callFunction('updateUserInfo', { openid, name })
 }
 
 async function getStudents(teacherId) {
@@ -65,6 +69,36 @@ async function saveStudentDetail(teacherId, studentId, detail) {
     teacherId,
     studentId,
     studentDetail: detail
+  })
+}
+
+async function purchaseStudentHours(teacherId, studentId, amount, requestId) {
+  return await callFunction('studentDetail', {
+    type: 'purchaseHours',
+    teacherId,
+    studentId,
+    amount,
+    requestId
+  })
+}
+
+async function adjustStudentHours(teacherId, studentId, amount, requestId) {
+  return await callFunction('studentDetail', {
+    type: 'adjustHours',
+    teacherId,
+    studentId,
+    amount,
+    requestId
+  })
+}
+
+async function refundStudentHours(teacherId, studentId, amount, requestId) {
+  return await callFunction('studentDetail', {
+    type: 'refundHours',
+    teacherId,
+    studentId,
+    amount,
+    requestId
   })
 }
 
@@ -112,8 +146,12 @@ async function getCourseApplications(teacherId) {
   return await callFunction('getPendingApplications', { teacherId })
 }
 
-async function handleCourseApplication(applicationId, status) {
-  return await callFunction('handleCourseApplication', { applicationId, status })
+async function approveCourse(applicationId, teacherId) {
+  return await callFunction('approveCourse', { applicationId, teacherId })
+}
+
+async function rejectCourse(applicationId, teacherId, remark = '') {
+  return await callFunction('rejectCourse', { applicationId, teacherId, remark })
 }
 
 async function getBindApplications(teacherId) {
@@ -128,16 +166,32 @@ async function getPendingApplications(teacherId) {
   return await callFunction('getPendingApplications', { teacherId })
 }
 
-async function handleBindApplication(applicationId, status) {
-  return await callFunction('handleBindApplication', { applicationId, status })
+async function approveBinding(bindingId, teacherId) {
+  return await callFunction('approveBinding', { bindingId, teacherId })
+}
+
+async function rejectBinding(bindingId, teacherId, remark = '') {
+  return await callFunction('rejectBinding', { bindingId, teacherId, remark })
+}
+
+async function mergeStudents(teacherId, sourceStudentId, targetStudentId) {
+  return await callFunction('mergeStudents', { teacherId, sourceStudentId, targetStudentId })
 }
 
 async function bindTeacher(studentId, teacherId) {
   return await callFunction('bindTeacher', { studentId, teacherId })
 }
 
-async function applyCourse(studentId, courseId) {
-  return await callFunction('applyCourse', { studentId, courseId })
+async function applyCourse(studentId, courseId, extra = {}) {
+  return await callFunction('applyCourse', { studentId, courseId, ...extra })
+}
+
+async function getCourseDetail(courseId, options = {}) {
+  return await callFunction('getCourseDetail', { courseId }, options)
+}
+
+async function updateClassMembers(courseId, studentIds, options = {}) {
+  return await callFunction('updateClassMembers', { courseId, studentIds }, options)
 }
 
 async function getTeachers(studentId) {
@@ -184,8 +238,8 @@ async function addCourseSchedule(scheduleData) {
   return await callFunction('addCourseSchedule', scheduleData)
 }
 
-async function generateBindCode(teacherId) {
-  return await callFunction('generateBindCode', { teacherId })
+async function generateBindCode(teacherId, teacherName = '') {
+  return await callFunction('generateBindCode', { teacherId, teacherName })
 }
 
 async function verifyBindCode(studentId, studentName, verifyCode) {
@@ -222,11 +276,15 @@ async function getTeacherDashboard(teacherId, options = {}) {
 module.exports = {
   login,
   getUserInfo,
+  updateUserInfo,
   getStudents,
 
   addStudentByTeacher,
   getStudentDetail,
   saveStudentDetail,
+  purchaseStudentHours,
+  adjustStudentHours,
+  refundStudentHours,
   addCourse,
   editCourse,
   deleteCourse,
@@ -236,13 +294,18 @@ module.exports = {
   getSchedule,
   sendReminder,
   getCourseApplications,
-  handleCourseApplication,
+  approveCourse,
+  rejectCourse,
   getBindApplications,
   getPendingBindings,
   getPendingApplications,
-  handleBindApplication,
+  approveBinding,
+  rejectBinding,
+  mergeStudents,
   bindTeacher,
   applyCourse,
+  getCourseDetail,
+  updateClassMembers,
   getTeachers,
   getMyCourses,
   getMyApplications,

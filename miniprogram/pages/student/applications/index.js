@@ -2,13 +2,22 @@ const app = getApp()
 const checkRole = require('../../../utils/checkRole.js')
 const api = require('../../../utils/api.js')
 
+const EMPTY_TEXTS = {
+  pending: '暂无待处理的申请',
+  approved: '暂无已通过的申请',
+  rejected: '暂无已拒绝的申请'
+}
+
 Page({
   data: {
+    theme: 'dark',
     currentTab: 'pending',
     applications: [],
     pendingList: [],
     approvedList: [],
-    rejectedList: []
+    rejectedList: [],
+    currentList: [],
+    emptyText: EMPTY_TEXTS.pending
   },
 
   onLoad() {
@@ -21,28 +30,30 @@ Page({
     if (!checkRole.checkStudent()) {
       return
     }
+    const theme = app.globalData.theme || 'dark'
+    this.setData({ theme })
+    app.applyThemeToSystem(theme)
     this.loadApplications()
   },
 
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab
-    this.setData({ currentTab: tab })
+    this.setData({ currentTab: tab }, () => {
+      this.updateCurrentView()
+    })
   },
 
-  get currentList() {
+  updateCurrentView() {
     const tab = this.data.currentTab
-    if (tab === 'pending') return this.data.pendingList
-    if (tab === 'approved') return this.data.approvedList
-    return this.data.rejectedList
-  },
-
-  get emptyText() {
-    const texts = {
-      pending: '暂无待处理的申请',
-      approved: '暂无已通过的申请',
-      rejected: '暂无已拒绝的申请'
-    }
-    return texts[this.data.currentTab]
+    const currentList = tab === 'pending'
+      ? this.data.pendingList
+      : tab === 'approved'
+        ? this.data.approvedList
+        : this.data.rejectedList
+    this.setData({
+      currentList,
+      emptyText: EMPTY_TEXTS[tab] || EMPTY_TEXTS.pending
+    })
   },
 
   async loadApplications() {
@@ -75,6 +86,8 @@ Page({
         pendingList: pending,
         approvedList: approved,
         rejectedList: rejected
+      }, () => {
+        this.updateCurrentView()
       })
     }
   },

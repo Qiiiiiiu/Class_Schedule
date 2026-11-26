@@ -1,4 +1,4 @@
-<view class="tab-bar">
+<view class="tab-bar {{currentTheme}}">
   <view class="tab-bar-border"></view>
   <view class="tab-bar-item" bindtap="switchTab" data-path="/pages/student/home/index">
     <image src="{{active === 'home' ? '/images/tab/home-active.png' : '/images/tab/home.png'}}" class="tab-icon"></image>

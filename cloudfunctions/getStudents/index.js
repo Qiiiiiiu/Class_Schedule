@@ -63,7 +63,9 @@ exports.main = async (event, context) => {
         nativePlace: student ? student.nativePlace : '',
         grade: student ? student.grade : '',
         subject: student ? student.subject : '',
-        remark: student ? student.remark : ''
+        remark: student ? student.remark : '',
+        purchasedHours: binding.purchasedHours || 0,
+        remainingHours: binding.remainingHours || 0
       }
     })
 

@@ -1,4 +1,15 @@
-<view class="container">
+<view class="container {{theme}}">
+  <!-- 加载失败降级 -->
+  <view class="form-section error-section" wx:if="{{loadFailed && !course}}">
+    <text class="error-title">课程详情加载失败</text>
+    <text class="error-desc">请检查网络后重试，或返回上一页</text>
+    <view class="actions-section">
+      <button class="action-btn edit-btn" bindtap="onRetryLoad">重新加载</button>
+      <button class="action-btn cancel-btn" bindtap="onGoBack">返回</button>
+    </view>
+  </view>
+
+  <block wx:if="{{course}}">
   <!-- 课程信息面板 -->
   <view class="form-section">
     <view class="section-header">
@@ -16,15 +27,15 @@
       </view>
       <view class="detail-row">
         <text class="detail-label">上课教师</text>
-        <text class="detail-value">{{course.teacherName}}</text>
+        <text class="detail-value">{{course.teacherName || '未设置'}}</text>
       </view>
       <view class="detail-row">
         <text class="detail-label">上课时间</text>
-        <text class="detail-value">{{course.schedule.startTime}} - {{course.schedule.endTime}}</text>
+        <text class="detail-value">{{(course.schedule && course.schedule.startTime) ? (course.schedule.startTime + ' - ' + (course.schedule.endTime || '')) : '未安排'}}</text>
       </view>
       <view class="detail-row">
         <text class="detail-label">上课地点</text>
-        <text class="detail-value">{{course.schedule.classroom || '未安排'}}</text>
+        <text class="detail-value">{{(course.schedule && course.schedule.classroom) || '未安排'}}</text>
       </view>
     </block>
 
@@ -130,4 +141,5 @@
       <button class="action-btn cancel-btn" bindtap="onCancelEdit">取消</button>
     </block>
   </view>
+  </block>
 </view>
