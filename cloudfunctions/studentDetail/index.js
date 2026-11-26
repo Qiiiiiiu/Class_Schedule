@@ -9,8 +9,39 @@ const { validateHoursMutation } = require('./hoursUtils')
 
 const ALLOWED_SAVE_FIELDS = ['name', 'phone', 'nativePlace', 'grade', 'subject', 'remark']
 
+function validateScorePayload(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return { ok: false, message: '成绩数据格式错误' }
+  }
+  const dateStr = String(payload.date || '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return { ok: false, message: '请选择正确的考试日期' }
+  }
+  const scoreNum = Number(payload.score)
+  if (!Number.isFinite(scoreNum) || scoreNum < 0 || scoreNum > 10000) {
+    return { ok: false, message: '请输入有效成绩（0 - 10000）' }
+  }
+  const roundedScore = Math.round(scoreNum * 100) / 100
+  const examName = String(payload.examName || '').trim().slice(0, 100)
+  return {
+    ok: true,
+    date: dateStr,
+    score: roundedScore,
+    examName
+  }
+}
+
+function sortScoreRecords(list) {
+  return [...(Array.isArray(list) ? list : [])].sort((a, b) => {
+    const da = String((a && a.date) || '')
+    const dbStr = String((b && b.date) || '')
+    if (da !== dbStr) return da.localeCompare(dbStr)
+    return ((a && a.createTime) || 0) - ((b && b.createTime) || 0)
+  })
+}
+
 exports.main = async (event, context) => {
-  const { type, teacherId, studentId, studentDetail, amount, requestId } = event || {}
+  const { type, teacherId, studentId, studentDetail, amount, requestId, scoreRecord, scoreId } = event || {}
   const wxContext = cloud.getWXContext()
   const callerOpenid = wxContext && wxContext.OPENID
 
@@ -65,7 +96,8 @@ exports.main = async (event, context) => {
           remark: user.remark || '',
           purchasedHours: bindingDoc.purchasedHours || 0,
           remainingHours: bindingDoc.remainingHours || 0,
-          hourLogs: bindingDoc.hourLogs || []
+          hourLogs: bindingDoc.hourLogs || [],
+          scoreRecords: sortScoreRecords(bindingDoc.scoreRecords || [])
         }
       }
     }
@@ -173,6 +205,169 @@ exports.main = async (event, context) => {
       }
 
       return { code: 1, message: '未找到该学生记录' }
+    }
+
+    if (type === 'addScore') {
+      const check = validateScorePayload(scoreRecord)
+      if (!check.ok) {
+        return { code: 1, message: check.message }
+      }
+
+      const bindingId = bindingDoc._id
+      let txResp = null
+
+      await db.runTransaction(async transaction => {
+        const lockedRes = await transaction.collection('teacher_student_bindings').doc(bindingId).get()
+        const locked = lockedRes && lockedRes.data
+        if (!locked || locked.teacherId !== effectiveTeacherId || locked.studentId !== studentId) {
+          throw new Error('师生绑定记录不存在或无权限')
+        }
+
+        const existing = Array.isArray(locked.scoreRecords) ? locked.scoreRecords : []
+        if (requestId && existing.some(s => s && s.requestId === requestId)) {
+          txResp = {
+            code: 0,
+            message: '成绩已录入',
+            data: {
+              duplicate: true,
+              scoreRecords: sortScoreRecords(existing)
+            }
+          }
+          return
+        }
+
+        const nowTs = Date.now()
+        const newRecord = {
+          id: `score_${nowTs}_${Math.random().toString(36).slice(2, 8)}`,
+          date: check.date,
+          score: check.score,
+          examName: check.examName,
+          createTime: nowTs,
+          updateTime: nowTs
+        }
+        if (requestId) {
+          newRecord.requestId = String(requestId)
+        }
+
+        const nextRecords = sortScoreRecords([...existing, newRecord])
+        await transaction.collection('teacher_student_bindings').doc(bindingId).update({
+          data: {
+            scoreRecords: nextRecords,
+            updateTime: new Date()
+          }
+        })
+
+        txResp = {
+          code: 0,
+          message: '成绩录入成功',
+          data: {
+            duplicate: false,
+            record: newRecord,
+            scoreRecords: nextRecords
+          }
+        }
+      })
+
+      return txResp || { code: 1, message: '录入失败' }
+    }
+
+    if (type === 'updateScore') {
+      if (!scoreId) {
+        return { code: 1, message: '缺少成绩记录ID' }
+      }
+      const check = validateScorePayload(scoreRecord)
+      if (!check.ok) {
+        return { code: 1, message: check.message }
+      }
+
+      const bindingId = bindingDoc._id
+      let txResp = null
+
+      await db.runTransaction(async transaction => {
+        const lockedRes = await transaction.collection('teacher_student_bindings').doc(bindingId).get()
+        const locked = lockedRes && lockedRes.data
+        if (!locked || locked.teacherId !== effectiveTeacherId || locked.studentId !== studentId) {
+          throw new Error('师生绑定记录不存在或无权限')
+        }
+
+        const existing = Array.isArray(locked.scoreRecords) ? locked.scoreRecords : []
+        const targetIdx = existing.findIndex(s => s && s.id === scoreId)
+        if (targetIdx === -1) {
+          txResp = { code: 1, message: '未找到该条成绩记录' }
+          return
+        }
+
+        const updatedRecord = {
+          ...existing[targetIdx],
+          date: check.date,
+          score: check.score,
+          examName: check.examName,
+          updateTime: Date.now()
+        }
+        const nextList = [...existing]
+        nextList[targetIdx] = updatedRecord
+        const sorted = sortScoreRecords(nextList)
+
+        await transaction.collection('teacher_student_bindings').doc(bindingId).update({
+          data: {
+            scoreRecords: sorted,
+            updateTime: new Date()
+          }
+        })
+
+        txResp = {
+          code: 0,
+          message: '更新成功',
+          data: {
+            record: updatedRecord,
+            scoreRecords: sorted
+          }
+        }
+      })
+
+      return txResp || { code: 1, message: '更新失败' }
+    }
+
+    if (type === 'deleteScore') {
+      if (!scoreId) {
+        return { code: 1, message: '缺少成绩记录ID' }
+      }
+
+      const bindingId = bindingDoc._id
+      let txResp = null
+
+      await db.runTransaction(async transaction => {
+        const lockedRes = await transaction.collection('teacher_student_bindings').doc(bindingId).get()
+        const locked = lockedRes && lockedRes.data
+        if (!locked || locked.teacherId !== effectiveTeacherId || locked.studentId !== studentId) {
+          throw new Error('师生绑定记录不存在或无权限')
+        }
+
+        const existing = Array.isArray(locked.scoreRecords) ? locked.scoreRecords : []
+        const nextList = existing.filter(s => s && s.id !== scoreId)
+        if (nextList.length === existing.length) {
+          txResp = { code: 1, message: '未找到该条成绩记录' }
+          return
+        }
+
+        const sorted = sortScoreRecords(nextList)
+        await transaction.collection('teacher_student_bindings').doc(bindingId).update({
+          data: {
+            scoreRecords: sorted,
+            updateTime: new Date()
+          }
+        })
+
+        txResp = {
+          code: 0,
+          message: '删除成功',
+          data: {
+            scoreRecords: sorted
+          }
+        }
+      })
+
+      return txResp || { code: 1, message: '删除失败' }
     }
 
     return { code: 1, message: '无效的操作类型' }

@@ -1,44 +1,121 @@
 <view class="container {{theme}}">
-  <!-- 头部信息 -->
+  <!-- 顶部学生名片 -->
   <view class="student-header-card">
     <image class="avatar" src="{{student.avatar || '/images/icons/avatar.png'}}" mode="aspectFill"></image>
-    <view class="header-info">
-      <text class="name">{{student.studentName || '学生姓名'}}</text>
-      <text class="status-tag status-{{student.status}}">{{student.statusStr || '已绑定'}}</text>
+    <view class="header-main">
+      <view class="header-name-row">
+        <text class="name">{{student.studentName || '学生姓名'}}</text>
+        <text class="status-tag status-{{student.status}}">{{student.statusStr || '已绑定'}}</text>
+      </view>
+      <text class="header-sub" wx:if="{{studentDetail.grade || studentDetail.subject}}">
+        {{studentDetail.grade || ''}}{{(studentDetail.grade && studentDetail.subject) ? ' · ' : ''}}{{studentDetail.subject || ''}}
+      </text>
+      <text class="header-sub" wx:elif="{{student.studentPhone}}">{{student.studentPhone}}</text>
+      <text class="header-sub muted" wx:else>点击下方可补充年级、科目与备注</text>
+    </view>
+    <view class="header-hours-badge">
+      <text class="badge-num">{{student.remainingHours || 0}}</text>
+      <text class="badge-lbl">剩余课时</text>
     </view>
   </view>
 
-  <!-- 所在班级模块（展示一对一与大班课多班并行关系） -->
+  <!-- 所在班级（一对一与大班课多班并行） -->
   <view class="card-section classes-section">
-    <view class="section-title-row">
-      <text class="section-title">所在班级 ({{enrolledClasses.length}})</text>
-      <text class="class-summary-sub">一对一 {{oneOnOneClasses.length}} · 大班 {{groupClasses.length}}</text>
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">所在班级</text>
+        <text class="section-count">{{enrolledClasses.length}}</text>
+      </view>
+      <view class="class-summary-pill">
+        <text>一对一 {{oneOnOneClasses.length}} · 大班 {{groupClasses.length}}</text>
+      </view>
     </view>
+
     <view class="enrolled-class-list" wx:if="{{enrolledClasses.length > 0}}">
-      <view class="enrolled-class-item" wx:for="{{enrolledClasses}}" wx:key="_id" bindtap="onOpenClassDetail" data-id="{{item._id}}">
+      <view class="enrolled-class-item" wx:for="{{enrolledClasses}}" wx:key="_id" bindtap="onOpenClassDetail" data-id="{{item._id}}" hover-class="item-hover">
         <view class="enrolled-class-left">
           <text class="class-pill type-{{item.classType}}">{{item.classTypeLabel}}</text>
           <text class="enrolled-class-name">{{item.name}}</text>
         </view>
         <view class="enrolled-class-right">
+          <view class="status-dot {{item.status === 'available' ? 'on' : 'off'}}"></view>
           <text class="enrolled-class-meta">{{item.status === 'available' ? '进行中' : '已停课'}}</text>
           <text class="enrolled-class-arrow">›</text>
         </view>
       </view>
     </view>
-    <view class="empty-logs" wx:else>
-      <text class="empty-logs-text">暂未加入任何一对一或大班课</text>
+    <view class="empty-block" wx:else>
+      <text class="empty-block-text">暂未加入任何一对一或大班课</text>
     </view>
   </view>
 
-  <!-- 课时管理模块 -->
-  <view class="card-section hours-section">
-    <view class="section-title-row">
-      <text class="section-title">课时管理</text>
+  <!-- 学生成绩统计看板（点击进入成绩录入界面） -->
+  <view class="card-section scores-section" bindtap="onOpenScorePage" hover-class="card-tap-hover">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">成绩统计</text>
+        <text class="section-count" wx:if="{{scoreRecords.length > 0}}">{{scoreRecords.length}} 次</text>
+      </view>
+      <view class="score-entry-pill">
+        <text>录入成绩 ›</text>
+      </view>
     </view>
+
+    <block wx:if="{{scoreRecords.length > 0}}">
+      <view class="score-summary-row">
+        <view class="score-stat-item highlight">
+          <view class="score-stat-val-row">
+            <text class="score-stat-val primary">{{scoreStats.latest}}</text>
+            <text class="score-delta {{scoreStats.deltaClass}}" wx:if="{{scoreStats.deltaStr}}">{{scoreStats.deltaStr}}</text>
+          </view>
+          <text class="score-stat-lbl">最新成绩</text>
+        </view>
+        <view class="score-stat-item">
+          <text class="score-stat-val">{{scoreStats.max}}</text>
+          <text class="score-stat-lbl">最高成绩</text>
+        </view>
+        <view class="score-stat-item">
+          <text class="score-stat-val">{{scoreStats.avg}}</text>
+          <text class="score-stat-lbl">平均成绩</text>
+        </view>
+      </view>
+
+      <view class="chart-wrapper">
+        <canvas type="2d" id="scoreChart" class="score-chart-canvas"></canvas>
+      </view>
+
+      <view class="score-board-footer">
+        <text class="latest-exam-tip">最近：{{scoreStats.latestExam}}（{{scoreStats.latestDate}}）</text>
+        <text class="chart-tap-hint">点击录入/管理</text>
+      </view>
+    </block>
+
+    <view class="score-empty-board" wx:else>
+      <view class="empty-chart-preview">
+        <view class="preview-line"></view>
+        <view class="preview-dot d1"></view>
+        <view class="preview-dot d2"></view>
+        <view class="preview-dot d3"></view>
+      </view>
+      <text class="score-empty-title">暂无成绩记录</text>
+      <text class="score-empty-sub">点击此处录入学生成绩，自动生成折线趋势图</text>
+    </view>
+  </view>
+
+  <!-- 课时管理 -->
+  <view class="card-section hours-section">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">课时账户</text>
+      </view>
+    </view>
+
     <view class="hours-display-grid">
-      <view class="hours-card">
-        <text class="hours-val">{{student.remainingHours || 0}}</text>
+      <view class="hours-card highlight">
+        <text class="hours-val primary">{{student.remainingHours || 0}}</text>
         <text class="hours-lbl">未上课时</text>
       </view>
       <view class="hours-card">
@@ -50,29 +127,24 @@
         <text class="hours-lbl">已上课时</text>
       </view>
     </view>
-    
-    <!-- 课时操作按钮 -->
+
     <view class="hours-actions">
-      <button class="action-btn buy" bindtap="onShowBuyDialog" hover-class="btn-hover">
-        <text class="action-icon">💳</text>
-        <text>购买课时</text>
-      </button>
-      <button class="action-btn adjust" bindtap="onShowAdjustDialog" hover-class="btn-hover">
-        <text class="action-icon">⚙️</text>
-        <text>调整课时</text>
-      </button>
-      <button class="action-btn refund" bindtap="onShowRefundDialog" hover-class="btn-hover">
-        <text class="action-icon">💵</text>
-        <text>退费</text>
-      </button>
+      <button class="action-btn buy" bindtap="onShowBuyDialog" hover-class="btn-hover">+ 购买课时</button>
+      <button class="action-btn adjust" bindtap="onShowAdjustDialog" hover-class="btn-hover">调整课时</button>
+      <button class="action-btn refund" bindtap="onShowRefundDialog" hover-class="btn-hover">退费</button>
     </view>
   </view>
 
-  <!-- 课时明细模块 -->
+  <!-- 课时变动明细 -->
   <view class="card-section logs-section">
-    <view class="section-title-row">
-      <text class="section-title">课时变动明细</text>
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">课时变动明细</text>
+        <text class="section-count" wx:if="{{logs.length > 0}}">{{logs.length}}</text>
+      </view>
     </view>
+
     <scroll-view class="logs-scroll" scroll-y wx:if="{{logs.length > 0}}">
       <view class="log-item" wx:for="{{logs}}" wx:key="index">
         <view class="log-left">
@@ -84,38 +156,41 @@
         </view>
       </view>
     </scroll-view>
-    <view class="empty-logs" wx:else>
-      <text class="empty-logs-text">暂无课时变动明细</text>
+    <view class="empty-block" wx:else>
+      <text class="empty-block-text">暂无课时变动记录</text>
     </view>
   </view>
 
-  <!-- 基本信息模块 -->
+  <!-- 基本信息 -->
   <view class="card-section info-section">
-    <view class="section-title-row">
-      <text class="section-title">基本信息</text>
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">基本信息</text>
+      </view>
       <text class="edit-toggle-btn" bindtap="toggleEditMode" hover-class="text-hover">{{editing ? '取消' : '编辑'}}</text>
     </view>
 
     <view class="info-list" wx:if="{{!editing}}">
       <view class="info-item">
         <text class="lbl">手机号码</text>
-        <text class="val">{{student.studentPhone || '未填写'}}</text>
+        <text class="val {{student.studentPhone ? '' : 'placeholder'}}">{{student.studentPhone || '未填写'}}</text>
       </view>
       <view class="info-item">
         <text class="lbl">籍贯</text>
-        <text class="val">{{studentDetail.nativePlace || '未填写'}}</text>
+        <text class="val {{studentDetail.nativePlace ? '' : 'placeholder'}}">{{studentDetail.nativePlace || '未填写'}}</text>
       </view>
       <view class="info-item">
         <text class="lbl">年级</text>
-        <text class="val">{{studentDetail.grade || '未填写'}}</text>
+        <text class="val {{studentDetail.grade ? '' : 'placeholder'}}">{{studentDetail.grade || '未填写'}}</text>
       </view>
       <view class="info-item">
         <text class="lbl">科目</text>
-        <text class="val">{{studentDetail.subject || '未填写'}}</text>
+        <text class="val {{studentDetail.subject ? '' : 'placeholder'}}">{{studentDetail.subject || '未填写'}}</text>
       </view>
       <view class="info-item vertical">
         <text class="lbl">备注信息</text>
-        <text class="val remark-val">{{studentDetail.remark || '无备注'}}</text>
+        <text class="val remark-val {{studentDetail.remark ? '' : 'placeholder'}}">{{studentDetail.remark || '暂无备注'}}</text>
       </view>
     </view>
 
@@ -140,7 +215,7 @@
     </view>
   </view>
 
-  <!-- 弹出的课时变动输入框对话框 -->
+  <!-- 课时操作弹窗 -->
   <view class="dialog-mask" wx:if="{{dialog.show}}" bindtap="onCloseDialog">
     <view class="dialog-content" catchtap="stopPropagation">
       <view class="dialog-header">

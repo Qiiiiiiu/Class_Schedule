@@ -69,15 +69,29 @@ exports.main = async (event, context) => {
       return { code: 1, message: '请先与该教师完成绑定后再申请课程' }
     }
 
-    // 3. 校验是否已有待处理申请
-    const checkRes = await db.collection('course_applications')
-      .where({
-        courseId,
-        studentId: effectiveStudentId,
-        status: 'pending'
-      })
-      .limit(1)
-      .get()
+    // 3. 校验是否已有待处理申请（若集合尚未创建，自动尝试建表）
+    let checkRes = { data: [] }
+    try {
+      checkRes = await db.collection('course_applications')
+        .where({
+          courseId,
+          studentId: effectiveStudentId,
+          status: 'pending'
+        })
+        .limit(1)
+        .get()
+    } catch (e) {
+      const msg = String((e && e.message) || e)
+      if (msg.includes('-502005') || msg.includes('DATABASE_COLLECTION_NOT_EXIST') || msg.includes('not exist')) {
+        if (typeof db.createCollection === 'function') {
+          await db.createCollection('course_applications')
+        } else {
+          throw e
+        }
+      } else {
+        throw e
+      }
+    }
     if (checkRes.data && checkRes.data.length > 0) {
       return { code: 1, message: '您已提交过该课程申请，请耐心等待教师审核' }
     }

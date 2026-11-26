@@ -55,17 +55,29 @@
     <block wx:if="{{currentTab === 'schedules'}}">
       <view class="section-list" wx:if="{{schedules.length > 0}}">
         <view class="schedule-card {{item.isFinished ? 'finished' : ''}}" wx:for="{{schedules}}" wx:key="_id">
+          <!-- 左侧日期方块 -->
+          <view class="schedule-date-box {{item.isFinished ? 'done' : 'todo'}}">
+            <text class="date-md">{{item.monthDay}}</text>
+            <text class="date-wk">{{item.weekdayStr || '日程'}}</text>
+          </view>
+
+          <!-- 中间课时核心信息 -->
           <view class="schedule-main">
             <view class="schedule-row-top">
-              <text class="schedule-date">{{item.dateStr || '日期待定'}}</text>
+              <text class="schedule-time">{{item.timeRange}}</text>
               <text class="schedule-state {{item.isFinished ? 'done' : 'todo'}}">{{item.isFinished ? '已结束' : '待上课'}}</text>
             </view>
-            <text class="schedule-time">🕐 {{item.timeRange}}</text>
-            <text class="schedule-room">📍 {{item.classroom}}</text>
+            <view class="schedule-row-sub">
+              <text class="schedule-room">{{item.classroom}}</text>
+              <text class="schedule-dot" wx:if="{{item.durationStr}}">·</text>
+              <text class="schedule-dur" wx:if="{{item.durationStr}}">{{item.durationStr}}</text>
+            </view>
           </view>
+
+          <!-- 右侧紧凑操作胶囊 -->
           <view class="schedule-ops">
-            <button class="mini-btn" bindtap="onOpenEditSchedule" data-item="{{item}}">改期</button>
-            <button class="mini-btn danger" bindtap="onDeleteSchedule" data-id="{{item._id}}">删除</button>
+            <view class="op-chip edit" hover-class="op-hover" bindtap="onOpenEditSchedule" data-item="{{item}}">改期</view>
+            <view class="op-chip danger" hover-class="op-hover" bindtap="onDeleteSchedule" data-id="{{item._id}}">删除</view>
           </view>
         </view>
       </view>

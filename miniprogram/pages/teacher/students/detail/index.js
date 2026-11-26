@@ -15,6 +15,16 @@ Page({
     },
     editing: false,
     logs: [],
+    scoreRecords: [],
+    scoreStats: {
+      latest: '--',
+      max: '--',
+      avg: '--',
+      deltaStr: '',
+      deltaClass: '',
+      latestExam: '',
+      latestDate: ''
+    },
     enrolledClasses: [],
     oneOnOneClasses: [],
     groupClasses: [],
@@ -119,6 +129,20 @@ Page({
           }
         })
 
+        const rawScores = Array.isArray(detail.scoreRecords) ? detail.scoreRecords : []
+        const scoreRecords = [...rawScores]
+          .filter(s => s && s.date && Number.isFinite(Number(s.score)))
+          .map(s => ({
+            ...s,
+            score: Math.round(Number(s.score) * 100) / 100
+          }))
+          .sort((a, b) => {
+            if (a.date !== b.date) return String(a.date).localeCompare(String(b.date))
+            return (a.createTime || 0) - (b.createTime || 0)
+          })
+
+        const scoreStats = this.computeScoreStats(scoreRecords)
+
         this.setData({
           student: {
             studentName: detail.studentName,
@@ -136,9 +160,15 @@ Page({
             remark: detail.remark || ''
           },
           logs: logs,
+          scoreRecords,
+          scoreStats,
           enrolledClasses,
           oneOnOneClasses,
           groupClasses
+        }, () => {
+          if (scoreRecords.length > 0) {
+            this.drawScoreChart()
+          }
         })
       }
     } catch (err) {
@@ -338,6 +368,274 @@ Page({
       this._submitting = false
       wx.hideLoading()
     }
+  },
+
+  computeScoreStats(records) {
+    if (!Array.isArray(records) || records.length === 0) {
+      return {
+        latest: '--',
+        max: '--',
+        avg: '--',
+        deltaStr: '',
+        deltaClass: '',
+        latestExam: '',
+        latestDate: ''
+      }
+    }
+    const nums = records.map(r => r.score)
+    const latestItem = records[records.length - 1]
+    const max = Math.round(Math.max(...nums) * 100) / 100
+    const avg = Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10
+    let deltaStr = ''
+    let deltaClass = ''
+    if (records.length >= 2) {
+      const prev = records[records.length - 2].score
+      const diff = Math.round((latestItem.score - prev) * 100) / 100
+      if (diff > 0) {
+        deltaStr = `+${diff}`
+        deltaClass = 'up'
+      } else if (diff < 0) {
+        deltaStr = `${diff}`
+        deltaClass = 'down'
+      } else {
+        deltaStr = '持平'
+        deltaClass = 'flat'
+      }
+    }
+    return {
+      latest: latestItem.score,
+      max,
+      avg,
+      deltaStr,
+      deltaClass,
+      latestExam: latestItem.examName || '日常测验',
+      latestDate: latestItem.date
+    }
+  },
+
+  drawScoreChart(retryCount = 0) {
+    const records = this.data.scoreRecords || []
+    if (records.length === 0) return
+
+    const query = wx.createSelectorQuery().in(this)
+    query.select('#scoreChart').fields({ node: true, size: true }).exec(res => {
+      if (!res || !res[0] || !res[0].node || !res[0].width) {
+        if (retryCount < 3) {
+          setTimeout(() => this.drawScoreChart(retryCount + 1), 120)
+        }
+        return
+      }
+
+      const canvas = res[0].node
+      const width = res[0].width
+      const height = res[0].height
+      const dpr = (wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : wx.getSystemInfoSync().pixelRatio) || 2
+
+      canvas.width = Math.round(width * dpr)
+      canvas.height = Math.round(height * dpr)
+
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+      ctx.clearRect(0, 0, width, height)
+
+      const isLight = this.data.theme === 'light'
+      const gridColor = isLight ? 'rgba(100, 116, 139, 0.16)' : 'rgba(148, 163, 184, 0.14)'
+      const axisTextColor = isLight ? '#64748b' : '#94a3b8'
+      const valueTextColor = isLight ? '#1e293b' : '#f1f5f9'
+      const dotCenterColor = isLight ? '#ffffff' : '#1e2433'
+      const lineColor = '#3b82f6'
+
+      // 计算纵坐标范围（4 等分刻度）
+      const scores = records.map(r => r.score)
+      const minVal = Math.min(...scores)
+      const maxVal = Math.max(...scores)
+      const niceSteps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000]
+      let yMin = 0
+      let yMax = 100
+
+      if (maxVal === minVal) {
+        if (maxVal === 0) {
+          yMin = 0
+          yMax = 100
+        } else {
+          const pad = Math.max(10, Math.ceil(maxVal * 0.15))
+          yMin = Math.max(0, Math.floor((maxVal - pad) / 5) * 5)
+          yMax = Math.ceil((maxVal + pad) / 5) * 5
+          if (maxVal <= 100 && yMax > 100) yMax = 100
+          if (yMax <= yMin) yMax = yMin + 20
+        }
+      } else {
+        const span = maxVal - minVal
+        const rawStep = span / 4
+        const step = niceSteps.find(s => s >= rawStep) || Math.ceil(rawStep / 100) * 100
+        yMin = Math.max(0, Math.floor((minVal - step * 0.4) / step) * step)
+        yMax = Math.ceil((maxVal + step * 0.4) / step) * step
+        if (maxVal <= 100 && yMax > 100 && (yMax - step) >= maxVal) {
+          yMax = 100
+        }
+        if (yMax <= yMin) yMax = yMin + step * 4
+      }
+
+      const padTop = 26
+      const padRight = 18
+      const padBottom = 28
+      const padLeft = yMax >= 1000 ? 44 : 36
+      const plotW = Math.max(10, width - padLeft - padRight)
+      const plotH = Math.max(10, height - padTop - padBottom)
+      const yRange = yMax - yMin || 1
+
+      // 绘制横向网格线与 Y 轴刻度
+      const tickCount = 4
+      ctx.font = '10px sans-serif'
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      for (let i = 0; i <= tickCount; i++) {
+        const ratio = i / tickCount
+        const val = yMin + yRange * (1 - ratio)
+        const y = padTop + plotH * ratio
+
+        ctx.beginPath()
+        ctx.strokeStyle = gridColor
+        ctx.lineWidth = 1
+        ctx.moveTo(padLeft, y)
+        ctx.lineTo(padLeft + plotW, y)
+        ctx.stroke()
+
+        const label = Number.isInteger(val) ? String(val) : String(Math.round(val * 10) / 10)
+        ctx.fillStyle = axisTextColor
+        ctx.fillText(label, padLeft - 6, y)
+      }
+
+      // 计算各数据点坐标
+      const n = records.length
+      const innerPadX = n === 1 ? plotW / 2 : Math.min(20, plotW / (n * 2))
+      const usableW = Math.max(1, plotW - innerPadX * 2)
+      const points = records.map((rec, idx) => {
+        const x = n === 1 ? padLeft + plotW / 2 : padLeft + innerPadX + (usableW * idx) / (n - 1)
+        const y = padTop + plotH * (1 - (rec.score - yMin) / yRange)
+        return { x, y, rec }
+      })
+
+      // 绘制折线下方面积渐变
+      if (points.length >= 2) {
+        const gradient = ctx.createLinearGradient(0, padTop, 0, padTop + plotH)
+        gradient.addColorStop(0, isLight ? 'rgba(59, 130, 246, 0.22)' : 'rgba(59, 130, 246, 0.26)')
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.01)')
+
+        ctx.beginPath()
+        ctx.moveTo(points[0].x, padTop + plotH)
+        points.forEach(p => ctx.lineTo(p.x, p.y))
+        ctx.lineTo(points[points.length - 1].x, padTop + plotH)
+        ctx.closePath()
+        ctx.fillStyle = gradient
+        ctx.fill()
+
+        // 绘制主折线
+        ctx.beginPath()
+        ctx.strokeStyle = lineColor
+        ctx.lineWidth = 2.5
+        ctx.lineJoin = 'round'
+        ctx.lineCap = 'round'
+        points.forEach((p, idx) => {
+          if (idx === 0) ctx.moveTo(p.x, p.y)
+          else ctx.lineTo(p.x, p.y)
+        })
+        ctx.stroke()
+      }
+
+      // 判断需要展示数值标签的点（数据过多时避免文字重叠）
+      const showValSet = new Set()
+      if (n <= 8) {
+        for (let i = 0; i < n; i++) showValSet.add(i)
+      } else {
+        showValSet.add(0)
+        showValSet.add(n - 1)
+        let maxIdx = 0
+        let minIdx = 0
+        for (let i = 1; i < n; i++) {
+          if (records[i].score >= records[maxIdx].score) maxIdx = i
+          if (records[i].score <= records[minIdx].score) minIdx = i
+        }
+        showValSet.add(maxIdx)
+        showValSet.add(minIdx)
+      }
+
+      // 绘制数据点与数值标签
+      points.forEach((p, idx) => {
+        const isLast = idx === n - 1
+        if (isLast) {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, 8, 0, Math.PI * 2)
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.2)'
+          ctx.fill()
+        }
+
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, isLast ? 4.5 : 3.8, 0, Math.PI * 2)
+        ctx.fillStyle = lineColor
+        ctx.fill()
+
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, isLast ? 2.2 : 1.8, 0, Math.PI * 2)
+        ctx.fillStyle = dotCenterColor
+        ctx.fill()
+
+        if (showValSet.has(idx)) {
+          ctx.font = isLast ? 'bold 11px sans-serif' : '10px sans-serif'
+          ctx.fillStyle = isLast ? lineColor : valueTextColor
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'bottom'
+          const textY = Math.max(12, p.y - 7)
+          ctx.fillText(String(p.rec.score), p.x, textY)
+        }
+      })
+
+      // 绘制 X 轴时间刻度（最多 5 个刻度防重叠）
+      const xLabelIndices = new Set()
+      if (n <= 5) {
+        for (let i = 0; i < n; i++) xLabelIndices.add(i)
+      } else {
+        xLabelIndices.add(0)
+        xLabelIndices.add(n - 1)
+        const stepIdx = (n - 1) / 4
+        for (let k = 1; k < 4; k++) {
+          xLabelIndices.add(Math.round(stepIdx * k))
+        }
+      }
+
+      const years = new Set(records.map(r => String(r.date).slice(0, 4)))
+      const multiYear = years.size > 1
+      ctx.font = '10px sans-serif'
+      ctx.fillStyle = axisTextColor
+      ctx.textBaseline = 'top'
+
+      Array.from(xLabelIndices).sort((a, b) => a - b).forEach(idx => {
+        const p = points[idx]
+        const rawDate = String(p.rec.date || '')
+        const parts = rawDate.split('-')
+        let label = rawDate
+        if (parts.length === 3) {
+          label = multiYear ? `${parts[0].slice(2)}/${parts[1]}/${parts[2]}` : `${parts[1]}/${parts[2]}`
+        }
+        if (n > 1 && idx === 0) {
+          ctx.textAlign = 'left'
+        } else if (n > 1 && idx === n - 1) {
+          ctx.textAlign = 'right'
+        } else {
+          ctx.textAlign = 'center'
+        }
+        ctx.fillText(label, p.x, padTop + plotH + 8)
+      })
+    })
+  },
+
+  onOpenScorePage() {
+    const { studentId, student } = this.data
+    if (!studentId) return
+    const name = encodeURIComponent((student && student.studentName) || '')
+    wx.navigateTo({
+      url: `/pages/teacher/students/scores/index?studentId=${studentId}&studentName=${name}`
+    })
   },
 
   onOpenClassDetail(e) {

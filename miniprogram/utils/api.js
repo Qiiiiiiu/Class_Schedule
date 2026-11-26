@@ -102,6 +102,35 @@ async function refundStudentHours(teacherId, studentId, amount, requestId) {
   })
 }
 
+async function addStudentScore(teacherId, studentId, scoreRecord, requestId) {
+  return await callFunction('studentDetail', {
+    type: 'addScore',
+    teacherId,
+    studentId,
+    scoreRecord,
+    requestId
+  })
+}
+
+async function updateStudentScore(teacherId, studentId, scoreId, scoreRecord) {
+  return await callFunction('studentDetail', {
+    type: 'updateScore',
+    teacherId,
+    studentId,
+    scoreId,
+    scoreRecord
+  })
+}
+
+async function deleteStudentScore(teacherId, studentId, scoreId) {
+  return await callFunction('studentDetail', {
+    type: 'deleteScore',
+    teacherId,
+    studentId,
+    scoreId
+  })
+}
+
 async function addCourse(courseData) {
   return await callFunction('addCourse', courseData)
 }
@@ -285,6 +314,9 @@ module.exports = {
   purchaseStudentHours,
   adjustStudentHours,
   refundStudentHours,
+  addStudentScore,
+  updateStudentScore,
+  deleteStudentScore,
   addCourse,
   editCourse,
   deleteCourse,

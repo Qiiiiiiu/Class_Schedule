@@ -101,11 +101,21 @@ exports.main = async (event, context) => {
       db.collection('course_applications').where({
         teacherId: effectiveTeacherId,
         status: 'pending'
-      }).count(),
+      }).count().catch(err => {
+        if (String(err.message || err).includes('-502005') || String(err.message || err).includes('not exist')) {
+          return { total: 0 }
+        }
+        throw err
+      }),
       db.collection('course_applications').where({
         teacherId: effectiveTeacherId,
         status: 'pending'
-      }).orderBy('applyTime', 'desc').limit(2).get()
+      }).orderBy('applyTime', 'desc').limit(2).get().catch(err => {
+        if (String(err.message || err).includes('-502005') || String(err.message || err).includes('not exist')) {
+          return { data: [] }
+        }
+        throw err
+      })
     ])
 
     const coursePriceMap = {}

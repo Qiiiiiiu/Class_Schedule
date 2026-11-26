@@ -57,8 +57,13 @@
 
       <view class="indicators-row">
         <view class="indicator-item">
+          <text class="indicator-value">{{totalStudentCount}}</text>
+          <text class="indicator-label">总学生数</text>
+        </view>
+        <view class="indicator-divider"></view>
+        <view class="indicator-item">
           <text class="indicator-value">{{studentCount}}</text>
-          <text class="indicator-label">已绑定学生数</text>
+          <text class="indicator-label">已绑定学生</text>
         </view>
         <view class="indicator-divider"></view>
         <view class="indicator-item" catchtap="navigateToBindings">
@@ -85,12 +90,13 @@
 
       <view class="indicators-row">
         <view class="indicator-item">
-          <text class="indicator-value">{{totalClassCount}}</text>
-          <text class="indicator-label">全部开设班级</text>
+          <text class="indicator-value">{{todayScheduleCount}}</text>
+          <text class="indicator-label">本日课程数</text>
         </view>
         <view class="indicator-divider"></view>
         <view class="indicator-item">
-          <text class="indicator-label">支持按一对一 / 大班 / 学生筛选排课</text>
+          <text class="indicator-value">{{weekScheduleCount}}</text>
+          <text class="indicator-label">本周课程数</text>
         </view>
       </view>
     </view>

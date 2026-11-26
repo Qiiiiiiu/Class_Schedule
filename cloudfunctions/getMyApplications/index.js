@@ -41,6 +41,10 @@ exports.main = async (event, context) => {
       data: list
     }
   } catch (err) {
+    const msg = String((err && err.message) || err)
+    if (msg.includes('-502005') || msg.includes('DATABASE_COLLECTION_NOT_EXIST') || msg.includes('not exist')) {
+      return { code: 0, data: [] }
+    }
     console.error('[getMyApplications] error:', err.message)
     return {
       code: 1,

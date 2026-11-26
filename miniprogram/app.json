@@ -6,6 +6,7 @@
     "pages/teacher/management/index",
     "pages/teacher/students/index",
     "pages/teacher/students/detail/index",
+    "pages/teacher/students/scores/index",
     "pages/teacher/courses/index",
     "pages/teacher/courses/add",
     "pages/teacher/courses/detail",

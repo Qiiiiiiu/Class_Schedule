@@ -1,0 +1,102 @@
+<view class="container {{theme}}">
+  <!-- 顶部学生提示条 -->
+  <view class="student-banner" wx:if="{{studentName}}">
+    <view class="banner-left">
+      <text class="banner-label">当前学生</text>
+      <text class="banner-name">{{studentName}}</text>
+    </view>
+    <view class="banner-right">
+      <text class="banner-stat">已录 {{scoreList.length}} 次成绩</text>
+    </view>
+  </view>
+
+  <!-- 成绩录入 / 编辑表单卡片 -->
+  <view class="card-section form-card">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">{{editingId ? '编辑成绩记录' : '录入新成绩'}}</text>
+      </view>
+      <text class="cancel-edit-btn" wx:if="{{editingId}}" bindtap="onCancelEdit">取消编辑</text>
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">考试时间 <text class="required">*</text></text>
+      <picker mode="date" value="{{formDate}}" bindchange="onDateChange">
+        <view class="picker-box">
+          <text class="picker-val {{formDate ? '' : 'placeholder'}}">{{formDate || '请选择考试日期'}}</text>
+          <text class="picker-arrow">选择日期 ›</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">考试成绩 <text class="required">*</text></text>
+      <input
+        class="form-input"
+        type="digit"
+        value="{{formScore}}"
+        bindinput="onScoreInput"
+        placeholder="请输入分数，例如：95 或 92.5"
+        placeholder-class="input-placeholder"
+      />
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">考试名称 / 备注</text>
+      <input
+        class="form-input"
+        value="{{formExamName}}"
+        bindinput="onExamNameInput"
+        maxlength="100"
+        placeholder="例如：期中考试、第三次月考、单元测试"
+        placeholder-class="input-placeholder"
+      />
+    </view>
+
+    <button
+      class="submit-btn"
+      hover-class="btn-hover"
+      bindtap="onSubmitScore"
+      loading="{{submitting}}"
+      disabled="{{submitting}}"
+    >
+      {{editingId ? '保存修改' : '+ 保存该次成绩'}}
+    </button>
+  </view>
+
+  <!-- 历史成绩记录列表 -->
+  <view class="card-section history-card">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">历史成绩记录</text>
+        <text class="section-count" wx:if="{{scoreList.length > 0}}">{{scoreList.length}}</text>
+      </view>
+      <text class="summary-chip" wx:if="{{scoreList.length > 0}}">最高 {{maxScore}} · 均分 {{avgScore}}</text>
+    </view>
+
+    <view class="score-list" wx:if="{{scoreList.length > 0}}">
+      <view class="score-item {{editingId === item.id ? 'editing' : ''}}" wx:for="{{scoreList}}" wx:key="id">
+        <view class="score-badge">
+          <text class="score-num">{{item.score}}</text>
+          <text class="score-unit">分</text>
+        </view>
+
+        <view class="score-info">
+          <text class="score-exam">{{item.examName || '日常测验'}}</text>
+          <text class="score-date">{{item.date}}</text>
+        </view>
+
+        <view class="score-ops">
+          <view class="op-chip edit" hover-class="op-hover" bindtap="onStartEdit" data-item="{{item}}">编辑</view>
+          <view class="op-chip danger" hover-class="op-hover" bindtap="onDeleteScore" data-item="{{item}}">删除</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-block" wx:else>
+      <text class="empty-text">暂无成绩记录，可在上方表单录入第一次考试成绩</text>
+    </view>
+  </view>
+</view>

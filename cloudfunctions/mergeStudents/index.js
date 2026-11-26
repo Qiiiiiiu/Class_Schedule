@@ -111,18 +111,36 @@ exports.main = async (event, context) => {
         migratedCourses++
       }
 
-      // 2. 合并源学生的已购课时、剩余课时与课时日志到目标学生
+      // 2. 合并源学生的已购课时、剩余课时、课时日志与成绩记录到目标学生
       const mergedPurchased = Math.round(((targetBinding.purchasedHours || 0) + (sourceBinding.purchasedHours || 0)) * 100) / 100
       const mergedRemaining = Math.round(((targetBinding.remainingHours || 0) + (sourceBinding.remainingHours || 0)) * 100) / 100
       const sourceLogs = Array.isArray(sourceBinding.hourLogs) ? sourceBinding.hourLogs : []
       const targetLogs = Array.isArray(targetBinding.hourLogs) ? targetBinding.hourLogs : []
       const mergedLogs = [...targetLogs, ...sourceLogs].sort((a, b) => (a.createTime || 0) - (b.createTime || 0))
 
+      const sourceScores = Array.isArray(sourceBinding.scoreRecords) ? sourceBinding.scoreRecords : []
+      const targetScores = Array.isArray(targetBinding.scoreRecords) ? targetBinding.scoreRecords : []
+      const seenScoreIds = new Set(targetScores.map(s => s && s.id).filter(Boolean))
+      const mergedScores = [...targetScores]
+      sourceScores.forEach(s => {
+        if (!s) return
+        if (s.id && seenScoreIds.has(s.id)) return
+        if (s.id) seenScoreIds.add(s.id)
+        mergedScores.push(s)
+      })
+      mergedScores.sort((a, b) => {
+        const da = String((a && a.date) || '')
+        const dbStr = String((b && b.date) || '')
+        if (da !== dbStr) return da.localeCompare(dbStr)
+        return ((a && a.createTime) || 0) - ((b && b.createTime) || 0)
+      })
+
       await transaction.collection('teacher_student_bindings').doc(targetBindingId).update({
         data: {
           purchasedHours: mergedPurchased,
           remainingHours: mergedRemaining,
           hourLogs: mergedLogs,
+          scoreRecords: mergedScores,
           updateTime: now
         }
       })

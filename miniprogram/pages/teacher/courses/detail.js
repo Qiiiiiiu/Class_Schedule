@@ -138,10 +138,12 @@ Page({
         if (isFinished) finishedCount++
         else upcomingCount++
 
+        let durationStr = ''
         if (startTime && endTime) {
           const [sh, sm] = startTime.split(':').map(Number)
           const [eh, em] = endTime.split(':').map(Number)
           const hours = Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60)
+          durationStr = `${Math.round(hours * 10) / 10}小时`
           const sCount = (Array.isArray(item.students) && item.students.length > 0)
             ? item.students.length
             : studentIds.length
@@ -151,9 +153,24 @@ Page({
           if (isFinished) earnedAmount += amt
         }
 
+        let monthDay = '--'
+        let weekdayStr = ''
+        if (dateStr) {
+          const parts = String(dateStr).split('-').map(Number)
+          if (parts.length === 3 && !parts.some(isNaN)) {
+            monthDay = `${String(parts[1]).padStart(2, '0')}/${String(parts[2]).padStart(2, '0')}`
+            const dObj = new Date(parts[0], parts[1] - 1, parts[2])
+            const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+            weekdayStr = weekNames[dObj.getDay()] || ''
+          }
+        }
+
         return {
           ...item,
           dateStr,
+          monthDay,
+          weekdayStr,
+          durationStr,
           timeRange: startTime && endTime ? `${startTime} - ${endTime}` : '时间待定',
           classroom: sch.classroom || '未设置地点',
           isFinished
