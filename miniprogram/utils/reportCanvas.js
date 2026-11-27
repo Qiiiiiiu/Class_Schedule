@@ -71,7 +71,66 @@ function truncateText(ctx, text, maxWidth) {
   return end > 0 ? `${str.slice(0, end)}…` : '…'
 }
 
+/**
+ * 将文本按最大宽度折行（最多 maxLines 行，超长末行自动补省略号）
+ * 传入 ctx 时按真实字体宽度测量；未传 ctx 时按保守字符宽度估算（用于预估画布高度）
+ */
+function wrapTextLines(ctx, text, maxWidth, maxLines = 2, font = 'bold 28px sans-serif', fontSize = 28) {
+  const str = String(text || '').trim()
+  if (!str) return ['']
+
+  const measure = (s) => {
+    if (ctx) {
+      return ctx.measureText(s).width
+    }
+    let w = 0
+    for (let i = 0; i < s.length; i++) {
+      w += s.charCodeAt(i) > 255 ? fontSize : fontSize * 0.58
+    }
+    return w
+  }
+
+  if (ctx) {
+    ctx.save()
+    ctx.font = font
+  }
+
+  const lines = []
+  let rest = str
+  while (rest.length > 0 && lines.length < maxLines) {
+    if (measure(rest) <= maxWidth) {
+      lines.push(rest)
+      rest = ''
+      break
+    }
+
+    if (lines.length === maxLines - 1) {
+      // 最后一行仍放不下时截断并追加省略号
+      let end = rest.length
+      while (end > 0 && measure(`${rest.slice(0, end)}…`) > maxWidth) {
+        end--
+      }
+      lines.push(end > 0 ? `${rest.slice(0, end)}…` : '…')
+      rest = ''
+      break
+    }
+
+    let cut = rest.length
+    while (cut > 1 && measure(rest.slice(0, cut)) > maxWidth) {
+      cut--
+    }
+    lines.push(rest.slice(0, cut))
+    rest = rest.slice(cut)
+  }
+
+  if (ctx) {
+    ctx.restore()
+  }
+  return lines.length > 0 ? lines : ['']
+}
+
 function drawPill(ctx, x, y, text, bg, color, fontSize = 20, padX = 14, height = 34) {
+  ctx.save()
   ctx.font = `600 ${fontSize}px sans-serif`
   const tw = ctx.measureText(text).width
   const w = tw + padX * 2
@@ -80,10 +139,12 @@ function drawPill(ctx, x, y, text, bg, color, fontSize = 20, padX = 14, height =
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(text, x + w / 2, y + height / 2 + 1)
+  ctx.restore()
   return w
 }
 
 function drawSectionHeader(ctx, x, y, w, title, badgeText, rightText) {
+  ctx.save()
   // 左侧蓝条
   fillRoundRect(ctx, x, y + 6, 8, 28, 4, COLORS.primary)
   ctx.font = 'bold 30px sans-serif'
@@ -104,6 +165,7 @@ function drawSectionHeader(ctx, x, y, w, title, badgeText, rightText) {
     ctx.textBaseline = 'middle'
     ctx.fillText(rightText, x + w, y + 20)
   }
+  ctx.restore()
 }
 
 function formatMoney(num) {
@@ -186,7 +248,7 @@ function buildOverviewItems(data) {
 /**
  * 预计算总画布高度（确保无溢出、无多余留白）
  */
-function calculateLayout(data) {
+function calculateLayout(data, ctx = null) {
   const { options, coursesSummary, selectedCourse, scores } = data
   const overviewItems = buildOverviewItems(data)
 
@@ -216,14 +278,17 @@ function calculateLayout(data) {
   } else if (options.courseScope === 'single' && selectedCourse) {
     const list = selectedCourse.filteredSchedules || []
     const shownCount = Math.min(list.length, MAX_SINGLE_SCHEDULES)
-    const metaBoxH = options.showFee ? 134 : 102
+    const titleMaxW = CONTENT_W - 56 - 40
+    const titleLines = wrapTextLines(ctx, selectedCourse.name || '未命名课程', titleMaxW, 2, 'bold 28px sans-serif', 28)
+    const titleLineH = 38
+    const metaBoxH = 18 + titleLines.length * titleLineH + 12 + 32 + (options.showFee ? 38 : 0) + 18
     const tableHeaderH = shownCount > 0 ? 46 : 0
     const rowH = 56
     const listH = shownCount === 0
       ? 100
       : tableHeaderH + shownCount * rowH + (list.length > MAX_SINGLE_SCHEDULES ? 42 : 0)
     const cardH = 32 + 40 + 20 + metaBoxH + 20 + listH + 28
-    blocks.singleCourse = { y, h: cardH, metaBoxH, rowH, shownCount }
+    blocks.singleCourse = { y, h: cardH, metaBoxH, titleLines, titleLineH, rowH, shownCount }
     y += cardH + 24
   }
 
@@ -512,19 +577,27 @@ function drawSingleCourse(ctx, block, data) {
 
   let curY = y + 28 + 40 + 20
 
-  // 课程概况浅蓝框
+  // 课程概况浅蓝框（方案 A：课程名左对齐独占整行支持自动换行，模式标签与汇总信息在下一行）
   fillRoundRect(ctx, innerX, curY, innerW, block.metaBoxH, 14, COLORS.tintBlueBg, COLORS.tintBlueBorder, 1)
+
+  const titleLines = block.titleLines || [selectedCourse.name || '未命名课程']
+  const titleLineH = block.titleLineH || 38
+
   ctx.font = 'bold 28px sans-serif'
   ctx.fillStyle = COLORS.textPrimary
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
+  titleLines.forEach((line, idx) => {
+    ctx.fillText(line, innerX + 20, curY + 18 + idx * titleLineH + titleLineH / 2)
+  })
+
+  // 第 2 行：左侧模式胶囊 + 右侧课次汇总
+  const row2Y = curY + 18 + titleLines.length * titleLineH + 12
   const modeTag = selectedCourse.includesPast ? '含已上课程' : '仅未来排课'
-  ctx.font = '600 20px sans-serif'
-  const tagW = ctx.measureText(modeTag).width + 24
-  drawPill(
+  const tagW = drawPill(
     ctx,
-    innerX + innerW - 18 - tagW,
-    curY + 18,
+    innerX + 20,
+    row2Y,
     modeTag,
     selectedCourse.includesPast ? '#dbeafe' : COLORS.greenBg,
     selectedCourse.includesPast ? COLORS.primary : COLORS.green,
@@ -533,14 +606,16 @@ function drawSingleCourse(ctx, block, data) {
     32
   )
 
-  ctx.font = 'bold 28px sans-serif'
-  ctx.fillStyle = COLORS.textPrimary
-  ctx.fillText(truncateText(ctx, selectedCourse.name, innerW - tagW - 50), innerX + 20, curY + 34)
-
   const summaryLine = `该时段共 ${selectedCourse.filteredSchedules.length} 节（已上 ${selectedCourse.rangeFinished} 节 · 待上 ${selectedCourse.rangeUpcoming} 节）`
   ctx.font = '22px sans-serif'
   ctx.fillStyle = COLORS.textSecondary
-  ctx.fillText(truncateText(ctx, summaryLine, innerW - 40), innerX + 20, curY + 74)
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(
+    truncateText(ctx, summaryLine, innerW - 40 - tagW - 14),
+    innerX + 20 + tagW + 14,
+    row2Y + 16
+  )
 
   if (options.showFee) {
     let feeLine = ''
@@ -551,7 +626,9 @@ function drawSingleCourse(ctx, block, data) {
     }
     ctx.font = '600 22px sans-serif'
     ctx.fillStyle = COLORS.primary
-    ctx.fillText(truncateText(ctx, feeLine, innerW - 40), innerX + 20, curY + 108)
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(truncateText(ctx, feeLine, innerW - 40), innerX + 20, row2Y + 32 + 22)
   }
 
   curY += block.metaBoxH + 20
@@ -1008,7 +1085,8 @@ function loadAvatarImage(canvas, avatarUrl) {
  * 主绘制入口：渲染到 Canvas 2D 节点并导出高清 PNG 临时文件路径
  */
 async function renderReportToFile(canvas, data) {
-  const layout = calculateLayout(data)
+  const ctx = canvas.getContext('2d')
+  const layout = calculateLayout(data, ctx)
   const totalHeight = layout.totalHeight
 
   // 根据总高度自适应缩放倍率（防止部分安卓机型超出 6000px 纹理限制）
@@ -1017,7 +1095,6 @@ async function renderReportToFile(canvas, data) {
   canvas.width = Math.round(LOGICAL_WIDTH * dpr)
   canvas.height = Math.round(totalHeight * dpr)
 
-  const ctx = canvas.getContext('2d')
   ctx.save()
   ctx.scale(dpr, dpr)
 

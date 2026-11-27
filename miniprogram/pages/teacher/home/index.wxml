@@ -26,9 +26,13 @@
       </view>
     </view>
     <view class="calendar-grid">
-      <view class="calendar-day {{item.empty ? 'empty' : ''}}" wx:for="{{calendar}}" wx:key="index" style="background: {{item.empty ? 'transparent' : item.bgColor}}" bindtap="onCalendarDayTap" data-date="{{item.fullDate}}">
-        <text wx:if="{{!item.empty}}" class="day-num {{item.isToday ? 'today' : ''}}" style="color: {{item.isToday ? '' : item.textColor}}">{{item.date}}</text>
-        <text wx:if="{{!item.empty && item.count > 0}}" class="day-count" style="color: {{item.isToday ? 'rgba(0, 0, 0, 0.7)' : item.textColor}}">{{item.count}}节</text>
+      <view class="calendar-day {{item.empty ? 'empty' : ''}}" wx:for="{{calendar}}" wx:key="index"
+        style="background: {{item.empty ? 'transparent' : item.bgColor}}" bindtap="onCalendarDayTap"
+        data-date="{{item.fullDate}}">
+        <text wx:if="{{!item.empty}}" class="day-num {{item.isToday ? 'today' : ''}}"
+          style="color: {{item.isToday ? '' : item.textColor}}">{{item.date}}</text>
+        <text wx:if="{{!item.empty && item.count > 0}}" class="day-count"
+          style="color: {{item.isToday ? 'rgba(0, 0, 0, 0.7)' : item.textColor}}">{{item.count}}节</text>
       </view>
     </view>
     <view class="calendar-hint">
@@ -47,7 +51,7 @@
         </view>
         <view class="stat-info">
           <text class="stat-value">{{stats.studentCount || 0}}</text>
-          <text class="stat-label">关联学生</text>
+          <text class="stat-label">总学生数</text>
         </view>
       </view>
       <view class="stat-card">
@@ -93,7 +97,8 @@
         </view>
       </view>
       <view class="income-right">
-        <image class="eye-icon" src="{{showAmount ? '/images/icons/eye-line.svg' : '/images/icons/eye-off-line.svg'}}" bindtap="toggleAmount" mode="aspectFit"></image>
+        <image class="eye-icon" src="{{showAmount ? '/images/icons/eye-line.svg' : '/images/icons/eye-off-line.svg'}}"
+          bindtap="toggleAmount" mode="aspectFit"></image>
       </view>
     </view>
     <view class="income-footer">
