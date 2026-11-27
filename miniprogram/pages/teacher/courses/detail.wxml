@@ -53,6 +53,10 @@
 
     <!-- Tab 1：本班隶属的所有课时/子课程 -->
     <block wx:if="{{currentTab === 'schedules'}}">
+      <view class="schedule-toolbar" wx:if="{{schedules.length > 0}}">
+        <text class="toolbar-tip">待上 {{upcomingCount}} 节 · 已结束 {{finishedCount}} 节</text>
+        <view class="batch-shift-btn" hover-class="op-hover" bindtap="onOpenBatchShift">批量顺延 / 改期</view>
+      </view>
       <view class="section-list" wx:if="{{schedules.length > 0}}">
         <view class="schedule-card {{item.isFinished ? 'finished' : ''}}" wx:for="{{schedules}}" wx:key="_id">
           <!-- 左侧日期方块 -->
@@ -164,6 +168,85 @@
       <view class="modal-footer">
         <button class="modal-btn cancel" bindtap="onCloseEditSchedule">取消</button>
         <button class="modal-btn confirm" bindtap="onSaveScheduleEdit">保存改期</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 批量顺延 / 批量改期弹窗 -->
+  <view class="modal-mask" wx:if="{{showBatchShiftModal}}" bindtap="onCloseBatchShift">
+    <view class="modal-card batch-modal" catchtap="stopPropagation">
+      <view class="modal-header">
+        <text class="modal-title">批量顺延 / 改期</text>
+        <text class="modal-close" bindtap="onCloseBatchShift">✕</text>
+      </view>
+      <scroll-view class="batch-modal-scroll" scroll-y>
+        <view class="modal-body">
+          <view class="form-row">
+            <text class="form-lbl">从此日期起（含当日）</text>
+            <picker mode="date" value="{{batchFromDate}}" bindchange="onBatchFromDateChange">
+              <view class="form-val accent">{{batchFromDate || '选择日期'}} ›</view>
+            </picker>
+          </view>
+
+          <view class="batch-block">
+            <text class="batch-lbl">日期整体顺延 / 提前（天）</text>
+            <view class="preset-chips">
+              <view class="preset-chip {{batchShiftDays === 0 ? 'active' : ''}}" bindtap="onBatchShiftPreset" data-days="0">不调日期</view>
+              <view class="preset-chip {{batchShiftDays === 7 ? 'active' : ''}}" bindtap="onBatchShiftPreset" data-days="7">顺延1周 (+7)</view>
+              <view class="preset-chip {{batchShiftDays === 14 ? 'active' : ''}}" bindtap="onBatchShiftPreset" data-days="14">顺延2周 (+14)</view>
+              <view class="preset-chip {{batchShiftDays === -7 ? 'active' : ''}}" bindtap="onBatchShiftPreset" data-days="-7">提前1周 (-7)</view>
+              <view class="preset-chip {{batchShiftDays === 1 ? 'active' : ''}}" bindtap="onBatchShiftPreset" data-days="1">顺延1天 (+1)</view>
+            </view>
+            <view class="form-row compact">
+              <text class="form-lbl">自定义天数（正数顺延 / 负数提前）</text>
+              <input class="form-input small-num" type="text" value="{{batchShiftDaysInput}}" bindinput="onBatchShiftDaysInput" placeholder="如 7 或 -3" />
+            </view>
+          </view>
+
+          <view class="form-row">
+            <text class="form-lbl">同时统一修改上课时间</text>
+            <switch checked="{{batchChangeTime}}" color="#3b82f6" bindchange="onToggleBatchChangeTime" />
+          </view>
+          <block wx:if="{{batchChangeTime}}">
+            <view class="form-row">
+              <text class="form-lbl">新开始时间</text>
+              <picker mode="time" value="{{batchStartTime}}" bindchange="onBatchStartTimeChange">
+                <view class="form-val accent">{{batchStartTime}}</view>
+              </picker>
+            </view>
+            <view class="form-row">
+              <text class="form-lbl">新结束时间</text>
+              <picker mode="time" value="{{batchEndTime}}" bindchange="onBatchEndTimeChange">
+                <view class="form-val accent">{{batchEndTime}}</view>
+              </picker>
+            </view>
+          </block>
+
+          <view class="form-row">
+            <text class="form-lbl">同时统一修改上课地点</text>
+            <switch checked="{{batchChangeClassroom}}" color="#3b82f6" bindchange="onToggleBatchChangeClassroom" />
+          </view>
+          <view class="form-row" wx:if="{{batchChangeClassroom}}">
+            <text class="form-lbl">新上课地点</text>
+            <input class="form-input" value="{{batchClassroom}}" bindinput="onBatchClassroomInput" placeholder="请输入新地点" />
+          </view>
+
+          <!-- 影响范围实时预览 -->
+          <view class="batch-preview-box">
+            <text class="preview-title">将调整本班 {{batchAffectedCount}} 节排课</text>
+            <view class="preview-item" wx:for="{{batchPreviews}}" wx:key="_id">
+              <text class="pv-old">{{item.previewOld}}</text>
+              <text class="pv-arrow">→</text>
+              <text class="pv-new">{{item.previewNew}}</text>
+            </view>
+            <text class="preview-more" wx:if="{{batchAffectedCount > 3}}">…其余 {{batchAffectedCount - 3}} 节将按相同规则顺延/改期</text>
+            <text class="preview-more" wx:if="{{batchAffectedCount === 0}}">该日期及之后暂无排课记录</text>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="modal-footer">
+        <button class="modal-btn cancel" bindtap="onCloseBatchShift">取消</button>
+        <button class="modal-btn confirm" bindtap="onConfirmBatchShift" loading="{{batchSaving}}" disabled="{{batchSaving || batchAffectedCount === 0}}">确认批量调整</button>
       </view>
     </view>
   </view>

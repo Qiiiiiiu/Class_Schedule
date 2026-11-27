@@ -1,10 +1,10 @@
 .container {
+  width: 100%;
   min-height: 100vh;
   background: var(--bg-color, #0f1419);
   padding: 30rpx;
   padding-top: 0;
   padding-bottom: 120rpx;
-  transition: background-color 0.3s ease;
   box-sizing: border-box;
 }
 
@@ -98,6 +98,11 @@
 .icon-box.green {
   background: rgba(16, 185, 129, 0.12);
   border: 1rpx solid rgba(16, 185, 129, 0.2);
+}
+
+.icon-box.amber {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1rpx solid rgba(245, 158, 11, 0.22);
 }
 
 .icon-emoji {

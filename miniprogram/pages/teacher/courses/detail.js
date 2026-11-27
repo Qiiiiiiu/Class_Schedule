@@ -1,6 +1,7 @@
 const app = getApp()
 const checkRole = require('../../../utils/checkRole.js')
 const api = require('../../../utils/api.js')
+const scheduleConflict = require('../../../utils/scheduleConflict.js')
 
 Page({
   data: {
@@ -25,6 +26,20 @@ Page({
     editStartTime: '',
     editEndTime: '',
     editClassroom: '',
+
+    // 批量顺延 / 批量改期弹窗
+    showBatchShiftModal: false,
+    batchFromDate: '',
+    batchShiftDays: 7,
+    batchShiftDaysInput: '7',
+    batchChangeTime: false,
+    batchStartTime: '09:00',
+    batchEndTime: '10:00',
+    batchChangeClassroom: false,
+    batchClassroom: '',
+    batchAffectedCount: 0,
+    batchPreviews: [],
+    batchSaving: false,
 
     // 学员管理弹窗
     showMemberModal: false,
@@ -370,6 +385,15 @@ Page({
       return
     }
 
+    wx.showLoading({ title: '检测排课冲突...' })
+    const allowSave = await scheduleConflict.checkAndConfirmConflicts(
+      app.globalData.openid,
+      [{ date: editDate, startTime: editStartTime, endTime: editEndTime }],
+      { excludeIds: [editingScheduleId] }
+    )
+    wx.hideLoading()
+    if (!allowSave) return
+
     const res = await api.editCourseSchedule(editingScheduleId, {
       date: editDate,
       startTime: editStartTime,
@@ -382,6 +406,242 @@ Page({
       wx.showToast({ title: '改期成功', icon: 'success' })
       this.setData({ showEditScheduleModal: false })
       this.loadAll()
+    }
+  },
+
+  // ===== 批量顺延 / 批量改期 =====
+  computeBatchPlan(overrides = {}) {
+    const schedules = this.data.schedules || []
+    const batchFromDate = overrides.batchFromDate !== undefined ? overrides.batchFromDate : this.data.batchFromDate
+    const batchShiftDays = overrides.batchShiftDays !== undefined ? overrides.batchShiftDays : this.data.batchShiftDays
+    const batchChangeTime = overrides.batchChangeTime !== undefined ? overrides.batchChangeTime : this.data.batchChangeTime
+    const batchStartTime = overrides.batchStartTime !== undefined ? overrides.batchStartTime : this.data.batchStartTime
+    const batchEndTime = overrides.batchEndTime !== undefined ? overrides.batchEndTime : this.data.batchEndTime
+    const batchChangeClassroom = overrides.batchChangeClassroom !== undefined ? overrides.batchChangeClassroom : this.data.batchChangeClassroom
+    const batchClassroom = overrides.batchClassroom !== undefined ? overrides.batchClassroom : this.data.batchClassroom
+
+    const shiftNum = parseInt(batchShiftDays, 10)
+    const effectiveShift = Number.isFinite(shiftNum) ? shiftNum : 0
+
+    const targets = schedules
+      .filter(s => s && s.dateStr && (!batchFromDate || s.dateStr >= batchFromDate))
+      .sort((a, b) => `${a.dateStr} ${(a.schedule && a.schedule.startTime) || ''}`.localeCompare(`${b.dateStr} ${(b.schedule && b.schedule.startTime) || ''}`))
+
+    const plan = targets.map(item => {
+      const sch = item.schedule || {}
+      const newDate = effectiveShift !== 0
+        ? scheduleConflict.addDaysToDateStr(item.dateStr, effectiveShift)
+        : item.dateStr
+      const newStartTime = batchChangeTime ? batchStartTime : (sch.startTime || '09:00')
+      const newEndTime = batchChangeTime ? batchEndTime : (sch.endTime || '10:00')
+      const newClassroom = batchChangeClassroom ? batchClassroom : (sch.classroom || '')
+      return {
+        _id: item._id,
+        oldDate: item.dateStr,
+        oldRange: `${sch.startTime || ''}-${sch.endTime || ''}`,
+        newDate,
+        newStartTime,
+        newEndTime,
+        newClassroom,
+        previewOld: `${String(item.dateStr).slice(5).replace('-', '/')} ${sch.startTime || ''}-${sch.endTime || ''}`,
+        previewNew: `${String(newDate).slice(5).replace('-', '/')} ${newStartTime}-${newEndTime}`
+      }
+    })
+
+    return {
+      plan,
+      batchAffectedCount: plan.length,
+      batchPreviews: plan.slice(0, 3)
+    }
+  },
+
+  onOpenBatchShift() {
+    const schedules = this.data.schedules || []
+    if (schedules.length === 0) {
+      wx.showToast({ title: '暂无可调整的排课', icon: 'none' })
+      return
+    }
+
+    const todayStr = scheduleConflict.formatDateStr(new Date())
+    const upcoming = schedules.filter(s => !s.isFinished && s.dateStr)
+    const defaultFromDate = upcoming.length > 0
+      ? todayStr
+      : (schedules.map(s => s.dateStr).filter(Boolean).sort()[0] || todayStr)
+
+    const sampleItem = upcoming[0] || schedules[0]
+    const sampleSch = (sampleItem && sampleItem.schedule) || {}
+
+    const init = {
+      batchFromDate: defaultFromDate,
+      batchShiftDays: 7,
+      batchShiftDaysInput: '7',
+      batchChangeTime: false,
+      batchStartTime: sampleSch.startTime || '09:00',
+      batchEndTime: sampleSch.endTime || '10:00',
+      batchChangeClassroom: false,
+      batchClassroom: sampleSch.classroom || ''
+    }
+    const { batchAffectedCount, batchPreviews } = this.computeBatchPlan(init)
+
+    this.setData({
+      showBatchShiftModal: true,
+      ...init,
+      batchAffectedCount,
+      batchPreviews
+    })
+  },
+
+  onCloseBatchShift() {
+    if (this.data.batchSaving) return
+    this.setData({ showBatchShiftModal: false })
+  },
+
+  onBatchFromDateChange(e) {
+    const batchFromDate = e.detail.value
+    const { batchAffectedCount, batchPreviews } = this.computeBatchPlan({ batchFromDate })
+    this.setData({ batchFromDate, batchAffectedCount, batchPreviews })
+  },
+
+  onBatchShiftPreset(e) {
+    const days = parseInt(e.currentTarget.dataset.days, 10)
+    if (isNaN(days)) return
+    const { batchAffectedCount, batchPreviews } = this.computeBatchPlan({ batchShiftDays: days })
+    this.setData({
+      batchShiftDays: days,
+      batchShiftDaysInput: String(days),
+      batchAffectedCount,
+      batchPreviews
+    })
+  },
+
+  onBatchShiftDaysInput(e) {
+    const raw = e.detail.value
+    const parsed = parseInt(raw, 10)
+    const batchShiftDays = Number.isFinite(parsed) ? parsed : 0
+    const { batchAffectedCount, batchPreviews } = this.computeBatchPlan({ batchShiftDays })
+    this.setData({
+      batchShiftDaysInput: raw,
+      batchShiftDays,
+      batchAffectedCount,
+      batchPreviews
+    })
+  },
+
+  onToggleBatchChangeTime(e) {
+    const batchChangeTime = Boolean(e.detail.value)
+    const { batchAffectedCount, batchPreviews } = this.computeBatchPlan({ batchChangeTime })
+    this.setData({ batchChangeTime, batchAffectedCount, batchPreviews })
+  },
+
+  onBatchStartTimeChange(e) {
+    const batchStartTime = e.detail.value
+    const { batchAffectedCount, batchPreviews } = this.computeBatchPlan({ batchStartTime })
+    this.setData({ batchStartTime, batchAffectedCount, batchPreviews })
+  },
+
+  onBatchEndTimeChange(e) {
+    const batchEndTime = e.detail.value
+    const { batchAffectedCount, batchPreviews } = this.computeBatchPlan({ batchEndTime })
+    this.setData({ batchEndTime, batchAffectedCount, batchPreviews })
+  },
+
+  onToggleBatchChangeClassroom(e) {
+    const batchChangeClassroom = Boolean(e.detail.value)
+    this.setData({ batchChangeClassroom })
+  },
+
+  onBatchClassroomInput(e) {
+    this.setData({ batchClassroom: e.detail.value })
+  },
+
+  async onConfirmBatchShift() {
+    if (this.data.batchSaving) return
+    const {
+      batchShiftDays,
+      batchChangeTime,
+      batchStartTime,
+      batchEndTime,
+      batchChangeClassroom,
+      classInfo
+    } = this.data
+
+    if (batchShiftDays === 0 && !batchChangeTime && !batchChangeClassroom) {
+      wx.showToast({ title: '请设置顺延天数或要修改的时段/地点', icon: 'none' })
+      return
+    }
+    if (batchChangeTime && (!batchStartTime || !batchEndTime || batchStartTime >= batchEndTime)) {
+      wx.showToast({ title: '结束时间必须晚于开始时间', icon: 'none' })
+      return
+    }
+
+    const { plan } = this.computeBatchPlan()
+    if (plan.length === 0) {
+      wx.showToast({ title: '该日期及之后没有排课可调整', icon: 'none' })
+      return
+    }
+
+    // 批量顺延/改期前执行全量冲突检测（自动排除本次一起移动的课次自身）
+    const proposedSlots = plan.map(p => ({
+      date: p.newDate,
+      startTime: p.newStartTime,
+      endTime: p.newEndTime,
+      label: (classInfo && classInfo.name) || '本班课程'
+    }))
+    const excludeIds = plan.map(p => p._id)
+
+    wx.showLoading({ title: '检测排课冲突...' })
+    const allowShift = await scheduleConflict.checkAndConfirmConflicts(
+      app.globalData.openid,
+      proposedSlots,
+      { excludeIds }
+    )
+    wx.hideLoading()
+    if (!allowShift) return
+
+    this.setData({ batchSaving: true })
+    wx.showLoading({ title: `正在调整 ${plan.length} 节...`, mask: true })
+
+    let successCount = 0
+    let failCount = 0
+    try {
+      const CHUNK = 5
+      for (let i = 0; i < plan.length; i += CHUNK) {
+        const chunk = plan.slice(i, i + CHUNK)
+        const results = await Promise.all(
+          chunk.map(item => {
+            const payload = {
+              date: item.newDate,
+              startTime: item.newStartTime,
+              endTime: item.newEndTime
+            }
+            if (batchChangeClassroom) {
+              payload.classroom = item.newClassroom
+            }
+            return api.editCourseSchedule(item._id, payload)
+          })
+        )
+        results.forEach(r => {
+          if (r) successCount++
+          else failCount++
+        })
+      }
+
+      app.clearCache()
+      app.globalData.refreshSchedule = true
+      this.setData({ showBatchShiftModal: false })
+
+      if (failCount === 0) {
+        wx.showToast({ title: `已批量调整 ${successCount} 节`, icon: 'success' })
+      } else {
+        wx.showToast({ title: `成功 ${successCount} 节，失败 ${failCount} 节`, icon: 'none' })
+      }
+      this.loadAll()
+    } catch (err) {
+      console.error('批量顺延/改期失败:', err)
+      wx.showToast({ title: '批量调整失败', icon: 'none' })
+    } finally {
+      this.setData({ batchSaving: false })
+      wx.hideLoading()
     }
   },
 

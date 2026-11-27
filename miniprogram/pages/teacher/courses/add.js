@@ -2,6 +2,7 @@ const app = getApp()
 const checkRole = require('../../../utils/checkRole.js')
 const api = require('../../../utils/api.js')
 const config = require('../../../config.js')
+const scheduleConflict = require('../../../utils/scheduleConflict.js')
 
 Page({
   data: {
@@ -712,6 +713,27 @@ Page({
       return
     }
 
+    // 排课时间冲突检测
+    const proposedDates = isRepeat
+      ? scheduleConflict.expandRepeatDates(repeatStartDate, selectedWeekdays, repeatCount)
+      : selectedDates
+    const proposedSlots = proposedDates.map(d => ({
+      date: d,
+      startTime,
+      endTime,
+      label: courseName
+    }))
+
+    wx.showLoading({ title: '检测排课冲突...' })
+    const allowContinue = await scheduleConflict.checkAndConfirmConflicts(
+      app.globalData.openid,
+      proposedSlots
+    )
+    wx.hideLoading()
+    if (!allowContinue) {
+      return
+    }
+
     this.setData({ loading: true, saving: true })
 
     try {
@@ -1115,9 +1137,20 @@ Page({
       return
     }
 
-    wx.showLoading({ title: '保存中...' })
-
     const isoDate = editDate.replace(/\//g, '-')
+
+    wx.showLoading({ title: '检测排课冲突...' })
+    const allowEdit = await scheduleConflict.checkAndConfirmConflicts(
+      app.globalData.openid,
+      [{ date: isoDate, startTime: editStartTime, endTime: editEndTime }],
+      { excludeIds: [editCourseId] }
+    )
+    wx.hideLoading()
+    if (!allowEdit) {
+      return
+    }
+
+    wx.showLoading({ title: '保存中...' })
 
     try {
       const result = await api.editCourseSchedule(editCourseId, {

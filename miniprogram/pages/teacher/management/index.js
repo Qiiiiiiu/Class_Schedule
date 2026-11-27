@@ -1,10 +1,19 @@
 const app = getApp()
 const checkRole = require('../../../utils/checkRole.js')
 const api = require('../../../utils/api.js')
+const statsHelper = require('../../../utils/statsHelper.js')
+
+function getSavedTheme() {
+  try {
+    return (app && app.globalData && app.globalData.theme) || wx.getStorageSync('theme') || 'dark'
+  } catch (e) {
+    return 'dark'
+  }
+}
 
 Page({
   data: {
-    theme: 'dark',
+    theme: getSavedTheme(),
     totalStudentCount: 0,
     studentCount: 0,
     pendingBindingsCount: 0,
@@ -12,12 +21,19 @@ Page({
     groupClassCount: 0,
     pendingApplicationsCount: 0,
     todayScheduleCount: 0,
-    weekScheduleCount: 0
+    weekScheduleCount: 0,
+    monthEarnedStr: '0',
+    monthTotalHours: 0
   },
 
   onLoad() {
     if (!checkRole.checkTeacher()) {
       return
+    }
+    const theme = app.globalData.theme || 'dark'
+    app.applyThemeToSystem(theme)
+    if (this.data.theme !== theme) {
+      this.setData({ theme })
     }
   },
 
@@ -26,7 +42,9 @@ Page({
       return
     }
     const theme = app.globalData.theme || 'dark'
-    this.setData({ theme })
+    if (this.data.theme !== theme) {
+      this.setData({ theme })
+    }
     app.applyThemeToSystem(theme)
     this.loadManagementStats()
   },
@@ -52,14 +70,18 @@ Page({
     const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6)
     const startDate = this.formatDateStr(weekStart)
     const endDate = this.formatDateStr(weekEnd)
+    const curYear = today.getFullYear()
+    const curMonth = today.getMonth() + 1
+    const monthRange = statsHelper.getMonthRange(curYear, curMonth)
 
     try {
-      const [students, courses, pendingBindings, pendingApplications, weekSchedules] = await Promise.all([
+      const [students, courses, pendingBindings, pendingApplications, weekSchedules, monthSchedules] = await Promise.all([
         api.getStudents(teacherId).catch(() => []),
         api.getCourses(teacherId).catch(() => []),
         api.getPendingBindings(teacherId).catch(() => []),
         api.getPendingApplications(teacherId).catch(() => []),
-        api.getSchedule(teacherId, { startDate, endDate }).catch(() => [])
+        api.getSchedule(teacherId, { startDate, endDate }).catch(() => []),
+        api.getSchedule(teacherId, { startDate: monthRange.startDate, endDate: monthRange.endDate }).catch(() => [])
       ])
 
       const approvedStudents = (students || []).filter(s => s.status === 'approved')
@@ -76,6 +98,7 @@ Page({
 
       const schedules = weekSchedules || []
       const todayScheduleCount = schedules.filter(s => s && s.schedule && s.schedule.date === todayStr).length
+      const monthStats = statsHelper.computeMonthlyStats(courses, monthSchedules, curYear, curMonth, today)
 
       this.setData({
         totalStudentCount: (students || []).length,
@@ -85,7 +108,9 @@ Page({
         groupClassCount,
         pendingApplicationsCount: (pendingApplications || []).length,
         todayScheduleCount,
-        weekScheduleCount: schedules.length
+        weekScheduleCount: schedules.length,
+        monthEarnedStr: monthStats.earnedRevenueStr,
+        monthTotalHours: monthStats.totalHours
       })
     } catch (err) {
       console.error('Failed to load management stats:', err)
@@ -121,6 +146,12 @@ Page({
   navigateToSchedule() {
     wx.navigateTo({
       url: '/pages/teacher/schedule/index'
+    })
+  },
+
+  navigateToStats() {
+    wx.navigateTo({
+      url: '/pages/teacher/stats/index'
     })
   }
 })

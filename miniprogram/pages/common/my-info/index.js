@@ -2,20 +2,39 @@ const app = getApp()
 const checkRole = require('../../../utils/checkRole.js')
 const api = require('../../../utils/api.js')
 
+function getSavedTheme() {
+  try {
+    return (app && app.globalData && app.globalData.theme) || wx.getStorageSync('theme') || 'dark'
+  } catch (e) {
+    return 'dark'
+  }
+}
+
 Page({
   data: {
     userInfo: null,
     createTime: '',
-    theme: 'dark',
+    theme: getSavedTheme(),
     showEditModal: false,
     newName: ''
   },
 
+  formatCreateTime(userInfo) {
+    if (!userInfo || !userInfo.createTime) return ''
+    const date = new Date(userInfo.createTime)
+    if (isNaN(date.getTime())) return ''
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  },
+
   onLoad() {
+    const theme = app.globalData.theme || 'dark'
+    const userInfo = app.globalData.userInfo || {}
+    app.applyThemeToSystem(theme)
     this.setData({
-      theme: app.globalData.theme || 'dark'
+      theme,
+      userInfo,
+      createTime: this.formatCreateTime(userInfo)
     })
-    this.initUserInfo()
   },
 
   onShow() {
@@ -23,25 +42,24 @@ Page({
       return
     }
     const theme = app.globalData.theme || 'dark'
-    this.setData({
-      theme: theme,
-      userInfo: app.globalData.userInfo || {}
-    })
-    this.initUserInfo()
+    const userInfo = app.globalData.userInfo || {}
+    const patch = {
+      userInfo,
+      createTime: this.formatCreateTime(userInfo)
+    }
+    if (this.data.theme !== theme) {
+      patch.theme = theme
+    }
+    this.setData(patch)
     app.applyThemeToSystem(theme)
   },
 
   initUserInfo() {
     const userInfo = app.globalData.userInfo || {}
     this.setData({
-      userInfo
+      userInfo,
+      createTime: this.formatCreateTime(userInfo)
     })
-    if (userInfo && userInfo.createTime) {
-      const date = new Date(userInfo.createTime)
-      this.setData({
-        createTime: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-      })
-    }
   },
 
   // 切换主题

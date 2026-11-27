@@ -1,0 +1,154 @@
+<view class="container {{theme}}">
+  <!-- 月份切换头 -->
+  <view class="month-bar">
+    <view class="month-nav-btn" hover-class="tap-hover" bindtap="onPrevMonth">‹ 上月</view>
+    <picker mode="date" fields="month" value="{{monthPickerVal}}" bindchange="onMonthPick">
+      <view class="month-center">
+        <text class="month-title">{{year}}年{{month}}月</text>
+        <text class="month-caret">▾</text>
+      </view>
+    </picker>
+    <view class="month-right-group">
+      <view class="today-chip" wx:if="{{!isCurrentMonth}}" bindtap="onBackCurrentMonth">本月</view>
+      <view class="month-nav-btn" hover-class="tap-hover" bindtap="onNextMonth">下月 ›</view>
+    </view>
+  </view>
+
+  <!-- 核心收入与工作量总览 -->
+  <view class="hero-card">
+    <view class="hero-top">
+      <view class="hero-rev-block">
+        <text class="hero-label">本月预计总收入</text>
+        <view class="hero-amount-row">
+          <text class="hero-currency">¥</text>
+          <text class="hero-amount">{{stats.totalRevenueStr}}</text>
+        </view>
+      </view>
+      <view class="hero-sub-split">
+        <view class="split-item">
+          <text class="split-lbl">已获收入</text>
+          <text class="split-val earned">¥{{stats.earnedRevenueStr}}</text>
+        </view>
+        <view class="split-divider"></view>
+        <view class="split-item">
+          <text class="split-lbl">待上预计</text>
+          <text class="split-val">¥{{stats.upcomingRevenueStr}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="workload-grid">
+      <view class="wl-box">
+        <text class="wl-val">{{stats.finishedLessons}} / {{stats.totalLessons}}</text>
+        <text class="wl-lbl">已上/总节次</text>
+      </view>
+      <view class="wl-box">
+        <text class="wl-val">{{stats.totalHours}}h</text>
+        <text class="wl-lbl">总授课时 (已上 {{stats.finishedHours}}h)</text>
+      </view>
+      <view class="wl-box">
+        <text class="wl-val">{{stats.activeDays}}天</text>
+        <text class="wl-lbl">授课天数</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 一对一 vs 大班课占比 -->
+  <view class="card-section">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">班型收入与课时构成</text>
+      </view>
+    </view>
+
+    <view class="ratio-bar-track" wx:if="{{stats.totalLessons > 0}}">
+      <view class="ratio-seg one-on-one" style="width: {{stats.oneOnOne.ratioPct}}%;"></view>
+      <view class="ratio-seg group" style="width: {{stats.group.ratioPct}}%;"></view>
+    </view>
+
+    <view class="type-compare-grid">
+      <view class="type-card">
+        <view class="type-head">
+          <view class="type-dot blue"></view>
+          <text class="type-name">一对一</text>
+          <text class="type-pct">{{stats.totalLessons > 0 ? stats.oneOnOne.ratioPct + '%' : '0%'}}</text>
+        </view>
+        <text class="type-money">¥{{stats.oneOnOne.revenueStr}}</text>
+        <text class="type-sub">{{stats.oneOnOne.lessons}} 节 · {{stats.oneOnOne.hours}} 小时</text>
+      </view>
+
+      <view class="type-card">
+        <view class="type-head">
+          <view class="type-dot purple"></view>
+          <text class="type-name">大班课</text>
+          <text class="type-pct">{{stats.totalLessons > 0 ? stats.group.ratioPct + '%' : '0%'}}</text>
+        </view>
+        <text class="type-money">¥{{stats.group.revenueStr}}</text>
+        <text class="type-sub">{{stats.group.lessons}} 节 · {{stats.group.hours}} 小时</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 本月每日分布柱状图 -->
+  <view class="card-section">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">每日分布趋势</text>
+      </view>
+      <view class="metric-switch">
+        <text class="metric-pill {{chartMetric === 'revenue' ? 'active' : ''}}" bindtap="onSwitchChartMetric" data-metric="revenue">按收入</text>
+        <text class="metric-pill {{chartMetric === 'hours' ? 'active' : ''}}" bindtap="onSwitchChartMetric" data-metric="hours">按课时</text>
+      </view>
+    </view>
+
+    <view class="chart-box" wx:if="{{stats.totalLessons > 0}}">
+      <canvas type="2d" id="dailyBarChart" class="bar-canvas"></canvas>
+    </view>
+    <view class="empty-block" wx:else>
+      <text class="empty-text">{{year}}年{{month}}月暂无排课记录</text>
+    </view>
+  </view>
+
+  <!-- 按班级收入与课时明细 -->
+  <view class="card-section">
+    <view class="section-header">
+      <view class="section-title-group">
+        <view class="section-bar"></view>
+        <text class="section-title">各班级收入明细</text>
+        <text class="section-count" wx:if="{{stats.classBreakdown.length > 0}}">{{stats.classBreakdown.length}}</text>
+      </view>
+    </view>
+
+    <view class="class-rank-list" wx:if="{{stats.classBreakdown.length > 0}}">
+      <view
+        class="rank-item"
+        wx:for="{{stats.classBreakdown}}"
+        wx:key="name"
+        bindtap="onOpenClassDetail"
+        data-id="{{item.parentId}}"
+        hover-class="tap-hover"
+      >
+        <view class="rank-top">
+          <view class="rank-left">
+            <text class="class-tag type-{{item.classType}}">{{item.classTypeLabel}}</text>
+            <text class="rank-name">{{item.name}}</text>
+            <text class="billing-tag" wx:if="{{item.billingLabel}}">{{item.billingLabel}}</text>
+          </view>
+          <text class="rank-money">¥{{item.revenueStr}}</text>
+        </view>
+        <view class="rank-mid">
+          <text class="rank-meta">已上 {{item.finishedLessons}}/{{item.lessons}} 节 · {{item.hours}} 小时</text>
+          <text class="rank-earned">已获 ¥{{item.earnedStr}}</text>
+        </view>
+        <view class="rank-bar-track">
+          <view class="rank-bar-fill type-{{item.classType}}" style="width: {{item.sharePct}}%;"></view>
+        </view>
+      </view>
+    </view>
+    <view class="empty-block" wx:else>
+      <text class="empty-text">本月暂无班级排课数据</text>
+    </view>
+  </view>
+</view>

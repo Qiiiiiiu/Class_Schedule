@@ -100,5 +100,33 @@
         </view>
       </view>
     </view>
+
+    <!-- 核心模块 4：月度收入与工作量统计看板 -->
+    <view class="module-card stats-module" bindtap="navigateToStats">
+      <view class="card-header">
+        <view class="card-title-area">
+          <view class="icon-box amber">
+            <text class="icon-emoji">📊</text>
+          </view>
+          <text class="card-title">月度收入与工作量</text>
+        </view>
+        <view class="detail-btn" catchtap="navigateToStats">
+          <text class="detail-text">统计看板</text>
+          <text class="detail-arrow">›</text>
+        </view>
+      </view>
+
+      <view class="indicators-row">
+        <view class="indicator-item">
+          <text class="indicator-value">¥{{monthEarnedStr}}</text>
+          <text class="indicator-label">本月已获收入</text>
+        </view>
+        <view class="indicator-divider"></view>
+        <view class="indicator-item">
+          <text class="indicator-value">{{monthTotalHours}}h</text>
+          <text class="indicator-label">本月总授课时</text>
+        </view>
+      </view>
+    </view>
   </view>
 </view>

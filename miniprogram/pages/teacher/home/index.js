@@ -2,8 +2,17 @@ const app = getApp()
 const checkRole = require('../../../utils/checkRole.js')
 const api = require('../../../utils/api.js')
 
+function getSavedTheme() {
+  try {
+    return (app && app.globalData && app.globalData.theme) || wx.getStorageSync('theme') || 'dark'
+  } catch (e) {
+    return 'dark'
+  }
+}
+
 Page({
   data: {
+    theme: getSavedTheme(),
     userInfo: null,
     stats: {
       studentCount: 0,
@@ -32,7 +41,10 @@ Page({
     if (!checkRole.checkTeacher()) {
       return
     }
+    const theme = app.globalData.theme || 'dark'
+    app.applyThemeToSystem(theme)
     this.setData({
+      theme,
       userInfo: app.globalData.userInfo
     })
   },
@@ -45,13 +57,19 @@ Page({
     const now = new Date()
     const targetYear = this.data.currentYear || now.getFullYear()
     const targetMonth = this.data.currentYear ? this.data.currentMonth : now.getMonth()
-    this.setData({
-      theme: theme,
+    const { greeting, greetingEmoji } = this.getGreetingInfo()
+
+    const patch = {
       userInfo: app.globalData.userInfo,
       currentYear: targetYear,
-      currentMonth: targetMonth
-    })
-    this.updateGreeting()
+      currentMonth: targetMonth,
+      greeting,
+      greetingEmoji
+    }
+    if (this.data.theme !== theme) {
+      patch.theme = theme
+    }
+    this.setData(patch)
     app.applyThemeToSystem(theme)
     if (app.globalData.refreshSchedule) {
       app.globalData.refreshSchedule = false
@@ -60,32 +78,17 @@ Page({
     this.loadStats()
   },
 
-  updateGreeting() {
+  getGreetingInfo() {
     const hour = new Date().getHours()
-    let greeting = ''
-    let greetingEmoji = ''
-    
-    if (hour >= 5 && hour < 9) {
-      greeting = '早上好'
-      greetingEmoji = '🌅'
-    } else if (hour >= 9 && hour < 12) {
-      greeting = '上午好'
-      greetingEmoji = '☀️'
-    } else if (hour >= 12 && hour < 18) {
-      greeting = '下午好'
-      greetingEmoji = '☕'
-    } else if (hour >= 18 && hour < 22) {
-      greeting = '晚上好'
-      greetingEmoji = '🌆'
-    } else {
-      greeting = '夜深了'
-      greetingEmoji = '🌙'
-    }
-    
-    this.setData({
-      greeting,
-      greetingEmoji
-    })
+    if (hour >= 5 && hour < 9) return { greeting: '早上好', greetingEmoji: '🌅' }
+    if (hour >= 9 && hour < 12) return { greeting: '上午好', greetingEmoji: '☀️' }
+    if (hour >= 12 && hour < 18) return { greeting: '下午好', greetingEmoji: '☕' }
+    if (hour >= 18 && hour < 22) return { greeting: '晚上好', greetingEmoji: '🌆' }
+    return { greeting: '夜深了', greetingEmoji: '🌙' }
+  },
+
+  updateGreeting() {
+    this.setData(this.getGreetingInfo())
   },
 
   async loadStats() {

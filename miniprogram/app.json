@@ -12,6 +12,7 @@
     "pages/teacher/courses/add",
     "pages/teacher/courses/detail",
     "pages/teacher/schedule/index",
+    "pages/teacher/stats/index",
     "pages/teacher/bindings/index",
     "pages/student/home/index",
     "pages/student/teachers/index",
@@ -21,7 +22,8 @@
     "pages/student/applications/index"
   ],
   "window": {
-    "backgroundColor": "#1a1a2e",
+    "backgroundColor": "#0f1419",
+    "backgroundColorContent": "#0f1419",
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#1a1a2e",
     "navigationBarTitleText": "课程管理",

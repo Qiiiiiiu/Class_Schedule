@@ -38,25 +38,45 @@ App({
   setTheme(theme) {
     this.globalData.theme = theme;
     wx.setStorageSync('theme', theme);
-    this.applyThemeToSystem(theme);
+    this.applyThemeToSystem(theme, true);
   },
 
-  applyThemeToSystem(theme) {
-    const isLight = theme === 'light';
-    
-    wx.nextTick(() => {
-      // 动态调整导航栏颜色
+  applyThemeToSystem(theme, force = false) {
+    const targetTheme = theme === 'light' ? 'light' : 'dark';
+    const isLight = targetTheme === 'light';
+
+    const pages = getCurrentPages();
+    const curPage = pages && pages.length > 0 ? pages[pages.length - 1] : null;
+    const prevPageTheme = (curPage && curPage.__appliedSystemTheme) || 'dark';
+    const prevTabTheme = this._appliedTabBarTheme || 'dark';
+
+    // 仅在页面实际需要变更时同步导航栏与窗口底色（避免每次切 Tab 重复重绘闪屏）
+    if (force || prevPageTheme !== targetTheme) {
+      if (curPage) {
+        curPage.__appliedSystemTheme = targetTheme;
+      }
+
       wx.setNavigationBarColor({
         frontColor: isLight ? '#000000' : '#ffffff',
         backgroundColor: isLight ? '#ffffff' : '#1a1a2e',
         animation: {
-          duration: 150,
-          timingFunc: 'easeIn'
+          duration: 0,
+          timingFunc: 'linear'
         },
         fail: () => {}
       });
 
-      // 动态调整 TabBar 样式
+      wx.setBackgroundColor({
+        backgroundColor: isLight ? '#f4f6f9' : '#0f1419',
+        backgroundColorTop: isLight ? '#f4f6f9' : '#0f1419',
+        backgroundColorBottom: isLight ? '#f4f6f9' : '#0f1419',
+        fail: () => {}
+      });
+    }
+
+    // 仅在 TabBar 主题发生变化时更新 TabBar 样式
+    if (force || prevTabTheme !== targetTheme) {
+      this._appliedTabBarTheme = targetTheme;
       wx.setTabBarStyle({
         color: isLight ? '#64748b' : '#666666',
         selectedColor: '#3b82f6',
@@ -64,15 +84,7 @@ App({
         borderStyle: isLight ? 'white' : 'black',
         fail: () => {}
       });
-
-      // 动态调整窗口背景色
-      wx.setBackgroundColor({
-        backgroundColor: isLight ? '#f4f6f9' : '#0f1419',
-        backgroundColorTop: isLight ? '#f4f6f9' : '#0f1419',
-        backgroundColorBottom: isLight ? '#f4f6f9' : '#0f1419',
-        fail: () => {}
-      });
-    });
+    }
   },
 
   clearCache() {

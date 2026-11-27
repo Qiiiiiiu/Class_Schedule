@@ -10,8 +10,9 @@ const LOGICAL_WIDTH = 750
 const PAD_X = 28
 const CONTENT_W = LOGICAL_WIDTH - PAD_X * 2 // 694
 const MAX_ALL_COURSES = 12
-const MAX_SINGLE_SCHEDULES = 24
+const MAX_CALENDAR_MONTHS = 6
 const MAX_SCORE_ROWS = 10
+const CALENDAR_WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日']
 
 const COLORS = {
   pageBg: '#f3f6fb',
@@ -176,6 +177,72 @@ function formatMoney(num) {
 }
 
 /**
+ * 按自然月分组排课记录，生成月历布局元数据（支持跨多月）
+ */
+function buildCalendarMonths(schedules) {
+  const monthMap = {}
+  ;(schedules || []).forEach(item => {
+    if (!item || !item.dateStr) return
+    const parts = String(item.dateStr).split('-').map(Number)
+    if (parts.length !== 3 || parts.some(isNaN)) return
+    const [year, month, day] = parts
+    const key = `${year}-${String(month).padStart(2, '0')}`
+    if (!monthMap[key]) {
+      monthMap[key] = { year, month, key, dayMap: {}, items: [] }
+    }
+    if (!monthMap[key].dayMap[day]) {
+      monthMap[key].dayMap[day] = []
+    }
+    monthMap[key].dayMap[day].push(item)
+    monthMap[key].items.push(item)
+  })
+
+  const keys = Object.keys(monthMap).sort()
+  const allMonths = keys.map(key => {
+    const m = monthMap[key]
+    const firstDay = new Date(m.year, m.month - 1, 1)
+    const startCol = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1 // 周一为 0
+    const daysInMonth = new Date(m.year, m.month, 0).getDate()
+    const weekRows = Math.ceil((startCol + daysInMonth) / 7)
+
+    let maxPerDay = 1
+    Object.keys(m.dayMap).forEach(d => {
+      m.dayMap[d].sort((a, b) => String(a.startTime || '').localeCompare(String(b.startTime || '')))
+      if (m.dayMap[d].length > maxPerDay) maxPerDay = m.dayMap[d].length
+    })
+
+    const cellH = maxPerDay >= 2 ? 108 : 92
+    const hasFee = m.items.some(it => it.studentFee !== null && it.studentFee !== undefined)
+    const monthFee = hasFee
+      ? Math.round(m.items.reduce((sum, it) => sum + (Number(it.studentFee) || 0), 0) * 100) / 100
+      : null
+
+    // 月历卡片内部高度：顶14 + 标题38 + 星期条34 + 间距10 + 行数*cellH + 底14
+    const monthH = 14 + 38 + 34 + 10 + weekRows * cellH + 14
+
+    return {
+      key,
+      year: m.year,
+      month: m.month,
+      title: `${m.year}年${m.month}月`,
+      startCol,
+      daysInMonth,
+      weekRows,
+      cellH,
+      dayMap: m.dayMap,
+      lessonCount: m.items.length,
+      monthFee,
+      monthH
+    }
+  })
+
+  return {
+    totalMonths: allMonths.length,
+    months: allMonths.slice(0, MAX_CALENDAR_MONTHS)
+  }
+}
+
+/**
  * 构建顶部 KPI 概览项（自动适配勾选内容）
  */
 function buildOverviewItems(data) {
@@ -277,18 +344,23 @@ function calculateLayout(data, ctx = null) {
     y += cardH + 24
   } else if (options.courseScope === 'single' && selectedCourse) {
     const list = selectedCourse.filteredSchedules || []
-    const shownCount = Math.min(list.length, MAX_SINGLE_SCHEDULES)
     const titleMaxW = CONTENT_W - 56 - 40
     const titleLines = wrapTextLines(ctx, selectedCourse.name || '未命名课程', titleMaxW, 2, 'bold 28px sans-serif', 28)
     const titleLineH = 38
     const metaBoxH = 18 + titleLines.length * titleLineH + 12 + 32 + (options.showFee ? 38 : 0) + 18
-    const tableHeaderH = shownCount > 0 ? 46 : 0
-    const rowH = 56
-    const listH = shownCount === 0
-      ? 100
-      : tableHeaderH + shownCount * rowH + (list.length > MAX_SINGLE_SCHEDULES ? 42 : 0)
-    const cardH = 32 + 40 + 20 + metaBoxH + 20 + listH + 28
-    blocks.singleCourse = { y, h: cardH, metaBoxH, titleLines, titleLineH, rowH, shownCount }
+
+    const calendarInfo = buildCalendarMonths(list)
+    let calendarAreaH = 100
+    if (calendarInfo.months.length > 0) {
+      const legendH = 38
+      const monthsSumH = calendarInfo.months.reduce((sum, m) => sum + m.monthH, 0)
+      const gapsH = Math.max(0, calendarInfo.months.length - 1) * 18
+      const overflowTipH = calendarInfo.totalMonths > MAX_CALENDAR_MONTHS ? 38 : 0
+      calendarAreaH = legendH + monthsSumH + gapsH + overflowTipH
+    }
+
+    const cardH = 32 + 40 + 20 + metaBoxH + 18 + calendarAreaH + 28
+    blocks.singleCourse = { y, h: cardH, metaBoxH, titleLines, titleLineH, calendarInfo }
     y += cardH + 24
   }
 
@@ -631,10 +703,10 @@ function drawSingleCourse(ctx, block, data) {
     ctx.fillText(truncateText(ctx, feeLine, innerW - 40), innerX + 20, row2Y + 32 + 22)
   }
 
-  curY += block.metaBoxH + 20
+  curY += block.metaBoxH + 18
 
-  const list = selectedCourse.filteredSchedules || []
-  if (list.length === 0) {
+  const calendarInfo = block.calendarInfo || buildCalendarMonths(selectedCourse.filteredSchedules || [])
+  if (!calendarInfo.months || calendarInfo.months.length === 0) {
     fillRoundRect(ctx, innerX, curY, innerW, 96, 14, COLORS.softBg, COLORS.cardBorder, 1)
     ctx.font = '24px sans-serif'
     ctx.fillStyle = COLORS.textMuted
@@ -644,98 +716,195 @@ function drawSingleCourse(ctx, block, data) {
     return
   }
 
-  // 是否在表格显示单节费用列
   const showRowFee = options.showFee && selectedCourse.feeDisplayTotal !== null
 
-  // 表头
-  fillRoundRect(ctx, innerX, curY, innerW, 46, 10, COLORS.slateBg)
-  ctx.font = '600 21px sans-serif'
-  ctx.fillStyle = COLORS.textSecondary
+  // 图例条（待上课 / 已结束 + 跨月提示）
+  ctx.save()
   ctx.textBaseline = 'middle'
-
-  const colDate = innerX + 16
-  const colTime = innerX + 160
-  const colRoom = showRowFee ? innerX + 322 : innerX + 338
-  const colFee = innerX + 498
-  const colStatus = innerX + innerW - 16
-
   ctx.textAlign = 'left'
-  ctx.fillText('上课日期', colDate, curY + 23)
-  ctx.fillText('时间段', colTime, curY + 23)
-  ctx.fillText('地点', colRoom, curY + 23)
-  if (showRowFee) {
-    ctx.textAlign = 'right'
-    ctx.fillText('费用', colFee, curY + 23)
-  }
+  const legendY = curY + 14
+
+  ctx.beginPath()
+  ctx.arc(innerX + 10, legendY, 6, 0, Math.PI * 2)
+  ctx.fillStyle = COLORS.primary
+  ctx.fill()
+  ctx.font = '20px sans-serif'
+  ctx.fillStyle = COLORS.textSecondary
+  ctx.fillText('待上课', innerX + 24, legendY)
+
+  ctx.beginPath()
+  ctx.arc(innerX + 114, legendY, 6, 0, Math.PI * 2)
+  ctx.fillStyle = COLORS.textMuted
+  ctx.fill()
+  ctx.fillStyle = COLORS.textSecondary
+  ctx.fillText('已结束', innerX + 128, legendY)
+
   ctx.textAlign = 'right'
-  ctx.fillText('状态', colStatus, curY + 23)
+  ctx.fillStyle = COLORS.textMuted
+  const spanHint = calendarInfo.totalMonths > 1
+    ? `共跨越 ${calendarInfo.totalMonths} 个月份`
+    : '月历视图'
+  ctx.fillText(spanHint, innerX + innerW - 4, legendY)
+  ctx.restore()
 
-  curY += 46
+  curY += 38
 
-  const shown = list.slice(0, MAX_SINGLE_SCHEDULES)
-  shown.forEach((item, idx) => {
-    if (idx % 2 === 1) {
-      fillRoundRect(ctx, innerX, curY, innerW, block.rowH, 8, COLORS.softBg)
-    }
-
-    const midY = curY + block.rowH / 2
-    ctx.textBaseline = 'middle'
-    ctx.textAlign = 'left'
-
-    ctx.font = '600 22px sans-serif'
-    ctx.fillStyle = item.isFinished ? COLORS.textSecondary : COLORS.textPrimary
-    ctx.fillText(`${item.monthDay} ${item.weekdayStr}`, colDate, midY)
-
-    ctx.font = '22px sans-serif'
-    ctx.fillStyle = COLORS.textSecondary
-    ctx.fillText(item.timeRange, colTime, midY)
-
-    const roomMaxW = showRowFee ? 120 : 185
-    ctx.fillText(truncateText(ctx, item.classroom || '未设地点', roomMaxW), colRoom, midY)
-
-    if (showRowFee) {
-      ctx.textAlign = 'right'
-      ctx.font = '600 22px sans-serif'
-      ctx.fillStyle = COLORS.primary
-      ctx.fillText(`¥${formatMoney(item.studentFee || 0)}`, colFee, midY)
-    }
-
-    // 状态胶囊
-    const stText = item.isFinished ? '已结束' : '待上课'
-    ctx.font = '600 19px sans-serif'
-    const stW = ctx.measureText(stText).width + 20
-    drawPill(
-      ctx,
-      colStatus - stW,
-      midY - 15,
-      stText,
-      item.isFinished ? COLORS.slateBg : COLORS.greenBg,
-      item.isFinished ? COLORS.textMuted : COLORS.green,
-      19,
-      10,
-      30
-    )
-
-    // 底部细分隔线
-    if (idx < shown.length - 1) {
-      ctx.beginPath()
-      ctx.strokeStyle = '#f1f5f9'
-      ctx.lineWidth = 1
-      ctx.moveTo(innerX + 8, curY + block.rowH)
-      ctx.lineTo(innerX + innerW - 8, curY + block.rowH)
-      ctx.stroke()
-    }
-
-    curY += block.rowH
+  // 逐月绘制月历卡片
+  calendarInfo.months.forEach((monthObj, mIdx) => {
+    drawMonthCalendar(ctx, innerX, curY, innerW, monthObj, showRowFee)
+    curY += monthObj.monthH + (mIdx < calendarInfo.months.length - 1 ? 18 : 0)
   })
 
-  if (list.length > MAX_SINGLE_SCHEDULES) {
+  if (calendarInfo.totalMonths > MAX_CALENDAR_MONTHS) {
+    ctx.save()
     ctx.font = '21px sans-serif'
     ctx.fillStyle = COLORS.textMuted
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(`该时段共 ${list.length} 节课，已展示前 ${MAX_SINGLE_SCHEDULES} 节`, innerX + innerW / 2, curY + 22)
+    ctx.fillText(`共跨越 ${calendarInfo.totalMonths} 个月份，已展示前 ${MAX_CALENDAR_MONTHS} 个月月历`, innerX + innerW / 2, curY + 22)
+    ctx.restore()
   }
+}
+
+/**
+ * 绘制单个月份的月历卡片
+ */
+function drawMonthCalendar(ctx, x, y, w, monthObj, showRowFee) {
+  ctx.save()
+
+  // 月历外框
+  fillRoundRect(ctx, x, y, w, monthObj.monthH, 16, COLORS.cardBg, COLORS.cardBorder, 1.2)
+
+  // 月份标题行
+  const titleY = y + 14 + 19
+  ctx.font = 'bold 25px sans-serif'
+  ctx.fillStyle = COLORS.textPrimary
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(monthObj.title, x + 16, titleY)
+
+  const monthStatText = (showRowFee && monthObj.monthFee !== null)
+    ? `本月 ${monthObj.lessonCount} 节 · ¥${formatMoney(monthObj.monthFee)}`
+    : `本月 ${monthObj.lessonCount} 节`
+  ctx.font = '600 20px sans-serif'
+  ctx.fillStyle = COLORS.primary
+  ctx.textAlign = 'right'
+  ctx.fillText(monthStatText, x + w - 16, titleY)
+
+  // 星期表头（周一 ~ 周日）
+  const gridX = x + 8
+  const gridW = w - 16
+  const colW = gridW / 7
+  const wkY = y + 14 + 38
+  fillRoundRect(ctx, gridX, wkY, gridW, 34, 8, COLORS.slateBg)
+
+  ctx.font = '600 19px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  CALENDAR_WEEKDAYS.forEach((wk, idx) => {
+    ctx.fillStyle = idx >= 5 ? COLORS.primary : COLORS.textSecondary
+    ctx.fillText(wk, gridX + idx * colW + colW / 2, wkY + 17)
+  })
+
+  // 日期网格
+  const gridY = wkY + 34 + 10
+  for (let day = 1; day <= monthObj.daysInMonth; day++) {
+    const pos = monthObj.startCol + day - 1
+    const row = Math.floor(pos / 7)
+    const col = pos % 7
+    const cx = gridX + col * colW
+    const cy = gridY + row * monthObj.cellH
+
+    const tx = cx + 2.5
+    const ty = cy + 3
+    const tw = colW - 5
+    const th = monthObj.cellH - 6
+    const dayItems = monthObj.dayMap[day]
+
+    if (!dayItems || dayItems.length === 0) {
+      // 无课日期格子
+      fillRoundRect(ctx, tx, ty, tw, th, 10, '#fafbfd', '#eef2f6', 1)
+      ctx.font = '20px sans-serif'
+      ctx.fillStyle = COLORS.textMuted
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(day), tx + 8, ty + 18)
+      continue
+    }
+
+    // 有课日期格子
+    const allFinished = dayItems.every(it => it.isFinished)
+    const tileBg = allFinished ? COLORS.softBg : COLORS.tintBlueBg
+    const tileBorder = allFinished ? '#cbd5e1' : '#93c5fd'
+    fillRoundRect(ctx, tx, ty, tw, th, 10, tileBg, tileBorder, allFinished ? 1.2 : 1.5)
+
+    // 日期数字 + 右上状态小标
+    ctx.font = 'bold 21px sans-serif'
+    ctx.fillStyle = allFinished ? COLORS.textSecondary : '#1d4ed8'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(String(day), tx + 8, ty + 17)
+
+    ctx.font = '600 14px sans-serif'
+    ctx.fillStyle = allFinished ? COLORS.textMuted : COLORS.green
+    ctx.textAlign = 'right'
+    ctx.fillText(allFinished ? '已上' : '待上', tx + tw - 7, ty + 17)
+
+    // 课程时间胶囊（单节 vs 当日多节）
+    const pillX = tx + 3
+    const pillW = tw - 6
+    if (dayItems.length === 1) {
+      const it = dayItems[0]
+      const pillBg = it.isFinished ? COLORS.textMuted : COLORS.primary
+      fillRoundRect(ctx, pillX, ty + 32, pillW, 24, 6, pillBg)
+
+      ctx.font = '600 12px sans-serif'
+      ctx.fillStyle = '#ffffff'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(truncateText(ctx, it.timeRange || '待定', pillW - 4), pillX + pillW / 2, ty + 44)
+
+      // 底部辅助信息（费用优先，其次教室，其次时长）
+      let subLabel = ''
+      if (showRowFee && it.studentFee !== null && it.studentFee !== undefined) {
+        subLabel = `¥${formatMoney(it.studentFee)}`
+      } else if (it.classroom && it.classroom !== '未设地点') {
+        subLabel = it.classroom
+      } else if (it.hours) {
+        subLabel = `${Math.round(it.hours * 10) / 10}小时`
+      }
+      if (subLabel) {
+        ctx.font = showRowFee ? '600 15px sans-serif' : '14px sans-serif'
+        ctx.fillStyle = (showRowFee && !it.isFinished) ? COLORS.primary : COLORS.textSecondary
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(truncateText(ctx, subLabel, pillW), tx + tw / 2, ty + 71)
+      }
+    } else {
+      const shownItems = dayItems.slice(0, 2)
+      shownItems.forEach((it, idx) => {
+        const py = ty + 31 + idx * 27
+        const pillBg = it.isFinished ? COLORS.textMuted : COLORS.primary
+        fillRoundRect(ctx, pillX, py, pillW, 23, 6, pillBg)
+
+        ctx.font = '600 12px sans-serif'
+        ctx.fillStyle = '#ffffff'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(truncateText(ctx, it.timeRange || '待定', pillW - 4), pillX + pillW / 2, py + 11.5)
+      })
+
+      if (dayItems.length > 2) {
+        ctx.font = '600 13px sans-serif'
+        ctx.fillStyle = COLORS.primary
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(`+${dayItems.length - 2}节`, tx + tw / 2, ty + 91)
+      }
+    }
+  }
+
+  ctx.restore()
 }
 
 /**
